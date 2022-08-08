@@ -18,15 +18,12 @@
 
 namespace Coil
 {
-  // Object is something which can be registered in a Book.
-  class Object
-  {
-  public:
-    virtual ~Object() {};
-  };
+  // Bookable is something which can be registered in a Book.
+  template <typename T>
+  concept Bookable = std::has_virtual_destructor_v<T>;
 
   // Book is a container for objects to remove them later.
-  class Book : public Object
+  class Book
   {
   public:
     Book() = default;
@@ -38,27 +35,71 @@ namespace Coil
     Book& operator=(Book&&);
 
     // Allocate new object in pool.
-    template <typename T, typename... Args>
-    T* Allocate(Args&&... args)
+    template <Bookable T, typename... Args>
+    T& Allocate(Args&&... args)
     {
-      static_assert(sizeof(T) <= _ChunkSize, "too big object to allocate in a book");
-      T* object = new (_AllocateFromPool(sizeof(T))) T(std::forward<Args...>(args...));
-      _Register(object);
-      return object;
+      static_assert(sizeof(TemplObjectHeader<T>) + sizeof(T) <= _MaxObjectSize, "too big object to allocate in a book");
+      return InitObject<T, Args...>(
+        _AllocateFromPool(sizeof(TemplObjectHeader<T>) + sizeof(T)),
+        std::forward<Args>(args)...
+      );
     }
     // Delete all objects.
     void Free();
 
   private:
+    // Init object using provided memory.
+    template <typename T, typename... Args>
+    T& InitObject(void* memory, Args&&... args)
+    {
+      ObjectHeader* header = new (memory) TemplObjectHeader<T>(_lastObjectHeader);
+      _lastObjectHeader = header;
+      return *new (header + 1) T(std::forward<Args>(args)...);
+    }
+
+    struct ObjectHeader
+    {
+      ObjectHeader(ObjectHeader* prev)
+      : prev(prev) {}
+      virtual ~ObjectHeader() {}
+
+      ObjectHeader* prev;
+    };
+    template <typename T>
+    struct TemplObjectHeader;
+
     void* _AllocateFromPool(size_t size);
-    void _Register(Object* object);
+    void _Register(ObjectHeader* objectHeader);
 
-    std::vector<Object*> _objects;
-    struct _Chunk;
-    _Chunk* _lastChunk = nullptr;
+    struct _Chunk {};
+    uint8_t* _lastChunk = nullptr;
     size_t _lastChunkAllocated = 0;
+    ObjectHeader* _lastObjectHeader = nullptr;
 
-    static constexpr size_t _ChunkSize = 0x1000;
+    static constexpr size_t _ChunkSize = 0x1000 - 128; // try to (over)estimate heap's overhead
+    static constexpr size_t _MaxObjectSize = _ChunkSize - sizeof(ObjectHeader);
+  };
+
+  template <Bookable T>
+  struct Book::TemplObjectHeader<T> : public Book::ObjectHeader
+  {
+    TemplObjectHeader(ObjectHeader* prev)
+    : ObjectHeader(prev) {}
+    ~TemplObjectHeader()
+    {
+      reinterpret_cast<T*>(this + 1)->~T();
+    }
+  };
+  // specialization for chunks
+  template <>
+  struct Book::TemplObjectHeader<Book::_Chunk> : public Book::ObjectHeader
+  {
+    TemplObjectHeader(ObjectHeader* prev)
+    : ObjectHeader(prev) {}
+    ~TemplObjectHeader()
+    {
+      delete [] reinterpret_cast<uint8_t*>(this);
+    }
   };
 
   // Piece of allocated or mapped memory.
@@ -79,11 +120,11 @@ namespace Coil
   };
 
   // Memory allocating with new uint8_t[].
-  class Memory : public Object
+  class Memory
   {
   public:
     Memory(uint8_t* const data);
-    ~Memory();
+    virtual ~Memory();
 
     static Buffer Allocate(Book& book, size_t size);
 

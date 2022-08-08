@@ -10,9 +10,9 @@ namespace Coil
 
   Book& Book::operator=(Book&& book)
   {
-    std::swap(_objects, book._objects);
     std::swap(_lastChunk, book._lastChunk);
     std::swap(_lastChunkAllocated, book._lastChunkAllocated);
+    std::swap(_lastObjectHeader, book._lastObjectHeader);
     return *this;
   }
 
@@ -23,43 +23,28 @@ namespace Coil
 
   void Book::Free()
   {
-    while(!_objects.empty())
+    while(_lastObjectHeader)
     {
-      _objects.back()->~Object();
-      _objects.pop_back();
+      ObjectHeader* prev = _lastObjectHeader->prev;
+      _lastObjectHeader->~ObjectHeader();
+      _lastObjectHeader = prev;
     }
     _lastChunk = nullptr;
     _lastChunkAllocated = 0;
+    _lastObjectHeader = nullptr;
   }
-
-  struct Book::_Chunk : public Object
-  {
-    _Chunk()
-    : data(new uint8_t[_ChunkSize]) {}
-    ~_Chunk()
-    {
-      delete [] data;
-    }
-
-    uint8_t* const data;
-  };
 
   void* Book::_AllocateFromPool(size_t size)
   {
     if(!_lastChunk || _lastChunkAllocated + size > _ChunkSize)
     {
-      _lastChunk = new _Chunk();
+      _lastChunk = new uint8_t[_ChunkSize];
       _lastChunkAllocated = 0;
-      _Register(_lastChunk);
+      InitObject<_Chunk>(_lastChunk);
     }
-    void* data = _lastChunk->data + _lastChunkAllocated;
+    void* data = _lastChunk + _lastChunkAllocated;
     _lastChunkAllocated += size;
     return data;
-  }
-
-  void Book::_Register(Object* object)
-  {
-    _objects.push_back(object);
   }
 
   Memory::Memory(uint8_t* const data)

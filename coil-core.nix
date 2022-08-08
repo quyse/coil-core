@@ -2,6 +2,7 @@
 , lib
 , ninja
 , writeText
+, SDL2
 }: let
   libraries = [
     "base"
@@ -9,7 +10,7 @@
   ];
   buildfile = writeText "coil-core.ninja" ''
     rule cxx
-      command = gcc -c -std=c++17 -o $out $in
+      command = gcc -c -std=c++20 -o $out $in
     rule ar
       command = ar -r $out $in
     ${lib.concatStrings (map (library: ''
@@ -22,6 +23,9 @@ in stdenv.mkDerivation {
   src = ./src;
   nativeBuildInputs = [
     ninja
+  ];
+  buildInputs = [
+    SDL2
   ];
   configurePhase = ''
     ln -s ${buildfile} build.ninja
