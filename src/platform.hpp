@@ -51,5 +51,4 @@ namespace Coil
   public:
     virtual Window& CreateWindow(Book& book, std::string const& title, int width, int height) = 0;
   };
-
 }

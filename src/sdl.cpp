@@ -496,6 +496,7 @@ namespace Coil::Platform
       SDL_DestroyWindow(_window);
       _window = nullptr;
     }
+    Stop();
   }
 
   void SdlWindow::SetFullScreen(bool fullScreen)
