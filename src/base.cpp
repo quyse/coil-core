@@ -39,7 +39,7 @@ namespace Coil
     if(!_lastChunk || _lastChunkAllocated + size > _ChunkSize)
     {
       _lastChunk = new uint8_t[_ChunkSize];
-      _lastChunkAllocated = 0;
+      _lastChunkAllocated = sizeof(TemplObjectHeader<_Chunk>);
       InitObject<_Chunk>(_lastChunk);
     }
     void* data = _lastChunk + _lastChunkAllocated;
