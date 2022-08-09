@@ -11,7 +11,7 @@ namespace Coil::Platform
   {
   public:
     Sdl(uint32_t flags);
-    virtual ~Sdl();
+    ~Sdl();
 
     static void Init(Book& book, uint32_t flags);
 
@@ -61,7 +61,7 @@ namespace Coil::Platform
   {
   public:
     SdlWindow(SDL_Window* window);
-    virtual ~SdlWindow();
+    ~SdlWindow();
 
     void SetTitle(std::string const& title) override;
     void Close() override;

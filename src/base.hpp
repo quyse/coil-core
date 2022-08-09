@@ -18,10 +18,6 @@
 
 namespace Coil
 {
-  // Bookable is something which can be registered in a Book.
-  template <typename T>
-  concept Bookable = std::has_virtual_destructor_v<T>;
-
   // Book is a container for objects to remove them later.
   class Book
   {
@@ -35,7 +31,7 @@ namespace Coil
     Book& operator=(Book&&);
 
     // Allocate new object in pool.
-    template <Bookable T, typename... Args>
+    template <typename T, typename... Args>
     T& Allocate(Args&&... args)
     {
       static_assert(sizeof(TemplObjectHeader<T>) + sizeof(T) <= _MaxObjectSize, "too big object to allocate in a book");
@@ -80,8 +76,8 @@ namespace Coil
     static constexpr size_t _MaxObjectSize = _ChunkSize - sizeof(ObjectHeader);
   };
 
-  template <Bookable T>
-  struct Book::TemplObjectHeader<T> : public Book::ObjectHeader
+  template <typename T>
+  struct Book::TemplObjectHeader : public Book::ObjectHeader
   {
     TemplObjectHeader(ObjectHeader* prev)
     : ObjectHeader(prev) {}
@@ -124,7 +120,7 @@ namespace Coil
   {
   public:
     Memory(uint8_t* const data);
-    virtual ~Memory();
+    ~Memory();
 
     static Buffer Allocate(Book& book, size_t size);
 
