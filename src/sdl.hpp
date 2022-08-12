@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include <SDL2/SDL.h>
 
-namespace Coil::Platform
+namespace Coil
 {
   class Sdl
   {
@@ -19,7 +19,7 @@ namespace Coil::Platform
     uint32_t _flags;
   };
 
-  class SdlInputManager : public Input::Manager
+  class SdlInputManager : public InputManager
   {
   public:
     void Update() override;
@@ -28,12 +28,12 @@ namespace Coil::Platform
     void SetVirtualScale(float widthScale, float heightScale);
 
   private:
-    static Input::Key ConvertKey(SDL_Scancode code);
+    static InputKey ConvertKey(SDL_Scancode code);
 
     float _widthScale = 1, _heightScale = 1;
     int _lastCursorX = 0, _lastCursorY = 0;
 
-    class SdlController : public Input::Controller
+    class SdlController : public InputController
     {
     public:
       SdlController(SDL_GameController* controller);
@@ -54,7 +54,7 @@ namespace Coil::Platform
       int _hapticEffectIndex = -1;
     };
 
-    std::unordered_map<Input::ControllerId, std::unique_ptr<SdlController>> _controllers;
+    std::unordered_map<InputControllerId, std::unique_ptr<SdlController>> _controllers;
   };
 
   class SdlWindow : public Window

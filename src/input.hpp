@@ -2,10 +2,10 @@
 
 #include "base.hpp"
 
-namespace Coil::Input
+namespace Coil
 {
   // Key numbers.
-  struct Keys
+  struct InputKeys
   {
     enum _
     {
@@ -148,13 +148,13 @@ namespace Coil::Input
       Alt = 0xef
     };
   };
-  using Key = Keys::_;
+  using InputKey = InputKeys::_;
 
   // Controller ID.
-  using ControllerId = uint64_t;
+  using InputControllerId = uint64_t;
 
   // Input event.
-  struct Event
+  struct InputEvent
   {
     enum Device
     {
@@ -175,7 +175,7 @@ namespace Coil::Input
       union
       {
         // in case type == typeKey{Down,Up}
-        Key key;
+        InputKey key;
         // in case type == typeCharacter
         char32_t character;
       };
@@ -265,7 +265,7 @@ namespace Coil::Input
       };
 
       // Device id (for all event types).
-      ControllerId device;
+      InputControllerId device;
 
       union
       {
@@ -303,30 +303,30 @@ namespace Coil::Input
   };
 
   // Input frame.
-  class Frame
+  class InputFrame
   {
   public:
-    Event const* NextEvent();
+    InputEvent const* NextEvent();
     State const& GetCurrentState() const;
     void ForwardEvents();
 
     void Reset();
-    void AddEvent(Event const& event);
+    void AddEvent(InputEvent const& event);
 
   private:
-    void _ProcessKeyboardVirtualEvents(Event const& event);
+    void _ProcessKeyboardVirtualEvents(InputEvent const& event);
 
-    std::vector<Event> _events;
+    std::vector<InputEvent> _events;
     size_t _nextEvent = 0;
     State _state;
   };
 
-  // Game controller.
-  class Controller
+  // Input controller (gamepad).
+  class InputController
   {
   public:
     // Get controller id.
-    ControllerId GetId() const;
+    InputControllerId GetId() const;
 
     // Return if controller is still connected.
     virtual bool IsActive() const = 0;
@@ -334,19 +334,19 @@ namespace Coil::Input
     virtual void StopHaptic() = 0;
 
   protected:
-    Controller(ControllerId id);
+    InputController(InputControllerId id);
 
     // Controller id to distinguish events for this controller.
-    ControllerId _id;
+    InputControllerId _id;
   };
 
-  class Manager
+  class InputManager
   {
   public:
     // Go to the next frame.
     virtual void Update();
     // Get current input frame.
-    Frame const& GetCurrentFrame() const;
+    InputFrame const& GetCurrentFrame() const;
 
     // Send up events for all keys on next Update.
     void ReleaseButtonsOnUpdate();
@@ -359,11 +359,11 @@ namespace Coil::Input
     bool IsTextInput() const;
 
   protected:
-    void AddEvent(Event const& event);
+    void AddEvent(InputEvent const& event);
 
-    Frame _frames[2];
-    Frame* _currentFrame = &_frames[0];
-    Frame* _internalFrame = &_frames[1];
+    InputFrame _frames[2];
+    InputFrame* _currentFrame = &_frames[0];
+    InputFrame* _internalFrame = &_frames[1];
 
     bool _textInputEnabled = false;
     bool _releaseButtonsOnUpdate = false;

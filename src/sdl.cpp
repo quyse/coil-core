@@ -1,7 +1,7 @@
 #include "sdl.hpp"
 #include "utf8.hpp"
 
-namespace Coil::Platform
+namespace Coil
 {
   class SdlGlobal
   {
@@ -47,16 +47,14 @@ namespace Coil::Platform
 
   void SdlInputManager::ProcessEvent(SDL_Event const& sdlEvent)
   {
-    // using Input::Event;
-
     switch(sdlEvent.type)
     {
     case SDL_KEYDOWN:
     case SDL_KEYUP:
       {
-        Input::Event event;
-        event.device = Input::Event::deviceKeyboard;
-        event.keyboard.type = sdlEvent.type == SDL_KEYDOWN ? Input::Event::Keyboard::typeKeyDown : Input::Event::Keyboard::typeKeyUp;
+        InputEvent event;
+        event.device = InputEvent::deviceKeyboard;
+        event.keyboard.type = sdlEvent.type == SDL_KEYDOWN ? InputEvent::Keyboard::typeKeyDown : InputEvent::Keyboard::typeKeyUp;
         event.keyboard.key = ConvertKey(sdlEvent.key.keysym.scancode);
         AddEvent(event);
       }
@@ -64,9 +62,9 @@ namespace Coil::Platform
     case SDL_TEXTINPUT:
       for(Utf8::Char32Iterator i(sdlEvent.text.text); *i; ++i)
       {
-        Input::Event event;
-        event.device = Input::Event::deviceKeyboard;
-        event.keyboard.type = Input::Event::Keyboard::typeCharacter;
+        InputEvent event;
+        event.device = InputEvent::deviceKeyboard;
+        event.keyboard.type = InputEvent::Keyboard::typeCharacter;
         event.keyboard.character = *i;
         AddEvent(event);
       }
@@ -74,9 +72,9 @@ namespace Coil::Platform
     case SDL_MOUSEMOTION:
       // raw move event
       {
-        Input::Event event;
-        event.device = Input::Event::deviceMouse;
-        event.mouse.type = Input::Event::Mouse::typeRawMove;
+        InputEvent event;
+        event.device = InputEvent::deviceMouse;
+        event.mouse.type = InputEvent::Mouse::typeRawMove;
         event.mouse.rawMoveX = sdlEvent.motion.xrel;
         event.mouse.rawMoveY = sdlEvent.motion.yrel;
         event.mouse.rawMoveZ = 0;
@@ -84,9 +82,9 @@ namespace Coil::Platform
       }
       // cursor move event
       {
-        Input::Event event;
-        event.device = Input::Event::deviceMouse;
-        event.mouse.type = Input::Event::Mouse::typeCursorMove;
+        InputEvent event;
+        event.device = InputEvent::deviceMouse;
+        event.mouse.type = InputEvent::Mouse::typeCursorMove;
         _lastCursorX = event.mouse.cursorX = (int)(sdlEvent.motion.x * _widthScale);
         _lastCursorY = event.mouse.cursorY = (int)(sdlEvent.motion.y * _heightScale);
         event.mouse.cursorZ = 0;
@@ -96,20 +94,20 @@ namespace Coil::Platform
     case SDL_MOUSEBUTTONDOWN:
     case SDL_MOUSEBUTTONUP:
       {
-        Input::Event event;
-        event.device = Input::Event::deviceMouse;
-        event.mouse.type = sdlEvent.type == SDL_MOUSEBUTTONDOWN ? Input::Event::Mouse::typeButtonDown : Input::Event::Mouse::typeButtonUp;
+        InputEvent event;
+        event.device = InputEvent::deviceMouse;
+        event.mouse.type = sdlEvent.type == SDL_MOUSEBUTTONDOWN ? InputEvent::Mouse::typeButtonDown : InputEvent::Mouse::typeButtonUp;
         bool ok = true;
         switch(sdlEvent.button.button)
         {
         case SDL_BUTTON_LEFT:
-          event.mouse.button = Input::Event::Mouse::buttonLeft;
+          event.mouse.button = InputEvent::Mouse::buttonLeft;
           break;
         case SDL_BUTTON_MIDDLE:
-          event.mouse.button = Input::Event::Mouse::buttonMiddle;
+          event.mouse.button = InputEvent::Mouse::buttonMiddle;
           break;
         case SDL_BUTTON_RIGHT:
-          event.mouse.button = Input::Event::Mouse::buttonRight;
+          event.mouse.button = InputEvent::Mouse::buttonRight;
           break;
         default:
           ok = false;
@@ -119,9 +117,9 @@ namespace Coil::Platform
         {
           AddEvent(event);
           // send double click event for second button up
-          if(event.mouse.type == Input::Event::Mouse::typeButtonUp && sdlEvent.button.clicks == 2)
+          if(event.mouse.type == InputEvent::Mouse::typeButtonUp && sdlEvent.button.clicks == 2)
           {
-            event.mouse.type = Input::Event::Mouse::typeDoubleClick;
+            event.mouse.type = InputEvent::Mouse::typeDoubleClick;
             AddEvent(event);
           }
         }
@@ -130,9 +128,9 @@ namespace Coil::Platform
     case SDL_MOUSEWHEEL:
       // raw move event
       {
-        Input::Event event;
-        event.device = Input::Event::deviceMouse;
-        event.mouse.type = Input::Event::Mouse::typeRawMove;
+        InputEvent event;
+        event.device = InputEvent::deviceMouse;
+        event.mouse.type = InputEvent::Mouse::typeRawMove;
         event.mouse.rawMoveX = 0;
         event.mouse.rawMoveY = 0;
         event.mouse.rawMoveZ = sdlEvent.wheel.direction == SDL_MOUSEWHEEL_FLIPPED ? -sdlEvent.wheel.y : sdlEvent.wheel.y;
@@ -140,9 +138,9 @@ namespace Coil::Platform
       }
       // cursor move event
       {
-        Input::Event event;
-        event.device = Input::Event::deviceMouse;
-        event.mouse.type = Input::Event::Mouse::typeCursorMove;
+        InputEvent event;
+        event.device = InputEvent::deviceMouse;
+        event.mouse.type = InputEvent::Mouse::typeCursorMove;
         event.mouse.cursorX = _lastCursorX;
         event.mouse.cursorY = _lastCursorY;
         event.mouse.cursorZ = sdlEvent.wheel.direction == SDL_MOUSEWHEEL_FLIPPED ? -sdlEvent.wheel.y : sdlEvent.wheel.y;
@@ -157,12 +155,12 @@ namespace Coil::Platform
         if(sdlController)
         {
           auto controller = std::make_unique<SdlController>(sdlController);
-          Input::ControllerId controllerId = controller->GetId();
+          InputControllerId controllerId = controller->GetId();
           _controllers.insert({ controllerId, std::move(controller) });
 
-          Input::Event event;
-          event.device = Input::Event::deviceController;
-          event.controller.type = Input::Event::Controller::typeDeviceAdded;
+          InputEvent event;
+          event.device = InputEvent::deviceController;
+          event.controller.type = InputEvent::Controller::typeDeviceAdded;
           event.controller.device = controllerId;
           AddEvent(event);
         }
@@ -179,9 +177,9 @@ namespace Coil::Platform
           _controllers.erase(i);
 
           // emit event
-          Input::Event event;
-          event.device = Input::Event::deviceController;
-          event.controller.type = Input::Event::Controller::typeDeviceRemoved;
+          InputEvent event;
+          event.device = InputEvent::deviceController;
+          event.controller.type = InputEvent::Controller::typeDeviceRemoved;
           event.controller.device = sdlEvent.cdevice.which;
           AddEvent(event);
         }
@@ -191,11 +189,11 @@ namespace Coil::Platform
     case SDL_CONTROLLERBUTTONUP:
       // controller button down/up event
       {
-        Input::Event::Controller::Button button;
+        InputEvent::Controller::Button button;
         bool ok = true;
         switch(sdlEvent.cbutton.button)
         {
-#define B(a, b) case SDL_CONTROLLER_BUTTON_##a: button = Input::Event::Controller::button##b; break
+#define B(a, b) case SDL_CONTROLLER_BUTTON_##a: button = InputEvent::Controller::button##b; break
         B(A, A);
         B(B, B);
         B(X, X);
@@ -216,9 +214,9 @@ namespace Coil::Platform
         }
         if(ok)
         {
-          Input::Event event;
-          event.device = Input::Event::deviceController;
-          event.controller.type = sdlEvent.type == SDL_CONTROLLERBUTTONDOWN ? Input::Event::Controller::typeButtonDown : Input::Event::Controller::typeButtonUp;
+          InputEvent event;
+          event.device = InputEvent::deviceController;
+          event.controller.type = sdlEvent.type == SDL_CONTROLLERBUTTONDOWN ? InputEvent::Controller::typeButtonDown : InputEvent::Controller::typeButtonUp;
           event.controller.device = sdlEvent.cbutton.which;
           event.controller.button = button;
           AddEvent(event);
@@ -228,11 +226,11 @@ namespace Coil::Platform
     case SDL_CONTROLLERAXISMOTION:
       // controller axis motion event
       {
-        Input::Event::Controller::Axis axis;
+        InputEvent::Controller::Axis axis;
         bool ok = true;
         switch(sdlEvent.caxis.axis)
         {
-#define A(a, b) case SDL_CONTROLLER_AXIS_##a: axis = Input::Event::Controller::axis##b; break
+#define A(a, b) case SDL_CONTROLLER_AXIS_##a: axis = InputEvent::Controller::axis##b; break
         A(LEFTX, LeftX);
         A(LEFTY, LeftY);
         A(RIGHTX, RightX);
@@ -244,9 +242,9 @@ namespace Coil::Platform
         }
         if(ok)
         {
-          Input::Event event;
-          event.device = Input::Event::deviceController;
-          event.controller.type = Input::Event::Controller::typeAxisMotion;
+          InputEvent event;
+          event.device = InputEvent::deviceController;
+          event.controller.type = InputEvent::Controller::typeAxisMotion;
           event.controller.device = sdlEvent.caxis.which;
           event.controller.axis = axis;
           event.controller.axisValue = sdlEvent.caxis.value;
@@ -263,12 +261,12 @@ namespace Coil::Platform
     _heightScale = heightScale;
   }
 
-  Input::Key SdlInputManager::ConvertKey(SDL_Scancode code)
+  InputKey SdlInputManager::ConvertKey(SDL_Scancode code)
   {
-    Input::Key key;
+    InputKey key;
     switch(code)
     {
-  #define C(c, k) case SDL_SCANCODE_##c: key = Input::Key::k; break
+  #define C(c, k) case SDL_SCANCODE_##c: key = InputKey::k; break
 
       C(BACKSPACE, BackSpace);
       C(TAB, Tab);
@@ -384,7 +382,7 @@ namespace Coil::Platform
   #undef C
 
     default:
-      key = Input::Key::_Unknown;
+      key = InputKey::_Unknown;
       break;
     }
 
@@ -392,7 +390,7 @@ namespace Coil::Platform
   }
 
   SdlInputManager::SdlController::SdlController(SDL_GameController* controller, SDL_Joystick* joystick)
-  : Controller(SDL_JoystickInstanceID(joystick))
+  : InputController(SDL_JoystickInstanceID(joystick))
   , _controller(controller)
   , _haptic(SDL_HapticOpenFromJoystick(joystick))
   , _hapticEffectIndex(-1)

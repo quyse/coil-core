@@ -1,63 +1,63 @@
 #include "input.hpp"
 
-namespace Coil::Input
+namespace Coil
 {
-  Event const* Frame::NextEvent()
+  InputEvent const* InputFrame::NextEvent()
   {
     while(_nextEvent < _events.size())
     {
       // process next event in state
-      Event const& event = _events[_nextEvent++];
+      InputEvent const& event = _events[_nextEvent++];
 
       switch(event.device)
       {
-      case Event::deviceKeyboard:
+      case InputEvent::deviceKeyboard:
         switch(event.keyboard.type)
         {
-        case Event::Keyboard::typeKeyDown:
+        case InputEvent::Keyboard::typeKeyDown:
           // if key already pressed, skip
           if(_state.keyboard[event.keyboard.key])
             continue;
           _state.keyboard[event.keyboard.key] = 1;
           break;
-        case Event::Keyboard::typeKeyUp:
+        case InputEvent::Keyboard::typeKeyUp:
           // if key already released, skip
           if(!_state.keyboard[event.keyboard.key])
             continue;
           _state.keyboard[event.keyboard.key] = 0;
           break;
-        case Event::Keyboard::typeCharacter:
+        case InputEvent::Keyboard::typeCharacter:
           break;
         }
         _ProcessKeyboardVirtualEvents(event);
         break;
-      case Event::deviceMouse:
+      case InputEvent::deviceMouse:
         switch(event.mouse.type)
         {
-        case Event::Mouse::typeButtonDown:
+        case InputEvent::Mouse::typeButtonDown:
           // if mouse button is already pressed, skip
           if(_state.mouseButtons[event.mouse.button])
             continue;
           _state.mouseButtons[event.mouse.button] = true;
           break;
-        case Event::Mouse::typeButtonUp:
+        case InputEvent::Mouse::typeButtonUp:
           // if mouse button is already released, skip
           if(!_state.mouseButtons[event.mouse.button])
             continue;
           _state.mouseButtons[event.mouse.button] = false;
           break;
-        case Event::Mouse::typeRawMove:
+        case InputEvent::Mouse::typeRawMove:
           // there is no state for raw move
           break;
-        case Event::Mouse::typeCursorMove:
+        case InputEvent::Mouse::typeCursorMove:
           _state.cursorX = event.mouse.cursorX;
           _state.cursorY = event.mouse.cursorY;
           break;
-        case Event::Mouse::typeDoubleClick:
+        case InputEvent::Mouse::typeDoubleClick:
           break;
         }
         break;
-      case Event::deviceController:
+      case InputEvent::deviceController:
         // TODO: controller state
         break;
       }
@@ -69,56 +69,56 @@ namespace Coil::Input
     return nullptr;
   }
 
-  State const& Frame::GetCurrentState() const
+  State const& InputFrame::GetCurrentState() const
   {
     return _state;
   }
 
-  void Frame::ForwardEvents()
+  void InputFrame::ForwardEvents()
   {
     while(NextEvent());
   }
 
-  void Frame::Reset()
+  void InputFrame::Reset()
   {
     _events.clear();
     _nextEvent = 0;
   }
 
-  void Frame::AddEvent(Event const& event)
+  void InputFrame::AddEvent(InputEvent const& event)
   {
     _events.push_back(event);
   }
 
-  void Frame::_ProcessKeyboardVirtualEvents(Event const& event)
+  void InputFrame::_ProcessKeyboardVirtualEvents(InputEvent const& event)
   {
     switch(event.keyboard.type)
     {
-    case Event::Keyboard::typeKeyDown:
-    case Event::Keyboard::typeKeyUp:
+    case InputEvent::Keyboard::typeKeyDown:
+    case InputEvent::Keyboard::typeKeyUp:
       break;
     default:
       return;
     }
 
-    Key virtualKey;
+    InputKey virtualKey;
     bool newPressed;
     switch(event.keyboard.key)
     {
-    case Key::ShiftL:
-    case Key::ShiftR:
-      virtualKey = Key::Shift;
-      newPressed = _state.keyboard[Key::ShiftL] || _state.keyboard[Key::ShiftR];
+    case InputKey::ShiftL:
+    case InputKey::ShiftR:
+      virtualKey = InputKey::Shift;
+      newPressed = _state.keyboard[InputKey::ShiftL] || _state.keyboard[InputKey::ShiftR];
       break;
-    case Key::ControlL:
-    case Key::ControlR:
-      virtualKey = Key::Control;
-      newPressed = _state.keyboard[Key::ControlL] || _state.keyboard[Key::ControlR];
+    case InputKey::ControlL:
+    case InputKey::ControlR:
+      virtualKey = InputKey::Control;
+      newPressed = _state.keyboard[InputKey::ControlL] || _state.keyboard[InputKey::ControlR];
       break;
-    case Key::AltL:
-    case Key::AltR:
-      virtualKey = Key::Alt;
-      newPressed = _state.keyboard[Key::AltL] || _state.keyboard[Key::AltR];
+    case InputKey::AltL:
+    case InputKey::AltR:
+      virtualKey = InputKey::Alt;
+      newPressed = _state.keyboard[InputKey::AltL] || _state.keyboard[InputKey::AltR];
       break;
     default:
       return;
@@ -128,23 +128,23 @@ namespace Coil::Input
 
     if(newPressed != oldPressed)
     {
-      Event virtualEvent;
-      virtualEvent.device = Event::deviceKeyboard;
-      virtualEvent.keyboard.type = newPressed ? Event::Keyboard::typeKeyDown : Event::Keyboard::typeKeyUp;
+      InputEvent virtualEvent;
+      virtualEvent.device = InputEvent::deviceKeyboard;
+      virtualEvent.keyboard.type = newPressed ? InputEvent::Keyboard::typeKeyDown : InputEvent::Keyboard::typeKeyUp;
       virtualEvent.keyboard.key = virtualKey;
       _events.push_back(virtualEvent);
     }
   }
 
-  ControllerId Controller::GetId() const
+  InputControllerId InputController::GetId() const
   {
     return _id;
   }
 
-  Controller::Controller(ControllerId id)
+  InputController::InputController(InputControllerId id)
   : _id(id) {}
 
-  void Manager::Update()
+  void InputManager::Update()
   {
     // swap frames
     std::swap(_currentFrame, _internalFrame);
@@ -163,55 +163,55 @@ namespace Coil::Input
       for(size_t i = 0; i < sizeof(state.keyboard) / sizeof(state.keyboard[0]); ++i)
         if(state.keyboard[i])
         {
-          Event event;
-          event.device = Event::deviceKeyboard;
-          event.keyboard.type = Event::Keyboard::typeKeyUp;
-          event.keyboard.key = Key(i);
+          InputEvent event;
+          event.device = InputEvent::deviceKeyboard;
+          event.keyboard.type = InputEvent::Keyboard::typeKeyUp;
+          event.keyboard.key = InputKey(i);
           _internalFrame->AddEvent(event);
         }
       for(size_t i = 0; i < sizeof(state.mouseButtons) / sizeof(state.mouseButtons[0]); ++i)
         if(state.mouseButtons[i])
         {
-          Event event;
-          event.device = Event::deviceMouse;
-          event.mouse.type = Event::Mouse::typeButtonUp;
-          event.mouse.button = Event::Mouse::Button(i);
+          InputEvent event;
+          event.device = InputEvent::deviceMouse;
+          event.mouse.type = InputEvent::Mouse::typeButtonUp;
+          event.mouse.button = InputEvent::Mouse::Button(i);
           _internalFrame->AddEvent(event);
         }
     }
   }
 
-  Frame const& Manager::GetCurrentFrame() const
+  InputFrame const& InputManager::GetCurrentFrame() const
   {
     return *_currentFrame;
   }
 
-  void Manager::ReleaseButtonsOnUpdate()
+  void InputManager::ReleaseButtonsOnUpdate()
   {
     _releaseButtonsOnUpdate = true;
   }
 
-  void Manager::StartTextInput()
+  void InputManager::StartTextInput()
   {
     _textInputEnabled = true;
   }
 
-  void Manager::StopTextInput()
+  void InputManager::StopTextInput()
   {
     _textInputEnabled = false;
   }
 
-  bool Manager::IsTextInput() const
+  bool InputManager::IsTextInput() const
   {
     return _textInputEnabled;
   }
 
-  void Manager::AddEvent(Event const& event)
+  void InputManager::AddEvent(InputEvent const& event)
   {
     // skip text input events if text input is disabled
     if(
-      event.device == Event::deviceKeyboard &&
-      event.keyboard.type == Event::Keyboard::typeCharacter &&
+      event.device == InputEvent::deviceKeyboard &&
+      event.keyboard.type == InputEvent::Keyboard::typeCharacter &&
       !_textInputEnabled) return;
 
     _internalFrame->AddEvent(event);
