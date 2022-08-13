@@ -66,9 +66,12 @@ namespace Coil
     void SetTitle(std::string const& title) override;
     void Close() override;
     void SetFullScreen(bool fullScreen) override;
+    ivec2 GetDrawableSize() const override;
     float GetDPIScale() const override;
     void Run(std::function<void()> const& loop) override;
     void PlaceCursor(int x, int y) override;
+
+    SDL_Window* GetSdlWindow() const;
 
   protected:
     void _UpdateMouseLock() override;

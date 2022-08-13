@@ -2,6 +2,11 @@
 
 namespace Coil
 {
+  void Window::SetPresenter(GraphicsPresenter* presenter)
+  {
+    _presenter = presenter;
+  }
+
   void Window::SetMouseLock(bool mouseLock)
   {
     if(_mouseLock != mouseLock)
@@ -20,13 +25,18 @@ namespace Coil
     }
   }
 
+  bool Window::IsVisible() const
+  {
+    return _visible;
+  }
+
   void Window::Stop()
   {
     _running = false;
   }
 
-  void Window::SetPreventUserClose(bool preventUserClose)
+  void Window::SetLoopOnlyVisible(bool loopOnlyVisible)
   {
-    _preventUserClose = preventUserClose;
+    _loopOnlyVisible = loopOnlyVisible;
   }
 }

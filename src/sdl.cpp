@@ -1,4 +1,5 @@
 #include "sdl.hpp"
+#include "graphics.hpp"
 #include "utf8.hpp"
 
 namespace Coil
@@ -468,7 +469,6 @@ namespace Coil
     }
   }
 
-
   SdlWindow::SdlWindow(SDL_Window* window)
   : _window(window), _windowId(SDL_GetWindowID(_window))
   {
@@ -491,6 +491,10 @@ namespace Coil
   {
     if(_window)
     {
+      if(_presenter)
+      {
+        _presenter = nullptr;
+      }
       SDL_DestroyWindow(_window);
       _window = nullptr;
     }
@@ -502,6 +506,11 @@ namespace Coil
     if(_fullScreen == fullScreen) return;
     _fullScreen = fullScreen;
     SDL_SetWindowFullscreen(_window, _fullScreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+  }
+
+  ivec2 SdlWindow::GetDrawableSize() const
+  {
+    return ivec2(_clientWidth, _clientHeight);
   }
 
   float SdlWindow::GetDPIScale() const
@@ -516,7 +525,7 @@ namespace Coil
     while(_running)
     {
       SDL_Event event;
-      while(SDL_PollEvent(&event))
+      while((_loopOnlyVisible && !_visible ? SDL_WaitEvent : SDL_PollEvent)(&event))
       {
         if(_inputManager)
         {
@@ -536,14 +545,21 @@ namespace Coil
             {
               _inputManager->SetVirtualScale((float)_clientWidth / (float)_virtualWidth, (float)_clientHeight / (float)_virtualHeight);
             }
-            // if(_presenter)
-            // {
-            //   _presenter->Resize(_clientWidth, _clientHeight);
-            // }
+            if(_presenter)
+            {
+              _presenter->Resize(GetDrawableSize());
+            }
             break;
           case SDL_WINDOWEVENT_CLOSE:
-            if(_preventUserClose) Stop();
-            else Close();
+            Close();
+            // hard quit from event loop
+            return;
+          case SDL_WINDOWEVENT_MINIMIZED:
+            _visible = false;
+            break;
+          case SDL_WINDOWEVENT_RESTORED:
+          case SDL_WINDOWEVENT_MAXIMIZED:
+            _visible = true;
             break;
           case SDL_WINDOWEVENT_FOCUS_LOST:
             if(_inputManager)
@@ -564,13 +580,21 @@ namespace Coil
         _inputManager->Update();
       }
 
-      loop();
+      if(_visible || !_loopOnlyVisible)
+      {
+        loop();
+      }
     }
   }
 
   void SdlWindow::PlaceCursor(int x, int y)
   {
     SDL_WarpMouseInWindow(_window, x, y);
+  }
+
+  SDL_Window* SdlWindow::GetSdlWindow() const
+  {
+    return _window;
   }
 
   void SdlWindow::_UpdateMouseLock()
@@ -588,7 +612,7 @@ namespace Coil
     SDL_Window* window = SDL_CreateWindow(title.c_str(),
       SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
       width, height,
-      SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI
+      SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_VULKAN
     );
     if(!window)
       throw Exception("failed to create SDL window");
