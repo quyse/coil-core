@@ -25,9 +25,13 @@ namespace Coil
     virtual GraphicsFrame& StartFrame() = 0;
   };
 
+  // Function type for recreating resources for present pass.
+  // Accepts special presenter book (which gets freed on next recreate), and pixel size of final frame.
+  using GraphicsRecreatePresentPassFunc = void(Book&, ivec2 const&);
+
   class GraphicsDevice
   {
   public:
-    virtual GraphicsPresenter& CreateWindowPresenter(Book& book, Window& window) = 0;
+    virtual GraphicsPresenter& CreateWindowPresenter(Book& book, Window& window, std::function<GraphicsRecreatePresentPassFunc>&& recreatePresentPass) = 0;
   };
 }
