@@ -1,5 +1,7 @@
 #pragma once
 
+#include "base.hpp"
+
 namespace Coil
 {
   template <typename T, size_t n>
@@ -158,6 +160,25 @@ namespace Coil
   using mat4x3 = xmat<float, 4, 3>;
   using mat4x4 = xmat<float, 4, 4>;
 
+  using uvec2 = xvec<uint32_t, 2>;
+  using uvec3 = xvec<uint32_t, 3>;
+  using uvec4 = xvec<uint32_t, 4>;
+  using umat1x2 = xmat<uint32_t, 1, 2>;
+  using umat1x3 = xmat<uint32_t, 1, 3>;
+  using umat1x4 = xmat<uint32_t, 1, 4>;
+  using umat2x1 = xmat<uint32_t, 2, 1>;
+  using umat2x2 = xmat<uint32_t, 2, 2>;
+  using umat2x3 = xmat<uint32_t, 2, 3>;
+  using umat2x4 = xmat<uint32_t, 2, 4>;
+  using umat3x1 = xmat<uint32_t, 3, 1>;
+  using umat3x2 = xmat<uint32_t, 3, 2>;
+  using umat3x3 = xmat<uint32_t, 3, 3>;
+  using umat3x4 = xmat<uint32_t, 3, 4>;
+  using umat4x1 = xmat<uint32_t, 4, 1>;
+  using umat4x2 = xmat<uint32_t, 4, 2>;
+  using umat4x3 = xmat<uint32_t, 4, 3>;
+  using umat4x4 = xmat<uint32_t, 4, 4>;
+
   using ivec2 = xvec<int32_t, 2>;
   using ivec3 = xvec<int32_t, 3>;
   using ivec4 = xvec<int32_t, 4>;
@@ -176,6 +197,25 @@ namespace Coil
   using imat4x2 = xmat<int32_t, 4, 2>;
   using imat4x3 = xmat<int32_t, 4, 3>;
   using imat4x4 = xmat<int32_t, 4, 4>;
+
+  using bvec2 = xvec<bool, 2>;
+  using bvec3 = xvec<bool, 3>;
+  using bvec4 = xvec<bool, 4>;
+  using bmat1x2 = xmat<bool, 1, 2>;
+  using bmat1x3 = xmat<bool, 1, 3>;
+  using bmat1x4 = xmat<bool, 1, 4>;
+  using bmat2x1 = xmat<bool, 2, 1>;
+  using bmat2x2 = xmat<bool, 2, 2>;
+  using bmat2x3 = xmat<bool, 2, 3>;
+  using bmat2x4 = xmat<bool, 2, 4>;
+  using bmat3x1 = xmat<bool, 3, 1>;
+  using bmat3x2 = xmat<bool, 3, 2>;
+  using bmat3x3 = xmat<bool, 3, 3>;
+  using bmat3x4 = xmat<bool, 3, 4>;
+  using bmat4x1 = xmat<bool, 4, 1>;
+  using bmat4x2 = xmat<bool, 4, 2>;
+  using bmat4x3 = xmat<bool, 4, 3>;
+  using bmat4x4 = xmat<bool, 4, 4>;
 
   template <typename T>
   using xquat = xvec<T, 4>;
