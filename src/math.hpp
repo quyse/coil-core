@@ -9,7 +9,11 @@ namespace Coil
   {
     T t[n];
 
-    xvec() : t({}) {}
+    consteval xvec()
+    {
+      for(size_t i = 0; i < n; ++i)
+        t[i] = {};
+    }
 
     T& operator()(size_t i)
     {
@@ -113,7 +117,12 @@ namespace Coil
   {
     T t[n][m];
 
-    xmat() : t({}) {}
+    consteval xmat()
+    {
+      for(size_t i = 0; i < n; ++i)
+        for(size_t j = 0; j < m; ++j)
+          t[i][j] = {};
+    }
 
     T& operator()(size_t i, size_t j)
     {
