@@ -1,7 +1,7 @@
 #include "data.hpp"
 #include <algorithm>
 
-namespace Coil::Data
+namespace Coil
 {
   StreamWriter::StreamWriter(OutputStream& stream)
   : _stream(stream) {}
@@ -84,6 +84,11 @@ namespace Coil::Data
     Write(value.data(), value.length());
   }
 
+  bigsize_t StreamWriter::GetWrittenSize() const
+  {
+    return _written;
+  }
+
   void StreamWriter::_WriteGap(size_t alignment)
   {
     alignment = alignment - ((_written - 1) & (alignment - 1)) - 1;
@@ -94,11 +99,6 @@ namespace Coil::Data
         data[i] = 0xCC;
       Write(data, alignment);
     }
-  }
-
-  bigsize_t StreamWriter::GetWrittenCount() const
-  {
-    return _written;
   }
 
   StreamReader::StreamReader(InputStream& stream)
@@ -170,6 +170,18 @@ namespace Coil::Data
     return value;
   }
 
+  void StreamReader::ReadEnd()
+  {
+    uint8_t u;
+    if(_stream.Read(Buffer(&u, 1)) != 0)
+      throw Exception("StreamReader: no end of stream");
+  }
+
+  bigsize_t StreamReader::GetReadSize() const
+  {
+    return _read;
+  }
+
   void StreamReader::_ReadGap(size_t alignment)
   {
     alignment = alignment - ((_read - 1) & (alignment - 1)) - 1;
@@ -178,12 +190,5 @@ namespace Coil::Data
       uint8_t* data = (uint8_t*)alloca(alignment);
       Read(data, alignment);
     }
-  }
-
-  void StreamReader::ReadEnd()
-  {
-    uint8_t u;
-    if(_stream.Read(Buffer(&u, 1)) != 0)
-      throw Exception("StreamReader: no end of stream");
   }
 }

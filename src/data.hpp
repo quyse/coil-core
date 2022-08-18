@@ -3,7 +3,7 @@
 #include "base.hpp"
 #include <string>
 
-namespace Coil::Data
+namespace Coil
 {
   // Writer of various data types.
   class StreamWriter
@@ -34,7 +34,7 @@ namespace Coil::Data
       _WriteGap(alignment);
     }
 
-    bigsize_t GetWrittenCount() const;
+    bigsize_t GetWrittenSize() const;
 
   private:
     void _WriteGap(size_t alignment);
@@ -74,6 +74,8 @@ namespace Coil::Data
 
     // Ensure stream has ended.
     void ReadEnd();
+
+    bigsize_t GetReadSize() const;
 
   private:
     void _ReadGap(size_t alignment);
