@@ -1,6 +1,7 @@
 #pragma once
 
 #include "platform.hpp"
+#include "graphics_format.hpp"
 
 namespace Coil
 {
