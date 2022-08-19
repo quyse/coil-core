@@ -5,7 +5,7 @@
 namespace Coil
 {
   template <typename T, size_t n>
-  struct xvec
+  struct alignas((n <= 1 ? 1 : n <= 2 ? 2 : 4) * sizeof(T)) xvec
   {
     T t[n];
 
@@ -29,7 +29,7 @@ namespace Coil
   };
 
   template <typename T>
-  struct xvec<T, 2>
+  struct alignas(2 * sizeof(T)) xvec<T, 2>
   {
     union
     {
@@ -57,7 +57,7 @@ namespace Coil
   };
 
   template <typename T>
-  struct xvec<T, 3>
+  struct alignas(4 * sizeof(T)) xvec<T, 3>
   {
     union
     {
@@ -85,7 +85,7 @@ namespace Coil
   };
 
   template <typename T>
-  struct xvec<T, 4>
+  struct alignas(4 * sizeof(T)) xvec<T, 4>
   {
     union
     {
@@ -115,23 +115,28 @@ namespace Coil
   template <typename T, size_t n, size_t m>
   struct xmat
   {
-    T t[n][m];
+    struct alignas((m <= 1 ? 1 : m <= 2 ? 2 : 4) * sizeof(T)) Row
+    {
+      T t[m];
+    };
+
+    Row t[n];
 
     consteval xmat()
     {
       for(size_t i = 0; i < n; ++i)
         for(size_t j = 0; j < m; ++j)
-          t[i][j] = {};
+          t[i].t[j] = {};
     }
 
-    T& operator()(size_t i, size_t j)
+    constexpr T& operator()(size_t i, size_t j)
     {
-      return t[i][j];
+      return t[i].t[j];
     }
 
-    T operator()(size_t i, size_t j) const
+    constexpr T operator()(size_t i, size_t j) const
     {
-      return t[i][j];
+      return t[i].t[j];
     }
 
     friend auto operator<=>(xmat const&, xmat const&) = default;
@@ -146,7 +151,6 @@ namespace Coil
         t(i, j) = i == j;
     return t;
   }
-
 
   // convenience synonyms
 
@@ -230,4 +234,15 @@ namespace Coil
   using xquat = xvec<T, 4>;
   using quat = xquat<float>;
   using dquat = xquat<double>;
+
+  // some alignment/size tests
+  static_assert(sizeof(xvec<float, 1>) == 4 && alignof(xvec<float, 1>) == 4);
+  static_assert(sizeof(vec2) == 8 && alignof(vec2) == 8);
+  static_assert(sizeof(vec3) == 16 && alignof(vec3) == 16);
+  static_assert(sizeof(vec4) == 16 && alignof(vec4) == 16);
+  static_assert(sizeof(mat2x3) == 32 && alignof(mat2x3) == 16);
+  static_assert(sizeof(mat3x2) == 24 && alignof(mat3x2) == 8);
+  static_assert(sizeof(mat3x4) == 48 && alignof(mat3x4) == 16);
+  static_assert(sizeof(mat4x3) == 64 && alignof(mat3x4) == 16);
+  static_assert(sizeof(mat4x4) == 64 && alignof(mat4x4) == 16);
 }

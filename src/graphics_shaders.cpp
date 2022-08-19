@@ -14,22 +14,22 @@ namespace Coil
       {
         auto const& as = static_cast<ShaderDataScalarType const&>(a);
         auto const& bs = static_cast<ShaderDataScalarType const&>(b);
-        return as.t < bs.t;
+        return as.type < bs.type;
       }
     case ShaderDataKind::Vector:
       {
         auto const& av = static_cast<ShaderDataVectorType const&>(a);
         auto const& bv = static_cast<ShaderDataVectorType const&>(b);
-        if(av.t < bv.t) return true;
-        if(bv.t < av.t) return false;
+        if(av.baseType < bv.baseType) return true;
+        if(bv.baseType < av.baseType) return false;
         return av.n < bv.n;
       }
     case ShaderDataKind::Matrix:
       {
         auto const& am = static_cast<ShaderDataMatrixType const&>(a);
         auto const& bm = static_cast<ShaderDataMatrixType const&>(b);
-        if(am.t < bm.t) return true;
-        if(bm.t < am.t) return false;
+        if(am.baseType < bm.baseType) return true;
+        if(bm.baseType < am.baseType) return false;
         if(am.n < bm.n) return true;
         if(bm.n < am.n) return false;
         return am.m < bm.m;
@@ -38,9 +38,15 @@ namespace Coil
       {
         auto const& aa = static_cast<ShaderDataArrayType const&>(a);
         auto const& ba = static_cast<ShaderDataArrayType const&>(b);
-        if(aa.t < ba.t) return true;
-        if(ba.t < aa.t) return false;
+        if(aa.baseType < ba.baseType) return true;
+        if(ba.baseType < aa.baseType) return false;
         return aa.n < ba.n;
+      }
+    case ShaderDataKind::Struct:
+      {
+        auto const& as = static_cast<ShaderDataStructType const&>(a);
+        auto const& bs = static_cast<ShaderDataStructType const&>(b);
+        return as.members < bs.members;
       }
     }
   }

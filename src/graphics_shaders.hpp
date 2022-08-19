@@ -12,6 +12,7 @@ namespace Coil
     Vector,
     Matrix,
     Array,
+    Struct,
   };
 
   struct ShaderDataScalarType;
@@ -22,7 +23,7 @@ namespace Coil
     ShaderDataType(ShaderDataType&&) = delete;
 
     virtual ShaderDataKind GetKind() const = 0;
-    virtual ShaderDataScalarType const& GetBaseScalarType() const = 0;
+    virtual uint32_t GetSize() const = 0;
 
   protected:
     ShaderDataType() = default;
@@ -38,76 +39,98 @@ namespace Coil
       _bool,
     };
 
-    ShaderDataScalarType(Type t)
-    : t(t) {}
+    ShaderDataScalarType(Type type, uint32_t size)
+    : type(type), size(size) {}
 
-    Type t;
+    Type type;
+    uint32_t size;
 
     ShaderDataKind GetKind() const override
     {
       return ShaderDataKind::Scalar;
     }
 
-    ShaderDataScalarType const& GetBaseScalarType() const override
+    uint32_t GetSize() const override
     {
-      return *this;
+      return size;
     }
   };
 
   struct ShaderDataVectorType : public ShaderDataType
   {
-    ShaderDataVectorType(ShaderDataScalarType const& t, size_t n)
-    : t(t), n(n) {}
+    ShaderDataVectorType(ShaderDataScalarType const& baseType, uint32_t n, uint32_t size)
+    : baseType(baseType), n(n), size(size) {}
 
-    ShaderDataScalarType const& t;
-    size_t n;
+    ShaderDataScalarType const& baseType;
+    uint32_t n, size;
 
     ShaderDataKind GetKind() const override
     {
       return ShaderDataKind::Vector;
     }
 
-    ShaderDataScalarType const& GetBaseScalarType() const override
+    uint32_t GetSize() const override
     {
-      return t;
+      return size;
     }
   };
 
   struct ShaderDataMatrixType : public ShaderDataType
   {
-    ShaderDataMatrixType(ShaderDataScalarType const& t, size_t n, size_t m)
-    : t(t), n(n), m(m) {}
+    ShaderDataMatrixType(ShaderDataScalarType const& baseType, uint32_t n, uint32_t m, uint32_t rowStride, uint32_t size)
+    : baseType(baseType), n(n), m(m), rowStride(rowStride), size(size) {}
 
-    ShaderDataScalarType const& t;
-    size_t n, m;
+    ShaderDataScalarType const& baseType;
+    uint32_t n, m, rowStride, size;
 
     ShaderDataKind GetKind() const override
     {
       return ShaderDataKind::Matrix;
     }
 
-    ShaderDataScalarType const& GetBaseScalarType() const override
+    uint32_t GetSize() const override
     {
-      return t;
+      return size;
     }
   };
 
   struct ShaderDataArrayType : public ShaderDataType
   {
-    ShaderDataArrayType(ShaderDataType const& t, size_t n)
-    : t(t), n(n) {}
+    ShaderDataArrayType(ShaderDataType const& baseType, uint32_t n)
+    : baseType(baseType), n(n) {}
 
-    ShaderDataType const& t;
-    size_t n;
+    ShaderDataType const& baseType;
+    uint32_t n;
 
     ShaderDataKind GetKind() const override
     {
       return ShaderDataKind::Array;
     }
 
-    ShaderDataScalarType const& GetBaseScalarType() const override
+    uint32_t GetSize() const override
     {
-      return t.GetBaseScalarType();
+      return n * baseType.GetSize();
+    }
+  };
+
+  struct ShaderDataStructType : public ShaderDataType
+  {
+    using Member = std::pair<uint32_t, ShaderDataType const&>;
+
+    ShaderDataStructType(std::vector<Member>&& members, uint32_t size)
+    : members(std::move(members)), size(size) {}
+
+    std::vector<Member> members;
+    uint32_t size;
+
+    ShaderDataKind GetKind() const override
+    {
+      return ShaderDataKind::Struct;
+    }
+
+    uint32_t GetSize() const override
+    {
+      return size;
     }
   };
 
@@ -122,7 +145,7 @@ namespace Coil
   {
     static ShaderDataScalarType const& GetType()
     {
-      static ShaderDataScalarType const t(ShaderDataScalarType::Type::_float);
+      static ShaderDataScalarType const t(ShaderDataScalarType::Type::_float, sizeof(float));
       return t;
     }
   };
@@ -131,7 +154,7 @@ namespace Coil
   {
     static ShaderDataScalarType const& GetType()
     {
-      static ShaderDataScalarType const t(ShaderDataScalarType::Type::_uint);
+      static ShaderDataScalarType const t(ShaderDataScalarType::Type::_uint, sizeof(uint32_t));
       return t;
     }
   };
@@ -140,7 +163,7 @@ namespace Coil
   {
     static ShaderDataScalarType const& GetType()
     {
-      static ShaderDataScalarType const t(ShaderDataScalarType::Type::_int);
+      static ShaderDataScalarType const t(ShaderDataScalarType::Type::_int, sizeof(int32_t));
       return t;
     }
   };
@@ -149,32 +172,32 @@ namespace Coil
   {
     static ShaderDataScalarType const& GetType()
     {
-      static ShaderDataScalarType const t(ShaderDataScalarType::Type::_bool);
+      static ShaderDataScalarType const t(ShaderDataScalarType::Type::_bool, 1);
       return t;
     }
   };
 
-  template <typename T, size_t n>
+  template <typename T, uint32_t n>
   struct ShaderDataTypeOfHelper<xvec<T, n>>
   {
     static ShaderDataVectorType const& GetType()
     {
-      static ShaderDataVectorType const t(ShaderDataTypeOfHelper<T>::GetType(), n);
+      static ShaderDataVectorType const t(ShaderDataTypeOfHelper<T>::GetType(), n, sizeof(xvec<T, n>));
       return t;
     }
   };
 
-  template <typename T, size_t n, size_t m>
+  template <typename T, uint32_t n, uint32_t m>
   struct ShaderDataTypeOfHelper<xmat<T, n, m>>
   {
     static ShaderDataMatrixType const& GetType()
     {
-      static ShaderDataMatrixType const t(ShaderDataTypeOfHelper<T>::GetType(), n, m);
+      static ShaderDataMatrixType const t(ShaderDataTypeOfHelper<T>::GetType(), n, m, sizeof(typename xmat<T, n, m>::Row), sizeof(xmat<T, n, m>));
       return t;
     }
   };
 
-  template <typename T, size_t n>
+  template <typename T, uint32_t n>
   struct ShaderDataTypeOfHelper<T[n]>
   {
     static ShaderDataType const& GetType()
@@ -197,6 +220,8 @@ namespace Coil
     Expression,
     // statements don't have value type
     Statement,
+    // uniform buffer
+    UniformBuffer,
     // variables have value type and can be written to
     Variable,
   };
@@ -207,12 +232,15 @@ namespace Coil
     Operation,
     // reads variable
     Read,
+    // reads uniform buffer member
+    Uniform,
   };
 
   enum class ShaderOperationType
   {
     Const,
     Cast,
+    Index,
     Negate,
     Add,
     Subtract,
@@ -310,6 +338,7 @@ namespace Coil
     ShaderExpression(std::shared_ptr<Node>&& node)
     : node(std::move(node)) {}
 
+    ShaderExpression() = delete;
     ShaderExpression(ShaderExpression const&) = default;
 
     // constant initialization
@@ -406,6 +435,21 @@ namespace Coil
     return std::make_shared<ShaderStatementSequenceNode>(a.node, b.node);
   }
 
+  struct ShaderUniformBufferNode : public ShaderNode
+  {
+    ShaderUniformBufferNode(ShaderDataStructType const& dataType, uint32_t slotSet, uint32_t slot)
+    : dataType(dataType), slotSet(slotSet), slot(slot) {}
+
+    ShaderDataStructType const& dataType;
+    uint32_t slotSet;
+    uint32_t slot;
+
+    ShaderNodeType GetNodeType() const
+    {
+      return ShaderNodeType::Variable;
+    }
+  };
+
   struct ShaderVariableNode : public ShaderNode
   {
     ShaderNodeType GetNodeType() const
@@ -427,6 +471,26 @@ namespace Coil
     ShaderExpressionType GetExpressionType() const override
     {
       return ShaderExpressionType::Read;
+    }
+  };
+
+  struct ShaderUniformNode : public ShaderExpressionNode
+  {
+    ShaderUniformNode(std::shared_ptr<ShaderUniformBufferNode> uniformBufferNode, ShaderDataType const& dataType, uint32_t index)
+    : uniformBufferNode(std::move(uniformBufferNode)), dataType(dataType), index(index) {}
+
+    std::shared_ptr<ShaderUniformBufferNode> uniformBufferNode;
+    ShaderDataType const& dataType;
+    uint32_t index;
+
+    ShaderExpressionType GetExpressionType() const override
+    {
+      return ShaderExpressionType::Uniform;
+    }
+
+    ShaderDataType const& GetDataType() const override
+    {
+      return dataType;
     }
   };
 
@@ -542,6 +606,84 @@ namespace Coil
       return dataType;
     }
   };
+
+  // helper template for discovering struct members
+  template <std::vector<ShaderDataStructType::Member>& members>
+  struct ShaderDataStructTypeOfHelper
+  {
+    template <typename M>
+    struct Member
+    {
+      Member()
+      {
+        members.push_back({ (size_t)this, ShaderDataTypeOf<M>() });
+      }
+
+      // include value itself to keep size/alignment
+      M m;
+    };
+
+    static ShaderDataStructType Finalize(void const* object, size_t size)
+    {
+      // calculate member offsets
+      for(size_t i = 0; i < members.size(); ++i)
+        members[i].first -= (size_t)object;
+
+      return ShaderDataStructType(std::move(members), size);
+    };
+  };
+
+  // get type of struct
+  template <template <template <typename> typename> typename T>
+  ShaderDataStructType const& ShaderDataStructTypeOf()
+  {
+    // declare mutable members vector
+    static std::vector<ShaderDataStructType::Member> members;
+    // register members
+    static T<ShaderDataStructTypeOfHelper<members>::template Member> const object;
+    // finalize type
+    static ShaderDataStructType const type = ShaderDataStructTypeOfHelper<members>::Finalize(&object, sizeof(object));
+
+    return type;
+  };
+
+  // struct establishing slot for uniform buffer
+  // must be used with static storage duration
+  template <template <template <typename> typename> typename T>
+  struct ShaderDataUniformStructSlot
+  {
+    template <template <typename> typename Q>
+    using Struct = T<Q>;
+
+    ShaderDataUniformStructSlot(uint32_t slotSet, uint32_t slot)
+    : structType(ShaderDataStructTypeOf<T>()),
+      node(std::make_shared<ShaderUniformBufferNode>(structType, slotSet, slot))
+    {}
+
+    ShaderDataStructType const& structType;
+    std::shared_ptr<ShaderUniformBufferNode> node;
+
+    // counter for member initialization
+    mutable uint32_t nextMember = 0;
+  };
+
+  template <auto& initializer>
+  struct ShaderDataUniformStructHelper
+  {
+    template <typename T>
+    struct Member : public ShaderExpression<T>
+    {
+      Member()
+      : ShaderExpression<T>(std::make_shared<ShaderUniformNode>(
+          initializer.node,
+          ShaderDataTypeOf<T>(),
+          initializer.nextMember++
+        )) {}
+    };
+  };
+
+  template <auto& initializer>
+  using ShaderDataUniformStruct = typename std::remove_cvref_t<decltype(initializer)>::template Struct<ShaderDataUniformStructHelper<initializer>::template Member>;
 
   template <typename T>
   struct ShaderVariable
