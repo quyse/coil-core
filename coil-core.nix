@@ -1,31 +1,38 @@
 { stdenv
 , lib
 , ninja
+, clang
 , writeText
 , SDL2
+, vulkan-headers
+, spirv-headers
 }: let
-  libraries = [
-    "base"
-    "data"
+  sources = lib.pipe ./src [
+    builtins.readDir
+    (lib.filterAttrs (file: type: lib.hasSuffix ".cpp" file && type == "regular"))
+    lib.attrNames
   ];
   buildfile = writeText "coil-core.ninja" ''
     rule cxx
-      command = gcc -c -std=c++20 -o $out $in
+      command = clang++ -c -std=c++20 -o $out $in
     rule ar
       command = ar -r $out $in
-    ${lib.concatStrings (map (library: ''
-      build ${library}.o: cxx ${library}.cpp
-      build libcoil-${library}.a: ar ${library}.o
-    '') libraries)}
+    ${lib.concatStrings (map (source: ''
+      build ${source}.o: cxx ${source}
+    '') sources)}
+    build libcoilcore.a: ar ${lib.concatStringsSep " " (map (source: "${source}.o") sources)}
   '';
 in stdenv.mkDerivation {
   name = "coil-core";
   src = ./src;
   nativeBuildInputs = [
     ninja
+    clang
   ];
   buildInputs = [
     SDL2
+    vulkan-headers
+    spirv-headers
   ];
   configurePhase = ''
     ln -s ${buildfile} build.ninja
