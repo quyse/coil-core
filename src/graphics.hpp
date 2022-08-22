@@ -20,11 +20,25 @@ namespace Coil
     virtual void EndFrame() = 0;
   };
 
+  // Represents memory pool.
+  class GraphicsPool
+  {
+  public:
+    Book& GetBook();
+
+  protected:
+    Book _book;
+  };
+
   class GraphicsPresenter
   {
   public:
     virtual void Resize(ivec2 const& size) = 0;
     virtual GraphicsFrame& StartFrame() = 0;
+  };
+
+  class GraphicsVertexBuffer
+  {
   };
 
   class GraphicsShader
@@ -50,7 +64,9 @@ namespace Coil
   class GraphicsDevice
   {
   public:
+    virtual GraphicsPool& CreatePool(Book& book, uint64_t chunkSize) = 0;
     virtual GraphicsPresenter& CreateWindowPresenter(Book& book, Window& window, std::function<GraphicsRecreatePresentPassFunc>&& recreatePresentPass) = 0;
+    virtual GraphicsVertexBuffer& CreateVertexBuffer(GraphicsPool& pool, Buffer const& buffer) = 0;
     virtual GraphicsShader& CreateShader(Book& book, GraphicsShaderRoots const& exprs) = 0;
   };
 }
