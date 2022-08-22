@@ -2,6 +2,7 @@
 
 #include "platform.hpp"
 #include "input.hpp"
+#include <memory>
 #include <unordered_map>
 #include <SDL2/SDL.h>
 

@@ -57,6 +57,10 @@ namespace Coil
     std::shared_ptr<ShaderStatementNode> fragment;
   };
 
+  class GraphicsPipeline
+  {
+  };
+
   // Function type for recreating resources for present pass.
   // Accepts special presenter book (which gets freed on next recreate), and pixel size of final frame.
   using GraphicsRecreatePresentPassFunc = void(Book&, ivec2 const&);

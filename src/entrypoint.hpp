@@ -1,6 +1,7 @@
 #pragma once
 
 #include "base.hpp"
+#include <functional>
 #include <vector>
 #include <string>
 
