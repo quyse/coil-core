@@ -656,6 +656,38 @@ namespace Coil
 
   void VulkanFrame::EndFrame()
   {
+    // transition frame image to proper present layout
+    {
+      VkImageMemoryBarrier imageMemoryBarrier =
+      {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+        .pNext = nullptr,
+        .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+        .dstAccessMask = 0,
+        .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        .newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+        .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .image = _image,
+        .subresourceRange =
+        {
+          .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+          .baseMipLevel = 0,
+          .levelCount = 1,
+          .baseArrayLayer = 0,
+          .layerCount = 1,
+        },
+      };
+      vkCmdPipelineBarrier(_commandBuffer,
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, // srcStageMask
+        VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, // dstStageMask
+        0, // flags
+        0, nullptr, // memory barriers
+        0, nullptr, // buffer memory barriers
+        1, &imageMemoryBarrier // image memory barriers
+      );
+    }
+
     // end command buffer
     CheckSuccess(vkEndCommandBuffer(_commandBuffer), "ending Vulkan command buffer failed");
 
@@ -666,13 +698,13 @@ namespace Coil
       {
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
         .pNext = nullptr,
-        .waitSemaphoreCount = 0, //1,
-        .pWaitSemaphores = nullptr, //&_semaphoreImageAvailable,
+        .waitSemaphoreCount = 1,
+        .pWaitSemaphores = &_semaphoreImageAvailable,
         .pWaitDstStageMask = &waitDstStageMask,
         .commandBufferCount = 1,
         .pCommandBuffers = &_commandBuffer,
-        .signalSemaphoreCount = 0, // 1,
-        .pSignalSemaphores = nullptr, //&_semaphoreFrameFinished,
+        .signalSemaphoreCount = 1,
+        .pSignalSemaphores = &_semaphoreFrameFinished,
       };
       CheckSuccess(vkQueueSubmit(_queue, 1, &info, _fenceFrameFinished), "queueing Vulkan command buffer failed");
     }
@@ -683,8 +715,8 @@ namespace Coil
       {
         .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
         .pNext = nullptr,
-        .waitSemaphoreCount = 0, //1,
-        .pWaitSemaphores = nullptr, //&_semaphoreFrameFinished,
+        .waitSemaphoreCount = 1,
+        .pWaitSemaphores = &_semaphoreFrameFinished,
         .swapchainCount = 1,
         .pSwapchains = &_swapchain,
         .pImageIndices = &_imageIndex,
