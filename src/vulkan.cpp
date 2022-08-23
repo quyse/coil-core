@@ -292,7 +292,7 @@ namespace Coil
         case F(Uint):
           switch(format.size)
           {
-          case S(32bit): return format.srgb ? R(B8G8R8A8_SRGB) : R(B8G8R8A8_UNORM);
+          case S(32bit): return format.srgb ? R(R8G8B8A8_SRGB) : R(R8G8B8A8_UNORM);
           case S(64bit): return R(R16G16B16A16_UNORM);
           default: break;
           }
@@ -379,7 +379,7 @@ namespace Coil
     book.Allocate<VulkanSurface>(_instance, surface);
 
     // create presenter
-    VulkanPresenter& presenter = book.Allocate<VulkanPresenter>(book.Allocate<Book>(), _physicalDevice, surface, _device, _graphicsQueue, _commandPool, std::move(recreatePresentPass));
+    VulkanPresenter& presenter = book.Allocate<VulkanPresenter>(*this, book.Allocate<Book>(), surface, std::move(recreatePresentPass));
 
     presenter.Init();
 
@@ -436,6 +436,318 @@ namespace Coil
     return pool.GetBook().Allocate<VulkanVertexBuffer>(vertexBuffer);
   }
 
+  VulkanPass& VulkanDevice::CreatePass(Book& book, GraphicsPassConfig const& config)
+  {
+    using AttachmentId = GraphicsPassConfig::AttachmentId;
+    using SubPassId = GraphicsPassConfig::SubPassId;
+
+    size_t attachmentsCount = config.attachments.size();
+    size_t subPassesCount = config.subPasses.size();
+
+    // process passes
+    std::vector<VkAttachmentDescription> attachmentsDescriptions(attachmentsCount);
+    std::vector<VkSubpassDescription> subPassesDescriptions(subPassesCount);
+    std::vector<VkAttachmentReference> colorAttachmentsReferences;
+    std::vector<VkAttachmentReference> depthStencilAttachmentsReferences(attachmentsCount);
+    std::vector<VkAttachmentReference> inputAttachmentsReferences;
+    std::vector<uint32_t> preserveAttachmentsReferences;
+    uint32_t subPassesColorAttachmentsCount = 0;
+    uint32_t subPassesInputAttachmentsCount = 0;
+    struct AttachmentInfo
+    {
+      VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+      VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    };
+    std::vector<AttachmentInfo> attachmentsInfos(attachmentsCount);
+    struct Dependency
+    {
+      VkPipelineStageFlags srcStageMask = 0;
+      VkAccessFlags srcAccessMask = 0;
+      VkPipelineStageFlags dstStageMask = 0;
+      VkAccessFlags dstAccessMask = 0;
+
+      void operator|=(Dependency const& dependency)
+      {
+        srcStageMask |= dependency.srcStageMask;
+        srcAccessMask |= dependency.srcAccessMask;
+        dstStageMask |= dependency.dstStageMask;
+        dstAccessMask |= dependency.dstAccessMask;
+      }
+    };
+    struct SubPassInfo
+    {
+      SubPassInfo(size_t subPassesCount)
+      : dependencies(subPassesCount) {}
+
+      std::vector<Dependency> dependencies;
+      std::vector<AttachmentId> preserveAttachments;
+    };
+    std::vector<SubPassInfo> subPassesInfos(subPassesCount, subPassesCount);
+    std::vector<VkSubpassDependency> subPassesDependencies;
+    std::vector<std::optional<std::tuple<SubPassId, VkPipelineStageFlags, VkAccessFlags>>> attachmentsLastWriter(attachmentsCount);
+    std::vector<std::vector<std::tuple<SubPassId, VkPipelineStageFlags>>> attachmentsLastReaders(attachmentsCount);
+    std::vector<Dependency> currentSubPassDependencies;
+    std::vector<AttachmentId> currentPassReadAttachments;
+    for(SubPassId subPassId = 0; subPassId < subPassesCount; ++subPassId)
+    {
+      GraphicsPassConfig::SubPass const& subPass = config.subPasses[subPassId];
+      SubPassInfo& subPassInfo = subPassesInfos[subPassId];
+
+      uint32_t subPassColorAttachmentsCount = 0;
+      uint32_t subPassInputAttachmentsCount = 0;
+
+      std::optional<AttachmentId> depthStencilAttachmentId;
+
+      // process attachments
+      for(auto const& it : subPass.attachments)
+      {
+        AttachmentId attachmentId = it.first;
+        AttachmentInfo& attachmentInfo = attachmentsInfos[attachmentId];
+
+        // note usage of attachment
+        VkPipelineStageFlags readStageMask = 0, writeStageMask = 0;
+        VkAccessFlags readAccessMask = 0, writeAccessMask = 0;
+        std::visit([&](auto const& attachment)
+        {
+          using T = std::decay_t<decltype(attachment)>;
+          // color attachment
+          if constexpr(std::is_same_v<T, GraphicsPassConfig::SubPass::ColorAttachment>)
+          {
+            colorAttachmentsReferences.push_back({
+              .attachment = attachmentId,
+              .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            });
+            subPassColorAttachmentsCount = std::max(subPassColorAttachmentsCount, attachmentId + 1);
+
+            if(attachmentInfo.initialLayout == VK_IMAGE_LAYOUT_UNDEFINED)
+              attachmentInfo.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            attachmentInfo.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+            readStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            readAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            writeStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            writeAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+          }
+          // depth stencil attachment
+          if constexpr(std::is_same_v<T, GraphicsPassConfig::SubPass::DepthStencilAttachment>)
+          {
+            if(depthStencilAttachmentId.has_value()) throw Exception("more than one Vulkan depth-stencil attachments in pass");
+            depthStencilAttachmentId = attachmentId;
+            depthStencilAttachmentsReferences[attachmentId] =
+            {
+              .attachment = attachmentId,
+              .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+            };
+
+            if(attachmentInfo.initialLayout == VK_IMAGE_LAYOUT_UNDEFINED)
+              attachmentInfo.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+            attachmentInfo.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+            readStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+            readAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+            writeStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+            writeAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+          }
+          // input attachment
+          if constexpr(std::is_same_v<T, GraphicsPassConfig::SubPass::InputAttachment>)
+          {
+            inputAttachmentsReferences.push_back({
+              .attachment = attachmentId,
+              .layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            });
+            subPassInputAttachmentsCount = std::max(subPassInputAttachmentsCount, attachmentId + 1);
+
+            if(attachmentInfo.initialLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+              attachmentInfo.initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            attachmentInfo.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+            readStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+            readAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
+          }
+          // shader attachment
+          if constexpr(std::is_same_v<T, GraphicsPassConfig::SubPass::ShaderAttachment>)
+          {
+            if(attachmentInfo.initialLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+              attachmentInfo.initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            attachmentInfo.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+            readStageMask = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+            readAccessMask = VK_ACCESS_SHADER_READ_BIT;
+          }
+        }, it.second);
+
+        currentPassReadAttachments.push_back(attachmentId);
+
+        // add dependency on writer subpass of this attachment
+        if(attachmentsLastWriter[attachmentId].has_value())
+        {
+          auto const& [lastWriterSubPassId, lastWriterStageMask, lastWriterAccessMask] = attachmentsLastWriter[attachmentId].value();
+          Dependency& dependency = subPassInfo.dependencies[lastWriterSubPassId];
+          dependency.srcStageMask |= lastWriterStageMask;
+          dependency.srcAccessMask |= lastWriterAccessMask;
+          dependency.dstStageMask |= readStageMask;
+          dependency.dstAccessMask |= readAccessMask;
+        }
+
+        // if this subpass writes to the attachment
+        if(writeAccessMask)
+        {
+          // add dependencies on reader subpasses
+          for(auto const& [lastReaderSubPassId, lastReaderStageMask] : attachmentsLastReaders[attachmentId])
+          {
+            Dependency& dependency = subPassInfo.dependencies[lastReaderSubPassId];
+            // write-after-read does not need access scope
+            dependency.srcStageMask |= lastReaderStageMask;
+            dependency.dstStageMask |= writeStageMask;
+          }
+
+          // record it as last writer
+          attachmentsLastWriter[attachmentId] = { subPassId, writeStageMask, writeAccessMask };
+          // clear reader subpasses
+          attachmentsLastReaders[attachmentId].clear();
+        }
+        // else if this subpass reads the attachment
+        else if(readAccessMask)
+        {
+          // add it as a reader
+          attachmentsLastReaders[attachmentId].push_back({ subPassId, readStageMask });
+        }
+      }
+
+      // process dependencies in reverse order, so we can filter out dependencies
+      // which are already transitively accounted for
+      currentSubPassDependencies.assign(subPassesCount, {});
+      for(int32_t dependencySubPassId = subPassId - 1; dependencySubPassId >= 0; --dependencySubPassId)
+      {
+        auto const& dependency = subPassInfo.dependencies[dependencySubPassId];
+        auto& currentDependency = currentSubPassDependencies[dependencySubPassId];
+
+        bool const isDirectDependency = dependency.srcStageMask || dependency.dstStageMask;
+        bool const isTransitiveDependency = currentDependency.srcStageMask || currentDependency.dstStageMask;
+        // if we do not depend on this subpass (directly or transitively), skip
+        if(!isDirectDependency && !isTransitiveDependency) continue;
+
+        // if this is direct dependency not yet transitively accounted for
+        if(isDirectDependency && (
+          (dependency.srcStageMask & ~currentDependency.srcStageMask) ||
+          (dependency.srcAccessMask & ~currentDependency.srcAccessMask) ||
+          (dependency.dstStageMask & ~currentDependency.dstStageMask) ||
+          (dependency.dstAccessMask & ~currentDependency.dstAccessMask)
+        ))
+        {
+          // create dependency
+          subPassesDependencies.push_back({
+            .srcSubpass = (uint32_t)dependencySubPassId,
+            .dstSubpass = subPassId,
+            .srcStageMask = dependency.srcStageMask,
+            .dstStageMask = dependency.dstStageMask,
+            .srcAccessMask = dependency.srcAccessMask,
+            .dstAccessMask = dependency.dstAccessMask,
+          });
+          // account for it
+          currentDependency |= dependency;
+        }
+
+        // account for sub-dependencies
+        SubPassInfo& dependencySubPassInfo = subPassesInfos[dependencySubPassId];
+        for(SubPassId subDependencySubPassId = 0; subDependencySubPassId < dependencySubPassId; ++subDependencySubPassId)
+        {
+          currentSubPassDependencies[subDependencySubPassId] |= dependencySubPassInfo.dependencies[subDependencySubPassId];
+        }
+
+        // preserve attachments the subpass depends on
+        dependencySubPassInfo.preserveAttachments.insert(dependencySubPassInfo.preserveAttachments.end(), currentPassReadAttachments.begin(), currentPassReadAttachments.end());
+      }
+
+      subPassesDescriptions[subPassId] =
+      {
+        .flags = 0,
+        .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+        .inputAttachmentCount = subPassInputAttachmentsCount,
+        .pInputAttachments = (VkAttachmentReference const*)(uintptr_t)subPassesInputAttachmentsCount, // to be fixed up later
+        .colorAttachmentCount = subPassColorAttachmentsCount,
+        .pColorAttachments = (VkAttachmentReference const*)(uintptr_t)subPassesColorAttachmentsCount, // to be fixed up later
+        .pResolveAttachments = nullptr,
+        .pDepthStencilAttachment = depthStencilAttachmentId.has_value() ? &depthStencilAttachmentsReferences[depthStencilAttachmentId.value()] : nullptr,
+        .preserveAttachmentCount = 0, // later
+        .pPreserveAttachments = nullptr, // later
+      };
+
+      // array counts
+      subPassesColorAttachmentsCount += subPassColorAttachmentsCount;
+      subPassesInputAttachmentsCount += subPassInputAttachmentsCount;
+
+      currentPassReadAttachments.clear();
+    }
+
+    // calculate preserve attachments
+    for(SubPassId subPassId = 0; subPassId < subPassesCount; ++subPassId)
+    {
+      GraphicsPassConfig::SubPass const& subPass = config.subPasses[subPassId];
+      SubPassInfo& subPassInfo = subPassesInfos[subPassId];
+
+      std::sort(subPassInfo.preserveAttachments.begin(), subPassInfo.preserveAttachments.end());
+      subPassInfo.preserveAttachments.resize(std::unique(subPassInfo.preserveAttachments.begin(), subPassInfo.preserveAttachments.end()) - subPassInfo.preserveAttachments.begin());
+
+      subPassesDescriptions[subPassId].pPreserveAttachments = (uint32_t const*)(uintptr_t)preserveAttachmentsReferences.size(); // to be fixed up later
+
+      for(size_t i = 0; i < subPassInfo.preserveAttachments.size(); ++i)
+      {
+        AttachmentId attachmentId = subPassInfo.preserveAttachments[i];
+
+        // filter out used attachments
+        if(subPass.attachments.find(attachmentId) != subPass.attachments.end()) continue;
+
+        preserveAttachmentsReferences.push_back(attachmentId);
+        ++subPassesDescriptions[subPassId].preserveAttachmentCount;
+      }
+    }
+
+    // fix up attachment references
+    for(SubPassId subPassId = 0; subPassId < subPassesCount; ++subPassId)
+    {
+      VkSubpassDescription& desc = subPassesDescriptions[subPassId];
+      desc.pInputAttachments = inputAttachmentsReferences.data() + (uintptr_t)desc.pInputAttachments;
+      desc.pColorAttachments = colorAttachmentsReferences.data() + (uintptr_t)desc.pColorAttachments;
+      desc.pPreserveAttachments = preserveAttachmentsReferences.data() + (uintptr_t)desc.pPreserveAttachments;
+    }
+
+    // attachments
+    for(AttachmentId attachmentId = 0; attachmentId < attachmentsCount; ++attachmentId)
+    {
+      GraphicsPassConfig::Attachment const& attachment = config.attachments[attachmentId];
+      attachmentsDescriptions[attachmentId] =
+      {
+        .flags = 0,
+        .format = VulkanSystem::GetPixelFormat(attachment.format),
+        .samples = VK_SAMPLE_COUNT_1_BIT,
+        .loadOp = attachment.keepBefore ? VK_ATTACHMENT_LOAD_OP_LOAD : VK_ATTACHMENT_LOAD_OP_CLEAR,
+        .storeOp = attachment.keepAfter ? VK_ATTACHMENT_STORE_OP_STORE : VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        .stencilLoadOp = attachment.keepBefore ? VK_ATTACHMENT_LOAD_OP_LOAD : VK_ATTACHMENT_LOAD_OP_CLEAR,
+        .stencilStoreOp = attachment.keepAfter ? VK_ATTACHMENT_STORE_OP_STORE : VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        .initialLayout = attachment.keepBefore ? attachmentsInfos[attachmentId].initialLayout : VK_IMAGE_LAYOUT_UNDEFINED,
+        .finalLayout = attachmentsInfos[attachmentId].finalLayout,
+      };
+    }
+
+    VkRenderPassCreateInfo info =
+    {
+      .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
+      .attachmentCount = (uint32_t)attachmentsCount,
+      .pAttachments = attachmentsDescriptions.data(),
+      .subpassCount = (uint32_t)subPassesCount,
+      .pSubpasses = subPassesDescriptions.data(),
+      .dependencyCount = (uint32_t)subPassesDependencies.size(),
+      .pDependencies = subPassesDependencies.data(),
+    };
+    VkRenderPass renderPass;
+    CheckSuccess(vkCreateRenderPass(_device, &info, nullptr, &renderPass), "creating Vulkan render pass failed");
+    book.Allocate<VulkanRenderPass>(_device, renderPass);
+    return book.Allocate<VulkanPass>(renderPass);
+  }
+
   VulkanShader& VulkanDevice::CreateShader(Book& book, GraphicsShaderRoots const& roots)
   {
     SpirvCode code = SpirvCompile(roots);
@@ -476,20 +788,14 @@ namespace Coil
   }
 
   VulkanPresenter::VulkanPresenter(
+    VulkanDevice& device,
     Book& book,
-    VkPhysicalDevice physicalDevice,
     VkSurfaceKHR surface,
-    VkDevice device,
-    VkQueue queue,
-    VkCommandPool commandPool,
     std::function<GraphicsRecreatePresentPassFunc>&& recreatePresentPass
     ) :
-  _book(book),
-  _physicalDevice(physicalDevice),
-  _surface(surface),
   _device(device),
-  _queue(queue),
-  _commandPool(commandPool),
+  _book(book),
+  _surface(surface),
   _recreatePresentPass(std::move(recreatePresentPass))
   {}
 
@@ -497,7 +803,7 @@ namespace Coil
   {
     // get surface capabilities
     VkSurfaceCapabilitiesKHR surfaceCapabilities;
-    CheckSuccess(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(_physicalDevice, _surface, &surfaceCapabilities), "getting Vulkan physical device surface capabilities failed");
+    CheckSuccess(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(_device._physicalDevice, _surface, &surfaceCapabilities), "getting Vulkan physical device surface capabilities failed");
 
     VkExtent2D extent = surfaceCapabilities.currentExtent;
 
@@ -528,25 +834,25 @@ namespace Coil
         .oldSwapchain = nullptr,
       };
 
-      CheckSuccess(vkCreateSwapchainKHR(_device, &info, nullptr, &_swapchain), "creating Vulkan swapchain failed");
-      _book.Allocate<VulkanSwapchain>(_device, _swapchain);
+      CheckSuccess(vkCreateSwapchainKHR(_device._device, &info, nullptr, &_swapchain), "creating Vulkan swapchain failed");
+      _book.Allocate<VulkanSwapchain>(_device._device, _swapchain);
     }
 
     // get swapchain images
     {
       uint32_t imagesCount;
-      CheckSuccess(vkGetSwapchainImagesKHR(_device, _swapchain, &imagesCount, nullptr), "getting Vulkan swapchain images failed");
+      CheckSuccess(vkGetSwapchainImagesKHR(_device._device, _swapchain, &imagesCount, nullptr), "getting Vulkan swapchain images failed");
 
       _images.assign(imagesCount, nullptr);
-      CheckSuccess(vkGetSwapchainImagesKHR(_device, _swapchain, &imagesCount, _images.data()), "getting Vulkan swapchain images failed");
+      CheckSuccess(vkGetSwapchainImagesKHR(_device._device, _swapchain, &imagesCount, _images.data()), "getting Vulkan swapchain images failed");
     }
 
     // create a few frames
-    std::vector<VkCommandBuffer> commandBuffers = VulkanCommandBuffers::Create(_book, _device, _commandPool, _framesCount, true);
+    std::vector<VkCommandBuffer> commandBuffers = VulkanCommandBuffers::Create(_book, _device._device, _device._commandPool, _framesCount, true);
     for(size_t i = 0; i < _framesCount; ++i)
-      _frames[i].Init(_book, _device, _swapchain, _queue, commandBuffers[i]);
+      _frames[i].Init(_book, _device._device, _swapchain, _device._graphicsQueue, commandBuffers[i]);
 
-    _book.Allocate<VulkanDeviceIdle>(_device);
+    _book.Allocate<VulkanDeviceIdle>(_device._device);
   }
 
   void VulkanPresenter::Clear()
@@ -725,6 +1031,9 @@ namespace Coil
       CheckSuccess<VK_SUBOPTIMAL_KHR>(vkQueuePresentKHR(_queue, &info), "queueing Vulkan present failed");
     }
   }
+
+  VulkanPass::VulkanPass(VkRenderPass renderPass)
+  : _renderPass(renderPass) {}
 
   VulkanSurface::VulkanSurface(VkInstance instance, VkSurfaceKHR surface)
   : _instance(instance), _surface(surface) {}

@@ -57,12 +57,9 @@ namespace Coil
   {
   public:
     VulkanPresenter(
+      VulkanDevice& device,
       Book& book,
-      VkPhysicalDevice physicalDevice,
       VkSurfaceKHR surface,
-      VkDevice device,
-      VkQueue queue,
-      VkCommandPool commandPool,
       std::function<GraphicsRecreatePresentPassFunc>&& recreatePresentPass
       );
 
@@ -73,12 +70,9 @@ namespace Coil
     VulkanFrame& StartFrame() override;
 
   private:
+    VulkanDevice& _device;
     Book& _book;
-    VkPhysicalDevice _physicalDevice;
     VkSurfaceKHR _surface;
-    VkDevice _device;
-    VkQueue _queue;
-    VkCommandPool _commandPool;
     std::function<GraphicsRecreatePresentPassFunc> _recreatePresentPass;
     VkSwapchainKHR _swapchain = nullptr;
     // swapchain images
@@ -92,6 +86,15 @@ namespace Coil
 
     // whether to recreate swapchain on next frame
     bool _recreateNeeded = false;
+  };
+
+  class VulkanPass : public GraphicsPass
+  {
+  public:
+    VulkanPass(VkRenderPass renderPass);
+
+  private:
+    VkRenderPass _renderPass;
   };
 
   class VulkanVertexBuffer : public GraphicsVertexBuffer
@@ -138,6 +141,7 @@ namespace Coil
     VulkanPool& CreatePool(Book& book, uint64_t chunkSize) override;
     VulkanPresenter& CreateWindowPresenter(Book& book, Window& window, std::function<GraphicsRecreatePresentPassFunc>&& recreatePresentPass) override;
     VulkanVertexBuffer& CreateVertexBuffer(GraphicsPool& pool, Buffer const& buffer) override;
+    VulkanPass& CreatePass(Book& book, GraphicsPassConfig const& config) override;
     VulkanShader& CreateShader(Book& book, GraphicsShaderRoots const& roots) override;
 
   private:
@@ -151,6 +155,7 @@ namespace Coil
     VkCommandPool _commandPool = nullptr;
     VkPhysicalDeviceMemoryProperties _memoryProperties;
 
+    friend class VulkanPresenter;
     friend class VulkanPool;
   };
 
