@@ -34,25 +34,6 @@ namespace
       R(VK_ERROR_FORMAT_NOT_SUPPORTED);
       R(VK_ERROR_FRAGMENTED_POOL);
       R(VK_ERROR_UNKNOWN);
-      R(VK_ERROR_OUT_OF_POOL_MEMORY);
-      R(VK_ERROR_INVALID_EXTERNAL_HANDLE);
-      R(VK_ERROR_FRAGMENTATION);
-      R(VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS);
-      R(VK_PIPELINE_COMPILE_REQUIRED);
-      R(VK_ERROR_SURFACE_LOST_KHR);
-      R(VK_ERROR_NATIVE_WINDOW_IN_USE_KHR);
-      R(VK_SUBOPTIMAL_KHR);
-      R(VK_ERROR_OUT_OF_DATE_KHR);
-      R(VK_ERROR_INCOMPATIBLE_DISPLAY_KHR);
-      R(VK_ERROR_VALIDATION_FAILED_EXT);
-      R(VK_ERROR_INVALID_SHADER_NV);
-      R(VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT);
-      R(VK_ERROR_NOT_PERMITTED_KHR);
-      R(VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT);
-      R(VK_THREAD_IDLE_KHR);
-      R(VK_THREAD_DONE_KHR);
-      R(VK_OPERATION_DEFERRED_KHR);
-      R(VK_OPERATION_NOT_DEFERRED_KHR);
 #undef R
       default:
         str = "unknown";
@@ -102,7 +83,7 @@ namespace Coil
         .applicationVersion = appVersion,
         .pEngineName = "Coil Core",
         .engineVersion = 0,
-        .apiVersion = VK_HEADER_VERSION_COMPLETE,
+        .apiVersion = VK_API_VERSION_1_0,
       };
 
       VkInstanceCreateInfo info =
