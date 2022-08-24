@@ -33,15 +33,16 @@ namespace Coil
   class VulkanFrame : public GraphicsFrame
   {
   public:
+    VulkanFrame(VulkanDevice& device, VulkanPresenter& presenter);
+
     void EndFrame() override;
 
   private:
-    void Init(Book& book, VkDevice device, VkSwapchainKHR swapchain, VkQueue queue, VkCommandBuffer commandBuffer);
+    void Init(Book& book, VkCommandBuffer commandBuffer);
     void Begin(std::vector<VkImage> const& images, bool& isSubOptimal);
 
-    VkDevice _device;
-    VkSwapchainKHR _swapchain;
-    VkQueue _queue;
+    VulkanDevice& _device;
+    VulkanPresenter& _presenter;
     VkCommandBuffer _commandBuffer;
     VkFence _fenceFrameFinished;
     VkSemaphore _semaphoreImageAvailable;
@@ -80,12 +81,14 @@ namespace Coil
 
     // frames
     static size_t constexpr _framesCount = 2;
-    std::array<VulkanFrame, _framesCount> _frames;
+    std::vector<VulkanFrame> _frames;
     // next frame to use
     size_t _nextFrame = 0;
 
     // whether to recreate swapchain on next frame
     bool _recreateNeeded = false;
+
+    friend class VulkanFrame;
   };
 
   class VulkanPass : public GraphicsPass
@@ -111,23 +114,10 @@ namespace Coil
   class VulkanShader : public GraphicsShader
   {
   public:
-    VulkanShader(VkDevice device, VkShaderModule shaderModule, uint8_t stagesMask);
-    ~VulkanShader();
+    VulkanShader(VkShaderModule shaderModule, uint8_t stagesMask);
 
-    VkDevice const device;
     VkShaderModule const shaderModule;
     uint8_t const stagesMask;
-  };
-
-  class VulkanPipeline : public GraphicsPipeline
-  {
-  public:
-    VulkanPipeline(VkDevice device, VkPipeline pipeline);
-    ~VulkanPipeline();
-
-  private:
-    VkDevice _device;
-    VkPipeline _pipeline;
   };
 
   class VulkanDevice : public GraphicsDevice
@@ -146,6 +136,8 @@ namespace Coil
 
   private:
     std::pair<VkDeviceMemory, VkDeviceSize> AllocateMemory(VulkanPool& pool, VkMemoryRequirements const& memoryRequirements, VkMemoryPropertyFlags requireFlags);
+    VkFence CreateFence(Book& book, bool signaled = false);
+    VkSemaphore CreateSemaphore(Book& book);
 
     VkInstance _instance;
     VkPhysicalDevice _physicalDevice;
@@ -156,6 +148,7 @@ namespace Coil
     VkPhysicalDeviceMemoryProperties _memoryProperties;
 
     friend class VulkanPresenter;
+    friend class VulkanFrame;
     friend class VulkanPool;
   };
 
@@ -186,17 +179,6 @@ namespace Coil
     friend class VulkanDevice;
   };
 
-  class VulkanSurface
-  {
-  public:
-    VulkanSurface(VkInstance instance, VkSurfaceKHR surface);
-    ~VulkanSurface();
-
-  private:
-    VkInstance _instance;
-    VkSurfaceKHR _surface;
-  };
-
   class VulkanDeviceIdle
   {
   public:
@@ -205,17 +187,6 @@ namespace Coil
 
   private:
     VkDevice _device;
-  };
-
-  class VulkanSwapchain
-  {
-  public:
-    VulkanSwapchain(VkDevice device, VkSwapchainKHR swapchain);
-    ~VulkanSwapchain();
-
-  private:
-    VkDevice _device;
-    VkSwapchainKHR _swapchain;
   };
 
   class VulkanCommandBuffers
@@ -230,97 +201,5 @@ namespace Coil
     VkDevice _device;
     VkCommandPool _commandPool;
     std::vector<VkCommandBuffer> _commandBuffers;
-  };
-
-  class VulkanRenderPass
-  {
-  public:
-    VulkanRenderPass(VkDevice device, VkRenderPass renderPass);
-    ~VulkanRenderPass();
-
-  private:
-    VkDevice _device;
-    VkRenderPass _renderPass;
-  };
-
-  class VulkanPipelineLayout
-  {
-  public:
-    VulkanPipelineLayout(VkDevice device, VkPipelineLayout pipelineLayout);
-    ~VulkanPipelineLayout();
-
-  private:
-    VkDevice _device;
-    VkPipelineLayout _pipelineLayout;
-  };
-
-  class VulkanFramebuffer
-  {
-  public:
-    VulkanFramebuffer(VkDevice device, VkFramebuffer framebuffer);
-    ~VulkanFramebuffer();
-
-  private:
-    VkDevice _device;
-    VkFramebuffer _framebuffer;
-  };
-
-  class VulkanBuffer
-  {
-  public:
-    VulkanBuffer(VkDevice device, VkBuffer buffer);
-    ~VulkanBuffer();
-
-  private:
-    VkDevice _device;
-    VkBuffer _buffer;
-  };
-
-  class VulkanImageView
-  {
-  public:
-    VulkanImageView(VkDevice device, VkImageView imageView);
-    ~VulkanImageView();
-
-  private:
-    VkDevice _device;
-    VkImageView _imageView;
-  };
-
-  class VulkanMemory
-  {
-  public:
-    VulkanMemory(VkDevice device, VkDeviceMemory memory);
-    ~VulkanMemory();
-
-  private:
-    VkDevice _device;
-    VkDeviceMemory _memory;
-  };
-
-  class VulkanFence
-  {
-  public:
-    VulkanFence(VkDevice device, VkFence fence);
-    ~VulkanFence();
-
-    static VkFence Create(Book& book, VkDevice device, bool signaled = false);
-
-  private:
-    VkDevice _device;
-    VkFence _fence;
-  };
-
-  class VulkanSemaphore
-  {
-  public:
-    VulkanSemaphore(VkDevice device, VkSemaphore semaphore);
-    ~VulkanSemaphore();
-
-    static VkSemaphore Create(Book& book, VkDevice device);
-
-  private:
-    VkDevice _device;
-    VkSemaphore _semaphore;
   };
 }

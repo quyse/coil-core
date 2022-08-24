@@ -1,4 +1,5 @@
 #include "vulkan.hpp"
+#include "vulkan_objects.hpp"
 #include "spirv.hpp"
 #include <vector>
 #include <limits>
@@ -376,7 +377,7 @@ namespace Coil
     }
     if(!surface)
       throw Exception("creating Vulkan surface failed");
-    book.Allocate<VulkanSurface>(_instance, surface);
+    AllocateVulkanObject(book, _instance, surface);
 
     // create presenter
     VulkanPresenter& presenter = book.Allocate<VulkanPresenter>(*this, book.Allocate<Book>(), surface, std::move(recreatePresentPass));
@@ -405,7 +406,7 @@ namespace Coil
         .pQueueFamilyIndices = nullptr,
       };
       CheckSuccess(vkCreateBuffer(_device, &info, nullptr, &vertexBuffer), "creating Vulkan vertex buffer failed");
-      pool.GetBook().Allocate<VulkanBuffer>(_device, vertexBuffer);
+      AllocateVulkanObject(pool.GetBook(), _device, vertexBuffer);
     }
 
     // get memory requirements
@@ -744,7 +745,7 @@ namespace Coil
     };
     VkRenderPass renderPass;
     CheckSuccess(vkCreateRenderPass(_device, &info, nullptr, &renderPass), "creating Vulkan render pass failed");
-    book.Allocate<VulkanRenderPass>(_device, renderPass);
+    AllocateVulkanObject(book, _device, renderPass);
     return book.Allocate<VulkanPass>(renderPass);
   }
 
@@ -769,7 +770,8 @@ namespace Coil
       if(roots.vertex) stagesMask |= GraphicsShader::VertexStageFlag;
       if(roots.fragment) stagesMask |= GraphicsShader::FragmentStageFlag;
 
-      return book.Allocate<VulkanShader>(_device, shaderModule, stagesMask);
+      AllocateVulkanObject(book, _device, shaderModule);
+      return book.Allocate<VulkanShader>(shaderModule, stagesMask);
     }
   }
 
@@ -785,6 +787,34 @@ namespace Coil
     }
 
     throw Exception("no suitable Vulkan memory found");
+  }
+
+  VkFence VulkanDevice::CreateFence(Book& book, bool signaled)
+  {
+    VkFenceCreateInfo info =
+    {
+      .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = VkFlags(signaled ? VK_FENCE_CREATE_SIGNALED_BIT : 0),
+    };
+    VkFence fence;
+    CheckSuccess(vkCreateFence(_device, &info, nullptr, &fence), "creating Vulkan fence failed");
+    AllocateVulkanObject(book, _device, fence);
+    return fence;
+  }
+
+  VkSemaphore VulkanDevice::CreateSemaphore(Book& book)
+  {
+    VkSemaphoreCreateInfo info =
+    {
+      .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
+    };
+    VkSemaphore semaphore;
+    CheckSuccess(vkCreateSemaphore(_device, &info, nullptr, &semaphore), "creating Vulkan semaphore failed");
+    AllocateVulkanObject(book, _device, semaphore);
+    return semaphore;
   }
 
   VulkanPresenter::VulkanPresenter(
@@ -835,7 +865,7 @@ namespace Coil
       };
 
       CheckSuccess(vkCreateSwapchainKHR(_device._device, &info, nullptr, &_swapchain), "creating Vulkan swapchain failed");
-      _book.Allocate<VulkanSwapchain>(_device._device, _swapchain);
+      AllocateVulkanObject(_book, _device._device, _swapchain);
     }
 
     // get swapchain images
@@ -849,8 +879,12 @@ namespace Coil
 
     // create a few frames
     std::vector<VkCommandBuffer> commandBuffers = VulkanCommandBuffers::Create(_book, _device._device, _device._commandPool, _framesCount, true);
+    _frames.reserve(_framesCount);
     for(size_t i = 0; i < _framesCount; ++i)
-      _frames[i].Init(_book, _device._device, _swapchain, _device._graphicsQueue, commandBuffers[i]);
+    {
+      _frames.emplace_back(_device, *this);
+      _frames[i].Init(_book, commandBuffers[i]);
+    }
 
     _book.Allocate<VulkanDeviceIdle>(_device._device);
   }
@@ -860,7 +894,7 @@ namespace Coil
     _book.Free();
     _swapchain = nullptr;
     _images.clear();
-    _frames = {};
+    _frames.clear();
   }
 
   void VulkanPresenter::Resize(ivec2 const& size)
@@ -894,7 +928,7 @@ namespace Coil
         .memoryTypeIndex = memoryTypeIndex,
       };
       CheckSuccess(vkAllocateMemory(_device._device, &info, nullptr, &memoryType.memory), "allocating Vulkan memory failed");
-      _book.Allocate<VulkanMemory>(_device._device, memoryType.memory);
+      AllocateVulkanObject(_book, _device._device, memoryType.memory);
 
       memoryType.size = _chunkSize;
     }
@@ -924,26 +958,26 @@ namespace Coil
     return frame;
   }
 
-  void VulkanFrame::Init(Book& book, VkDevice device, VkSwapchainKHR swapchain, VkQueue queue, VkCommandBuffer commandBuffer)
+  VulkanFrame::VulkanFrame(VulkanDevice& device, VulkanPresenter& presenter)
+  : _device(device), _presenter(presenter) {}
+
+  void VulkanFrame::Init(Book& book, VkCommandBuffer commandBuffer)
   {
-    _device = device;
-    _swapchain = swapchain;
-    _queue = queue;
     _commandBuffer = commandBuffer;
-    _fenceFrameFinished = VulkanFence::Create(book, device, true);
-    _semaphoreImageAvailable = VulkanSemaphore::Create(book, device);
-    _semaphoreFrameFinished = VulkanSemaphore::Create(book, device);
+    _fenceFrameFinished = _device.CreateFence(book, true);
+    _semaphoreImageAvailable = _device.CreateSemaphore(book);
+    _semaphoreFrameFinished = _device.CreateSemaphore(book);
   }
 
   void VulkanFrame::Begin(std::vector<VkImage> const& images, bool& isSubOptimal)
   {
     // wait until previous use of the frame is done
-    CheckSuccess(vkWaitForFences(_device, 1, &_fenceFrameFinished, VK_TRUE, std::numeric_limits<uint64_t>::max()), "waiting for Vulkan frame finished failed");
+    CheckSuccess(vkWaitForFences(_device._device, 1, &_fenceFrameFinished, VK_TRUE, std::numeric_limits<uint64_t>::max()), "waiting for Vulkan frame finished failed");
     // reset fence
-    CheckSuccess(vkResetFences(_device, 1, &_fenceFrameFinished), "resetting Vulkan fence failed");
+    CheckSuccess(vkResetFences(_device._device, 1, &_fenceFrameFinished), "resetting Vulkan fence failed");
 
     // acquire image
-    if(CheckSuccess<VK_SUBOPTIMAL_KHR>(vkAcquireNextImageKHR(_device, _swapchain, std::numeric_limits<uint64_t>::max(), _semaphoreImageAvailable, nullptr, &_imageIndex), "acquiring Vulkan next image failed") == VK_SUBOPTIMAL_KHR)
+    if(CheckSuccess<VK_SUBOPTIMAL_KHR>(vkAcquireNextImageKHR(_device._device, _presenter._swapchain, std::numeric_limits<uint64_t>::max(), _semaphoreImageAvailable, nullptr, &_imageIndex), "acquiring Vulkan next image failed") == VK_SUBOPTIMAL_KHR)
       isSubOptimal = true;
     _image = images[_imageIndex];
 
@@ -1012,7 +1046,7 @@ namespace Coil
         .signalSemaphoreCount = 1,
         .pSignalSemaphores = &_semaphoreFrameFinished,
       };
-      CheckSuccess(vkQueueSubmit(_queue, 1, &info, _fenceFrameFinished), "queueing Vulkan command buffer failed");
+      CheckSuccess(vkQueueSubmit(_device._graphicsQueue, 1, &info, _fenceFrameFinished), "queueing Vulkan command buffer failed");
     }
 
     // present
@@ -1024,24 +1058,16 @@ namespace Coil
         .waitSemaphoreCount = 1,
         .pWaitSemaphores = &_semaphoreFrameFinished,
         .swapchainCount = 1,
-        .pSwapchains = &_swapchain,
+        .pSwapchains = &_presenter._swapchain,
         .pImageIndices = &_imageIndex,
         .pResults = nullptr,
       };
-      CheckSuccess<VK_SUBOPTIMAL_KHR>(vkQueuePresentKHR(_queue, &info), "queueing Vulkan present failed");
+      CheckSuccess<VK_SUBOPTIMAL_KHR>(vkQueuePresentKHR(_device._graphicsQueue, &info), "queueing Vulkan present failed");
     }
   }
 
   VulkanPass::VulkanPass(VkRenderPass renderPass)
   : _renderPass(renderPass) {}
-
-  VulkanSurface::VulkanSurface(VkInstance instance, VkSurfaceKHR surface)
-  : _instance(instance), _surface(surface) {}
-
-  VulkanSurface::~VulkanSurface()
-  {
-    vkDestroySurfaceKHR(_instance, _surface, nullptr);
-  }
 
   VulkanDeviceIdle::VulkanDeviceIdle(VkDevice device)
   : _device(device) {}
@@ -1049,14 +1075,6 @@ namespace Coil
   VulkanDeviceIdle::~VulkanDeviceIdle()
   {
     CheckSuccess(vkDeviceWaitIdle(_device), "waiting for Vulkan device idle failed\n");
-  }
-
-  VulkanSwapchain::VulkanSwapchain(VkDevice device, VkSwapchainKHR swapchain)
-  : _device(device), _swapchain(swapchain) {}
-
-  VulkanSwapchain::~VulkanSwapchain()
-  {
-    vkDestroySwapchainKHR(_device, _swapchain, nullptr);
   }
 
   VulkanCommandBuffers::VulkanCommandBuffers(VkDevice device, VkCommandPool commandPool, std::vector<VkCommandBuffer>&& commandBuffers)
@@ -1087,114 +1105,9 @@ namespace Coil
     return std::move(commandBuffers);
   }
 
-  VulkanRenderPass::VulkanRenderPass(VkDevice device, VkRenderPass renderPass)
-  : _device(device), _renderPass(renderPass) {}
-
-  VulkanRenderPass::~VulkanRenderPass()
-  {
-    vkDestroyRenderPass(_device, _renderPass, nullptr);
-  }
-
-  VulkanPipeline::VulkanPipeline(VkDevice device, VkPipeline pipeline)
-  : _device(device), _pipeline(pipeline) {}
-
-  VulkanPipeline::~VulkanPipeline()
-  {
-    vkDestroyPipeline(_device, _pipeline, nullptr);
-  }
-
-  VulkanPipelineLayout::VulkanPipelineLayout(VkDevice device, VkPipelineLayout pipelineLayout)
-  : _device(device), _pipelineLayout(pipelineLayout) {}
-
-  VulkanPipelineLayout::~VulkanPipelineLayout()
-  {
-    vkDestroyPipelineLayout(_device, _pipelineLayout, nullptr);
-  }
-
-  VulkanFramebuffer::VulkanFramebuffer(VkDevice device, VkFramebuffer framebuffer)
-  : _device(device), _framebuffer(framebuffer) {}
-
-  VulkanFramebuffer::~VulkanFramebuffer()
-  {
-    vkDestroyFramebuffer(_device, _framebuffer, nullptr);
-  }
-
-  VulkanBuffer::VulkanBuffer(VkDevice device, VkBuffer buffer)
-  : _device(device), _buffer(buffer) {}
-
-  VulkanBuffer::~VulkanBuffer()
-  {
-    vkDestroyBuffer(_device, _buffer, nullptr);
-  }
-
-  VulkanImageView::VulkanImageView(VkDevice device, VkImageView imageView)
-  : _device(device), _imageView(imageView) {}
-
-  VulkanImageView::~VulkanImageView()
-  {
-    vkDestroyImageView(_device, _imageView, nullptr);
-  }
-
   VulkanVertexBuffer::VulkanVertexBuffer(VkBuffer buffer)
   : _buffer(buffer) {}
 
-  VulkanShader::VulkanShader(VkDevice device, VkShaderModule shaderModule, uint8_t stagesMask)
-  : device(device), shaderModule(shaderModule), stagesMask(stagesMask) {}
-
-  VulkanShader::~VulkanShader()
-  {
-    vkDestroyShaderModule(device, shaderModule, nullptr);
-  }
-
-  VulkanMemory::VulkanMemory(VkDevice device, VkDeviceMemory memory)
-  : _device(device), _memory(memory) {}
-
-  VulkanMemory::~VulkanMemory()
-  {
-    vkFreeMemory(_device, _memory, nullptr);
-  }
-
-  VulkanFence::VulkanFence(VkDevice device, VkFence fence)
-  : _device(device), _fence(fence) {}
-
-  VulkanFence::~VulkanFence()
-  {
-    vkDestroyFence(_device, _fence, nullptr);
-  }
-
-  VkFence VulkanFence::Create(Book& book, VkDevice device, bool signaled)
-  {
-    VkFenceCreateInfo info =
-    {
-      .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
-      .pNext = nullptr,
-      .flags = VkFlags(signaled ? VK_FENCE_CREATE_SIGNALED_BIT : 0),
-    };
-    VkFence fence;
-    CheckSuccess(vkCreateFence(device, &info, nullptr, &fence), "creating Vulkan fence failed");
-    book.Allocate<VulkanFence>(device, fence);
-    return fence;
-  }
-
-  VulkanSemaphore::VulkanSemaphore(VkDevice device, VkSemaphore semaphore)
-  : _device(device), _semaphore(semaphore) {}
-
-  VulkanSemaphore::~VulkanSemaphore()
-  {
-    vkDestroySemaphore(_device, _semaphore, nullptr);
-  }
-
-  VkSemaphore VulkanSemaphore::Create(Book& book, VkDevice device)
-  {
-    VkSemaphoreCreateInfo info =
-    {
-      .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
-      .pNext = nullptr,
-      .flags = 0,
-    };
-    VkSemaphore semaphore;
-    CheckSuccess(vkCreateSemaphore(device, &info, nullptr, &semaphore), "creating Vulkan semaphore failed");
-    book.Allocate<VulkanSemaphore>(device, semaphore);
-    return semaphore;
-  }
+  VulkanShader::VulkanShader(VkShaderModule shaderModule, uint8_t stagesMask)
+  : shaderModule(shaderModule), stagesMask(stagesMask) {}
 }
