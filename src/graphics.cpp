@@ -25,7 +25,7 @@ namespace Coil
     return &_config.attachments[_id];
   }
 
-  GraphicsPassConfig::SubPassRef::SubPassRef(GraphicsPassConfig& config, SubPassId id)
+  GraphicsPassConfig::SubPassRef::SubPassRef(GraphicsPassConfig& config, GraphicsSubPassId id)
   : _config(config), _id(id) {}
   GraphicsPassConfig::SubPass& GraphicsPassConfig::SubPassRef::operator*()
   {
@@ -55,7 +55,7 @@ namespace Coil
 
   GraphicsPassConfig::SubPassRef GraphicsPassConfig::AddSubPass()
   {
-    SubPassId subPassId = (SubPassId)subPasses.size();
+    GraphicsSubPassId subPassId = (GraphicsSubPassId)subPasses.size();
     subPasses.push_back({});
     return SubPassRef(*this, subPassId);
   }

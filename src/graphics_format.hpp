@@ -4,6 +4,44 @@
 
 namespace Coil
 {
+  // Vertex attribute format.
+  struct VertexFormat
+  {
+    enum class Format : uint8_t
+    {
+      // float
+      Float,
+      // signed int
+      SInt,
+      // unsigned int
+      UInt,
+      // signed int, normalized to -1..1 float
+      SNorm,
+      // unsigned int, normalized to 0..1 float
+      UNorm,
+    };
+    Format format;
+
+    // number of components, 1..4
+    uint8_t components = 1;
+
+    // size of attribute, in bytes
+    enum class Size : uint8_t
+    {
+      _8bit,
+      _16bit,
+      _24bit,
+      _32bit,
+      _48bit,
+      _64bit,
+      _96bit,
+      _128bit
+    };
+    Size size;
+
+    VertexFormat(Format format, uint8_t components, Size size);
+  };
+
   // Pixel format.
   struct PixelFormat
   {

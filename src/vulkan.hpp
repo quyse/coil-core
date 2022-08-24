@@ -9,6 +9,7 @@ namespace Coil
 {
   class VulkanDevice;
   class VulkanPresenter;
+  class VulkanImage;
 
   class VulkanPool : public GraphicsPool
   {
@@ -35,11 +36,13 @@ namespace Coil
   public:
     VulkanFrame(VulkanDevice& device, VulkanPresenter& presenter);
 
+    uint32_t GetImageIndex() const override;
+    void Pass(GraphicsPass& pass, GraphicsFramebuffer& framebuffer, std::function<void(GraphicsSubPassId, GraphicsContext&)> const& func) override;
     void EndFrame() override;
 
   private:
     void Init(Book& book, VkCommandBuffer commandBuffer);
-    void Begin(std::vector<VkImage> const& images, bool& isSubOptimal);
+    void Begin(std::vector<VulkanImage*> const& pImages, bool& isSubOptimal);
 
     VulkanDevice& _device;
     VulkanPresenter& _presenter;
@@ -48,7 +51,7 @@ namespace Coil
     VkSemaphore _semaphoreImageAvailable;
     VkSemaphore _semaphoreFrameFinished;
 
-    VkImage _image = nullptr;
+    VulkanImage* _pImage = nullptr;
     uint32_t _imageIndex = -1;
 
     friend class VulkanPresenter;
@@ -61,7 +64,8 @@ namespace Coil
       VulkanDevice& device,
       Book& book,
       VkSurfaceKHR surface,
-      std::function<GraphicsRecreatePresentPassFunc>&& recreatePresentPass
+      std::function<GraphicsRecreatePresentPassFunc>&& recreatePresentPass,
+      std::function<GraphicsRecreatePresentFrameFunc>&& recreatePresentFrame
       );
 
     void Init();
@@ -75,9 +79,10 @@ namespace Coil
     Book& _book;
     VkSurfaceKHR _surface;
     std::function<GraphicsRecreatePresentPassFunc> _recreatePresentPass;
+    std::function<GraphicsRecreatePresentFrameFunc> _recreatePresentFrame;
     VkSwapchainKHR _swapchain = nullptr;
     // swapchain images
-    std::vector<VkImage> _images;
+    std::vector<VulkanImage*> _images;
 
     // frames
     static size_t constexpr _framesCount = 2;
@@ -94,10 +99,15 @@ namespace Coil
   class VulkanPass : public GraphicsPass
   {
   public:
-    VulkanPass(VkRenderPass renderPass);
+    VulkanPass(VkRenderPass renderPass, uint32_t subPassesCount);
 
   private:
     VkRenderPass _renderPass;
+    uint32_t _subPassesCount;
+
+    friend class VulkanDevice;
+    friend class VulkanContext;
+    friend class VulkanFrame;
   };
 
   class VulkanVertexBuffer : public GraphicsVertexBuffer
@@ -108,16 +118,67 @@ namespace Coil
   private:
     VkBuffer _buffer;
 
+    friend class VulkanContext;
+  };
+
+  class VulkanImage : public GraphicsImage
+  {
+  public:
+    VulkanImage(VkImage image, VkImageView imageView);
+
+  private:
+    VkImage _image;
+    VkImageView _imageView;
+
     friend class VulkanDevice;
+    friend class VulkanFrame;
   };
 
   class VulkanShader : public GraphicsShader
   {
   public:
-    VulkanShader(VkShaderModule shaderModule, uint8_t stagesMask);
+    VulkanShader(VkShaderModule shaderModule, VkShaderStageFlags stagesMask);
 
-    VkShaderModule const shaderModule;
-    uint8_t const stagesMask;
+  private:
+    VkShaderModule const _shaderModule;
+    VkShaderStageFlags const _stagesMask;
+
+    friend class VulkanDevice;
+  };
+
+  class VulkanPipelineLayout : public GraphicsPipelineLayout
+  {
+  public:
+    VulkanPipelineLayout(VkPipelineLayout pipelineLayout);
+
+  private:
+    VkPipelineLayout _pipelineLayout;
+
+    friend class VulkanDevice;
+  };
+
+  class VulkanPipeline : public GraphicsPipeline
+  {
+  public:
+    VulkanPipeline(VkPipeline pipeline);
+
+  private:
+    VkPipeline _pipeline;
+
+    friend class VulkanDevice;
+    friend class VulkanContext;
+  };
+
+  class VulkanFramebuffer : public GraphicsFramebuffer
+  {
+  public:
+    VulkanFramebuffer(VkFramebuffer framebuffer, ivec2 const& size);
+
+  private:
+    VkFramebuffer _framebuffer;
+    ivec2 _size;
+
+    friend class VulkanFrame;
   };
 
   class VulkanDevice : public GraphicsDevice
@@ -128,10 +189,13 @@ namespace Coil
     void Init(Book& book);
 
     VulkanPool& CreatePool(Book& book, uint64_t chunkSize) override;
-    VulkanPresenter& CreateWindowPresenter(Book& book, Window& window, std::function<GraphicsRecreatePresentPassFunc>&& recreatePresentPass) override;
+    VulkanPresenter& CreateWindowPresenter(Book& book, Window& window, std::function<GraphicsRecreatePresentPassFunc>&& recreatePresentPass, std::function<GraphicsRecreatePresentFrameFunc>&& recreatePresentFrame) override;
     VulkanVertexBuffer& CreateVertexBuffer(GraphicsPool& pool, Buffer const& buffer) override;
     VulkanPass& CreatePass(Book& book, GraphicsPassConfig const& config) override;
     VulkanShader& CreateShader(Book& book, GraphicsShaderRoots const& roots) override;
+    VulkanPipelineLayout& CreatePipelineLayout(Book& book) override;
+    VulkanPipeline& CreatePipeline(Book& book, GraphicsPipelineConfig const& config, GraphicsPipelineLayout& graphicsPipelineLayout, GraphicsPass& pass, GraphicsSubPassId subPassId, GraphicsShader& shader) override;
+    VulkanFramebuffer& CreateFramebuffer(Book& book, GraphicsPass& pass, std::span<GraphicsImage*> const& pImages, ivec2 const& size) override;
 
   private:
     std::pair<VkDeviceMemory, VkDeviceSize> AllocateMemory(VulkanPool& pool, VkMemoryRequirements const& memoryRequirements, VkMemoryPropertyFlags requireFlags);
@@ -151,6 +215,19 @@ namespace Coil
     friend class VulkanPool;
   };
 
+  class VulkanContext : public GraphicsContext
+  {
+  public:
+    VulkanContext(VkCommandBuffer commandBuffer);
+
+    void BindVertexBuffer(GraphicsVertexBuffer& vertexBuffer) override;
+    void BindPipeline(GraphicsPipeline& pipeline) override;
+    void Draw(uint32_t verticesCount) override;
+
+  private:
+    VkCommandBuffer _commandBuffer;
+  };
+
   class VulkanSystem : public GraphicsSystem
   {
   public:
@@ -166,6 +243,7 @@ namespace Coil
     static void RegisterInstanceExtensionsHandler(InstanceExtensionsHandler&& handler);
     static void RegisterDeviceSurfaceHandler(DeviceSurfaceHandler&& handler);
 
+    static VkFormat GetVertexFormat(VertexFormat format);
     static VkFormat GetPixelFormat(PixelFormat format);
 
   private:

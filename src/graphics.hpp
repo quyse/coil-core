@@ -7,9 +7,12 @@
 #include <map>
 #include <optional>
 #include <variant>
+#include <span>
 
 namespace Coil
 {
+  using GraphicsSubPassId = uint32_t;
+
   struct GraphicsPassConfig
   {
     using AttachmentId = uint32_t;
@@ -45,8 +48,6 @@ namespace Coil
       AttachmentId const _id;
     };
 
-    using SubPassId = uint32_t;
-
     struct SubPass
     {
       struct ColorAttachment
@@ -76,7 +77,7 @@ namespace Coil
     class SubPassRef
     {
     public:
-      SubPassRef(GraphicsPassConfig& config, SubPassId id);
+      SubPassRef(GraphicsPassConfig& config, GraphicsSubPassId id);
 
       SubPass& operator*();
       SubPass const& operator*() const;
@@ -85,7 +86,7 @@ namespace Coil
 
     private:
       GraphicsPassConfig& _config;
-      SubPassId const _id;
+      GraphicsSubPassId const _id;
     };
 
     AttachmentRef AddAttachment(PixelFormat format);
@@ -96,12 +97,10 @@ namespace Coil
     std::vector<SubPass> subPasses;
   };
 
-  class GraphicsPass
-  {
-  public:
-  };
-
   class GraphicsDevice;
+  class GraphicsContext;
+  class GraphicsPass;
+  class GraphicsFramebuffer;
 
   class GraphicsSystem
   {
@@ -112,6 +111,8 @@ namespace Coil
   class GraphicsFrame
   {
   public:
+    virtual uint32_t GetImageIndex() const = 0;
+    virtual void Pass(GraphicsPass& pass, GraphicsFramebuffer& framebuffer, std::function<void(GraphicsSubPassId, GraphicsContext&)> const& func) = 0;
     virtual void EndFrame() = 0;
   };
 
@@ -132,18 +133,22 @@ namespace Coil
     virtual GraphicsFrame& StartFrame() = 0;
   };
 
+  class GraphicsPass
+  {
+  public:
+  };
+
   class GraphicsVertexBuffer
+  {
+  };
+
+  class GraphicsImage
   {
   };
 
   class GraphicsShader
   {
   public:
-    enum GraphicsStageFlag
-    {
-      VertexStageFlag = 1,
-      FragmentStageFlag = 2,
-    };
   };
 
   struct GraphicsShaderRoots
@@ -152,21 +157,62 @@ namespace Coil
     std::shared_ptr<ShaderStatementNode> fragment;
   };
 
+  class GraphicsPipelineLayout
+  {
+  };
+
+  struct GraphicsPipelineConfig
+  {
+    struct VertexSlot
+    {
+      uint32_t stride = 0;
+      bool perInstance = false;
+    };
+    std::vector<VertexSlot> vertexSlots;
+
+    struct VertexAttribute
+    {
+      uint32_t location;
+      uint32_t slot;
+      uint32_t offset;
+      VertexFormat format;
+    };
+    std::vector<VertexAttribute> vertexAttributes;
+  };
+
   class GraphicsPipeline
   {
   };
 
+  class GraphicsFramebuffer
+  {
+  };
+
   // Function type for recreating resources for present pass.
-  // Accepts special presenter book (which gets freed on next recreate), and pixel size of final frame.
-  using GraphicsRecreatePresentPassFunc = void(Book&, ivec2 const&);
+  // Accepts special presenter book (which gets freed on next recreate), pixel size of final frame, and number of frame images.
+  using GraphicsRecreatePresentPassFunc = void(Book&, ivec2 const&, uint32_t);
+  // Function type for recreating resources for present pass per frame.
+  // Accepts special presenter book (which gets freed on next recreate), pixel size of final frame, frame image index, and frame image.
+  using GraphicsRecreatePresentFrameFunc = void(Book&, ivec2 const&, uint32_t, GraphicsImage&);
 
   class GraphicsDevice
   {
   public:
     virtual GraphicsPool& CreatePool(Book& book, uint64_t chunkSize) = 0;
-    virtual GraphicsPresenter& CreateWindowPresenter(Book& book, Window& window, std::function<GraphicsRecreatePresentPassFunc>&& recreatePresentPass) = 0;
+    virtual GraphicsPresenter& CreateWindowPresenter(Book& book, Window& window, std::function<GraphicsRecreatePresentPassFunc>&& recreatePresentPass, std::function<GraphicsRecreatePresentFrameFunc>&& recreatePresentFrame) = 0;
     virtual GraphicsVertexBuffer& CreateVertexBuffer(GraphicsPool& pool, Buffer const& buffer) = 0;
     virtual GraphicsPass& CreatePass(Book& book, GraphicsPassConfig const& config) = 0;
     virtual GraphicsShader& CreateShader(Book& book, GraphicsShaderRoots const& exprs) = 0;
+    virtual GraphicsPipelineLayout& CreatePipelineLayout(Book& book) = 0;
+    virtual GraphicsPipeline& CreatePipeline(Book& book, GraphicsPipelineConfig const& config, GraphicsPipelineLayout& graphicsPipelineLayout, GraphicsPass& pass, GraphicsSubPassId subPassId, GraphicsShader& shader) = 0;
+    virtual GraphicsFramebuffer& CreateFramebuffer(Book& book, GraphicsPass& pass, std::span<GraphicsImage*> const& pImages, ivec2 const& size) = 0;
+  };
+
+  class GraphicsContext
+  {
+  public:
+    virtual void BindVertexBuffer(GraphicsVertexBuffer& vertexBuffer) = 0;
+    virtual void BindPipeline(GraphicsPipeline& pipeline) = 0;
+    virtual void Draw(uint32_t verticesCount) = 0;
   };
 }

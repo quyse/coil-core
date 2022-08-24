@@ -204,127 +204,6 @@ namespace Coil
     _deviceSurfaceHandlers.push_back(std::move(handler));
   }
 
-  VkFormat VulkanSystem::GetPixelFormat(PixelFormat format)
-  {
-#define T(t) PixelFormat::Type::t
-#define C(c) PixelFormat::Components::c
-#define F(f) PixelFormat::Format::f
-#define S(s) PixelFormat::Size::_##s
-#define X(x) PixelFormat::Compression::x
-#define R(r) VK_FORMAT_##r
-    switch(format.type)
-    {
-    case T(Unknown):
-      return R(UNDEFINED);
-    case T(Uncompressed):
-      switch(format.components)
-      {
-      case C(R):
-        switch(format.format)
-        {
-        case F(Untyped):
-          break;
-        case F(Uint):
-          switch(format.size)
-          {
-          case S(8bit): return R(R8_UNORM);
-          case S(16bit): return R(R16_UNORM);
-          default: break;
-          }
-          break;
-        case F(Float):
-          switch(format.size)
-          {
-          case S(16bit): return R(R16_SFLOAT);
-          case S(32bit): return R(R32_SFLOAT);
-          default: break;
-          }
-          break;
-        }
-        break;
-      case C(RG):
-        switch(format.format)
-        {
-        case F(Untyped):
-          break;
-        case F(Uint):
-          switch(format.size)
-          {
-          case S(16bit): return R(R8G8_UNORM);
-          case S(32bit): return R(R16G16_UNORM);
-          default: break;
-          }
-          break;
-        case F(Float):
-          switch(format.size)
-          {
-          case S(32bit): return R(R16G16_SFLOAT);
-          case S(64bit): return R(R32G32_SFLOAT);
-          default: break;
-          }
-          break;
-        }
-        break;
-      case C(RGB):
-        switch(format.format)
-        {
-        case F(Untyped):
-          break;
-        case F(Uint):
-          break;
-        case F(Float):
-          switch(format.size)
-          {
-          case S(32bit): return R(B10G11R11_UFLOAT_PACK32);
-          case S(96bit): return R(R32G32B32_SFLOAT);
-          default: break;
-          }
-          break;
-        }
-        break;
-      case C(RGBA):
-        switch(format.format)
-        {
-        case F(Untyped):
-          break;
-        case F(Uint):
-          switch(format.size)
-          {
-          case S(32bit): return format.srgb ? R(R8G8B8A8_SRGB) : R(R8G8B8A8_UNORM);
-          case S(64bit): return R(R16G16B16A16_UNORM);
-          default: break;
-          }
-          break;
-        case F(Float):
-          switch(format.size)
-          {
-          case S(64bit): return R(R16G16B16A16_SFLOAT);
-          case S(128bit): return R(R32G32B32A32_SFLOAT);
-          default: break;
-          }
-          break;
-        }
-        break;
-      }
-      break;
-    case T(Compressed):
-      switch(format.compression)
-      {
-      case X(Bc1): return format.srgb ? R(BC1_RGB_SRGB_BLOCK) : R(BC1_RGB_UNORM_BLOCK);
-      case X(Bc1Alpha): return format.srgb ? R(BC1_RGBA_SRGB_BLOCK) : R(BC1_RGBA_UNORM_BLOCK);
-      case X(Bc2): return format.srgb ? R(BC2_SRGB_BLOCK) : R(BC2_UNORM_BLOCK);
-      case X(Bc3): return format.srgb ? R(BC3_SRGB_BLOCK) : R(BC3_UNORM_BLOCK);
-      case X(Bc4): return R(BC4_UNORM_BLOCK);
-      case X(Bc4Signed): return R(BC4_SNORM_BLOCK);
-      case X(Bc5): return R(BC5_UNORM_BLOCK);
-      case X(Bc5Signed): return R(BC5_SNORM_BLOCK);
-      default: break;
-      }
-      break;
-    }
-    throw Exception("unsupported Vulkan pixel format");
-  }
-
   std::vector<VulkanSystem::InstanceExtensionsHandler> VulkanSystem::_instanceExtensionsHandlers;
   std::vector<VulkanSystem::DeviceSurfaceHandler> VulkanSystem::_deviceSurfaceHandlers;
 
@@ -358,7 +237,7 @@ namespace Coil
     return book.Allocate<VulkanPool>(*this, chunkSize);
   }
 
-  VulkanPresenter& VulkanDevice::CreateWindowPresenter(Book& book, Window& window, std::function<GraphicsRecreatePresentPassFunc>&& recreatePresentPass)
+  VulkanPresenter& VulkanDevice::CreateWindowPresenter(Book& book, Window& window, std::function<GraphicsRecreatePresentPassFunc>&& recreatePresentPass, std::function<GraphicsRecreatePresentFrameFunc>&& recreatePresentFrame)
   {
     // create surface for window
     VkSurfaceKHR surface = nullptr;
@@ -371,7 +250,7 @@ namespace Coil
     AllocateVulkanObject(book, _instance, surface);
 
     // create presenter
-    VulkanPresenter& presenter = book.Allocate<VulkanPresenter>(*this, book.Allocate<Book>(), surface, std::move(recreatePresentPass));
+    VulkanPresenter& presenter = book.Allocate<VulkanPresenter>(*this, book.Allocate<Book>(), surface, std::move(recreatePresentPass), std::move(recreatePresentFrame));
 
     presenter.Init();
 
@@ -431,7 +310,7 @@ namespace Coil
   VulkanPass& VulkanDevice::CreatePass(Book& book, GraphicsPassConfig const& config)
   {
     using AttachmentId = GraphicsPassConfig::AttachmentId;
-    using SubPassId = GraphicsPassConfig::SubPassId;
+    using SubPassId = GraphicsSubPassId;
 
     size_t attachmentsCount = config.attachments.size();
     size_t subPassesCount = config.subPasses.size();
@@ -737,7 +616,7 @@ namespace Coil
     VkRenderPass renderPass;
     CheckSuccess(vkCreateRenderPass(_device, &info, nullptr, &renderPass), "creating Vulkan render pass failed");
     AllocateVulkanObject(book, _device, renderPass);
-    return book.Allocate<VulkanPass>(renderPass);
+    return book.Allocate<VulkanPass>(renderPass, subPassesCount);
   }
 
   VulkanShader& VulkanDevice::CreateShader(Book& book, GraphicsShaderRoots const& roots)
@@ -757,13 +636,225 @@ namespace Coil
       VkShaderModule shaderModule;
       CheckSuccess(vkCreateShaderModule(_device, &info, nullptr, &shaderModule), "creating Vulkan shader module failed");
 
-      uint8_t stagesMask = 0;
-      if(roots.vertex) stagesMask |= GraphicsShader::VertexStageFlag;
-      if(roots.fragment) stagesMask |= GraphicsShader::FragmentStageFlag;
+      VkShaderStageFlags stagesMask = 0;
+      if(roots.vertex) stagesMask |= VK_SHADER_STAGE_VERTEX_BIT;
+      if(roots.fragment) stagesMask |= VK_SHADER_STAGE_FRAGMENT_BIT;
 
       AllocateVulkanObject(book, _device, shaderModule);
       return book.Allocate<VulkanShader>(shaderModule, stagesMask);
     }
+  }
+
+  VulkanPipelineLayout& VulkanDevice::CreatePipelineLayout(Book& book)
+  {
+    // just empty layout for now
+    VkPipelineLayoutCreateInfo info =
+    {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
+      .setLayoutCount = 0,
+      .pSetLayouts = nullptr,
+      .pushConstantRangeCount = 0,
+      .pPushConstantRanges = nullptr,
+    };
+    VkPipelineLayout pipelineLayout;
+    CheckSuccess(vkCreatePipelineLayout(_device, &info, nullptr, &pipelineLayout), "creating Vulkan pipeline layout failed");
+    AllocateVulkanObject(book, _device, pipelineLayout);
+    return book.Allocate<VulkanPipelineLayout>(pipelineLayout);
+  }
+
+  VulkanPipeline& VulkanDevice::CreatePipeline(Book& book, GraphicsPipelineConfig const& config, GraphicsPipelineLayout& graphicsPipelineLayout, GraphicsPass& graphicsPass, GraphicsSubPassId subPassId, GraphicsShader& graphicsShader)
+  {
+    VulkanPipelineLayout& pipelineLayout = static_cast<VulkanPipelineLayout&>(graphicsPipelineLayout);
+    VulkanPass& pass = static_cast<VulkanPass&>(graphicsPass);
+    VulkanShader& shader = static_cast<VulkanShader&>(graphicsShader);
+
+    std::vector<VkPipelineShaderStageCreateInfo> stagesInfos;
+    auto addShaderStage = [&](VkShaderStageFlagBits flag, char const* entryPoint)
+    {
+      if(shader._stagesMask & flag)
+      {
+        stagesInfos.push_back(
+        {
+          .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+          .pNext = nullptr,
+          .flags = 0,
+          .stage = flag,
+          .module = shader._shaderModule,
+          .pName = entryPoint,
+          .pSpecializationInfo = nullptr,
+        });
+      }
+    };
+    addShaderStage(VK_SHADER_STAGE_VERTEX_BIT, "mainVertex");
+    addShaderStage(VK_SHADER_STAGE_FRAGMENT_BIT, "mainFragment");
+
+    std::vector<VkVertexInputBindingDescription> vertexBindingDescriptions;
+    for(size_t i = 0; i < config.vertexSlots.size(); ++i)
+    {
+      GraphicsPipelineConfig::VertexSlot const& slot = config.vertexSlots[i];
+      vertexBindingDescriptions.push_back(
+      {
+        .binding = (uint32_t)i,
+        .stride = slot.stride,
+        .inputRate = slot.perInstance ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX,
+      });
+    }
+
+    std::vector<VkVertexInputAttributeDescription> vertexAttributeDescriptions;
+    for(size_t i = 0; i < config.vertexAttributes.size(); ++i)
+    {
+      GraphicsPipelineConfig::VertexAttribute const& attribute = config.vertexAttributes[i];
+      vertexAttributeDescriptions.push_back(
+      {
+        .location = attribute.location,
+        .binding = attribute.slot,
+        .format = VulkanSystem::GetVertexFormat(attribute.format),
+        .offset = attribute.offset,
+      });
+    }
+
+    VkPipelineVertexInputStateCreateInfo vertexInputStateInfo =
+    {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
+      .vertexBindingDescriptionCount = (uint32_t)vertexBindingDescriptions.size(),
+      .pVertexBindingDescriptions = vertexBindingDescriptions.data(),
+      .vertexAttributeDescriptionCount = (uint32_t)vertexAttributeDescriptions.size(),
+      .pVertexAttributeDescriptions = vertexAttributeDescriptions.data(),
+    };
+
+    VkPipelineInputAssemblyStateCreateInfo inputAssemblyState =
+    {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
+      .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+      .primitiveRestartEnable = VK_FALSE,
+    };
+
+    VkPipelineViewportStateCreateInfo viewportStateInfo =
+    {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
+      .viewportCount = 1,
+      .pViewports = nullptr, // dynamic
+      .scissorCount = 1,
+      .pScissors = nullptr, // dynamic
+    };
+
+    VkPipelineRasterizationStateCreateInfo rasterizationState =
+    {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
+      .depthClampEnable = VK_FALSE,
+      .rasterizerDiscardEnable = VK_FALSE,
+      .polygonMode = VK_POLYGON_MODE_FILL,
+      .cullMode = VK_CULL_MODE_BACK_BIT,
+      .frontFace = VK_FRONT_FACE_CLOCKWISE,
+      .depthBiasEnable = VK_FALSE,
+      .depthBiasConstantFactor = 0,
+      .depthBiasClamp = 0,
+      .depthBiasSlopeFactor = 0,
+      .lineWidth = 1,
+    };
+
+    VkPipelineColorBlendAttachmentState colorBlendAttachmentState =
+    {
+      .blendEnable = VK_TRUE,
+      .srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
+      .dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+      .colorBlendOp = VK_BLEND_OP_ADD,
+      .srcAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
+      .dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
+      .alphaBlendOp = VK_BLEND_OP_ADD,
+      .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+    };
+
+    VkPipelineColorBlendStateCreateInfo colorBlendStateInfo =
+    {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
+      .logicOpEnable = VK_FALSE,
+      .logicOp = VK_LOGIC_OP_CLEAR,
+      .attachmentCount = 1,
+      .pAttachments = &colorBlendAttachmentState,
+      .blendConstants = { 0 },
+    };
+
+    VkDynamicState dynamicStates[] =
+    {
+      VK_DYNAMIC_STATE_VIEWPORT,
+      VK_DYNAMIC_STATE_SCISSOR,
+    };
+    VkPipelineDynamicStateCreateInfo dynamicStateInfo =
+    {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
+      .dynamicStateCount = sizeof(dynamicStates) / sizeof(dynamicStates[0]),
+      .pDynamicStates = dynamicStates,
+    };
+
+    VkGraphicsPipelineCreateInfo info =
+    {
+      .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
+      .stageCount = (uint32_t)stagesInfos.size(),
+      .pStages = stagesInfos.data(),
+      .pVertexInputState = &vertexInputStateInfo,
+      .pInputAssemblyState = &inputAssemblyState,
+      .pTessellationState = nullptr,
+      .pViewportState = &viewportStateInfo,
+      .pRasterizationState = &rasterizationState,
+      .pMultisampleState = nullptr,
+      .pDepthStencilState = nullptr,
+      .pColorBlendState = &colorBlendStateInfo,
+      .pDynamicState = &dynamicStateInfo,
+      .layout = pipelineLayout._pipelineLayout,
+      .renderPass = pass._renderPass,
+      .subpass = 0,
+      .basePipelineHandle = nullptr,
+      .basePipelineIndex = -1,
+    };
+
+    VkPipeline pipeline;
+    CheckSuccess(vkCreateGraphicsPipelines(_device, nullptr, 1, &info, nullptr, &pipeline), "creating Vulkan graphics pipeline failed");
+    AllocateVulkanObject(book, _device, pipeline);
+    return book.Allocate<VulkanPipeline>(pipeline);
+  }
+
+  VulkanFramebuffer& VulkanDevice::CreateFramebuffer(Book& book, GraphicsPass& graphicsPass, std::span<GraphicsImage*> const& pImages, ivec2 const& size)
+  {
+    VulkanPass& pass = static_cast<VulkanPass&>(graphicsPass);
+
+    std::vector<VkImageView> attachments;
+    attachments.reserve(pImages.size());
+    for(auto const& pImage : pImages)
+      attachments.push_back(static_cast<VulkanImage&>(*pImage)._imageView);
+
+    VkFramebufferCreateInfo info =
+    {
+      .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
+      .renderPass = pass._renderPass,
+      .attachmentCount = (uint32_t)attachments.size(),
+      .pAttachments = attachments.data(),
+      .width = (uint32_t)size.x,
+      .height = (uint32_t)size.y,
+      .layers = 1,
+    };
+    VkFramebuffer framebuffer;
+    CheckSuccess(vkCreateFramebuffer(_device,  &info, nullptr, &framebuffer), "creating Vulkan framebuffer failed");
+    AllocateVulkanObject(book, _device, framebuffer);
+    return book.Allocate<VulkanFramebuffer>(framebuffer, size);
   }
 
   std::pair<VkDeviceMemory, VkDeviceSize> VulkanDevice::AllocateMemory(VulkanPool& pool, VkMemoryRequirements const& memoryRequirements, VkMemoryPropertyFlags requireFlags)
@@ -808,16 +899,41 @@ namespace Coil
     return semaphore;
   }
 
+  VulkanContext::VulkanContext(VkCommandBuffer commandBuffer)
+  : _commandBuffer(commandBuffer) {}
+
+  void VulkanContext::BindVertexBuffer(GraphicsVertexBuffer& graphicsVertexBuffer)
+  {
+    VulkanVertexBuffer& vertexBuffer = static_cast<VulkanVertexBuffer&>(graphicsVertexBuffer);
+
+    VkDeviceSize offset = 0;
+    vkCmdBindVertexBuffers(_commandBuffer, 0, 1, &vertexBuffer._buffer, &offset);
+  }
+
+  void VulkanContext::BindPipeline(GraphicsPipeline& graphicsPipeline)
+  {
+    VulkanPipeline& pipeline = static_cast<VulkanPipeline&>(graphicsPipeline);
+
+    vkCmdBindPipeline(_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline._pipeline);
+  }
+
+  void VulkanContext::Draw(uint32_t verticesCount)
+  {
+    vkCmdDraw(_commandBuffer, verticesCount, 1, 0, 0);
+  }
+
   VulkanPresenter::VulkanPresenter(
     VulkanDevice& device,
     Book& book,
     VkSurfaceKHR surface,
-    std::function<GraphicsRecreatePresentPassFunc>&& recreatePresentPass
+    std::function<GraphicsRecreatePresentPassFunc>&& recreatePresentPass,
+    std::function<GraphicsRecreatePresentFrameFunc>&& recreatePresentFrame
     ) :
   _device(device),
   _book(book),
   _surface(surface),
-  _recreatePresentPass(std::move(recreatePresentPass))
+  _recreatePresentPass(std::move(recreatePresentPass)),
+  _recreatePresentFrame(std::move(recreatePresentFrame))
   {}
 
   void VulkanPresenter::Init()
@@ -864,8 +980,34 @@ namespace Coil
       uint32_t imagesCount;
       CheckSuccess(vkGetSwapchainImagesKHR(_device._device, _swapchain, &imagesCount, nullptr), "getting Vulkan swapchain images failed");
 
-      _images.assign(imagesCount, nullptr);
-      CheckSuccess(vkGetSwapchainImagesKHR(_device._device, _swapchain, &imagesCount, _images.data()), "getting Vulkan swapchain images failed");
+      std::vector<VkImage> images(imagesCount, nullptr);
+      CheckSuccess(vkGetSwapchainImagesKHR(_device._device, _swapchain, &imagesCount, images.data()), "getting Vulkan swapchain images failed");
+
+      for(uint32_t i = 0; i < imagesCount; ++i)
+      {
+        VkImageViewCreateInfo info =
+        {
+          .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+          .pNext = nullptr,
+          .flags = 0,
+          .image = images[i],
+          .viewType = VK_IMAGE_VIEW_TYPE_2D,
+          .format = VK_FORMAT_R8G8B8A8_SRGB,
+          .components = {},
+          .subresourceRange =
+          {
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .baseMipLevel = 0,
+            .levelCount = 1,
+            .baseArrayLayer = 0,
+            .layerCount = 1,
+          },
+        };
+        VkImageView imageView;
+        CheckSuccess(vkCreateImageView(_device._device, &info, nullptr, &imageView), "creating Vulkan image view failed");
+        AllocateVulkanObject(_book, _device._device, imageView);
+        _images.push_back(&_book.Allocate<VulkanImage>(images[i], imageView));
+      }
     }
 
     // create a few frames
@@ -876,6 +1018,12 @@ namespace Coil
       _frames.emplace_back(_device, *this);
       _frames[i].Init(_book, commandBuffers[i]);
     }
+
+    // recreate resources linked to images
+    ivec2 size = { (int32_t)extent.width, (int32_t)extent.height };
+    _recreatePresentPass(_book, size, _images.size());
+    for(size_t i = 0; i < _images.size(); ++i)
+      _recreatePresentFrame(_book, size, i, *_images[i]);
 
     _book.Allocate<VulkanDeviceIdle>(_device._device);
   }
@@ -960,7 +1108,7 @@ namespace Coil
     _semaphoreFrameFinished = _device.CreateSemaphore(book);
   }
 
-  void VulkanFrame::Begin(std::vector<VkImage> const& images, bool& isSubOptimal)
+  void VulkanFrame::Begin(std::vector<VulkanImage*> const& pImages, bool& isSubOptimal)
   {
     // wait until previous use of the frame is done
     CheckSuccess(vkWaitForFences(_device._device, 1, &_fenceFrameFinished, VK_TRUE, std::numeric_limits<uint64_t>::max()), "waiting for Vulkan frame finished failed");
@@ -970,7 +1118,7 @@ namespace Coil
     // acquire image
     if(CheckSuccess<VK_SUBOPTIMAL_KHR>(vkAcquireNextImageKHR(_device._device, _presenter._swapchain, std::numeric_limits<uint64_t>::max(), _semaphoreImageAvailable, nullptr, &_imageIndex), "acquiring Vulkan next image failed") == VK_SUBOPTIMAL_KHR)
       isSubOptimal = true;
-    _image = images[_imageIndex];
+    _pImage = pImages[_imageIndex];
 
     // start command buffer
     {
@@ -983,6 +1131,72 @@ namespace Coil
       };
       CheckSuccess(vkBeginCommandBuffer(_commandBuffer, &info), "beginning Vulkan command buffer failed");
     }
+  }
+
+  uint32_t VulkanFrame::GetImageIndex() const
+  {
+    return _imageIndex;
+  }
+
+  void VulkanFrame::Pass(GraphicsPass& graphicsPass, GraphicsFramebuffer& graphicsFramebuffer, std::function<void(GraphicsSubPassId, GraphicsContext&)> const& func)
+  {
+    VulkanPass& pass = static_cast<VulkanPass&>(graphicsPass);
+    VulkanFramebuffer& framebuffer = static_cast<VulkanFramebuffer&>(graphicsFramebuffer);
+
+    // start render pass
+    {
+      VkClearValue clearValues[] =
+      {
+        { .color = { .float32 = { 0, 0, 0, 0 } } },
+      };
+      VkRenderPassBeginInfo info =
+      {
+        .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+        .pNext = nullptr,
+        .renderPass = pass._renderPass,
+        .framebuffer = framebuffer._framebuffer,
+        .renderArea =
+        {
+          .offset = { 0, 0 },
+          .extent = { (uint32_t)framebuffer._size.x, (uint32_t)framebuffer._size.y },
+        },
+        .clearValueCount = 1,
+        .pClearValues = clearValues,
+      };
+      vkCmdBeginRenderPass(_commandBuffer, &info, VK_SUBPASS_CONTENTS_INLINE);
+    }
+
+    // set viewport & scissor
+    {
+      VkViewport viewport =
+      {
+        .x = 0,
+        .y = 0,
+        .width = (float)framebuffer._size.x,
+        .height = (float)framebuffer._size.y,
+        .minDepth = 0,
+        .maxDepth = 1,
+      };
+      vkCmdSetViewport(_commandBuffer, 0, 1, &viewport);
+      VkRect2D scissor =
+      {
+        .offset = { 0, 0 },
+        .extent = { (uint32_t)framebuffer._size.x, (uint32_t)framebuffer._size.y },
+      };
+      vkCmdSetScissor(_commandBuffer, 0, 1, &scissor);
+    }
+
+    // perform subpasses
+    VulkanContext context(_commandBuffer);
+    for(uint32_t i = 0; i < pass._subPassesCount; ++i)
+    {
+      if(i > 0)
+        vkCmdNextSubpass(_commandBuffer, VK_SUBPASS_CONTENTS_INLINE);
+      func(i, context);
+    }
+
+    // end render pass
+    vkCmdEndRenderPass(_commandBuffer);
   }
 
   void VulkanFrame::EndFrame()
@@ -999,7 +1213,7 @@ namespace Coil
         .newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
         .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
         .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-        .image = _image,
+        .image = _pImage->_image,
         .subresourceRange =
         {
           .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
@@ -1057,8 +1271,8 @@ namespace Coil
     }
   }
 
-  VulkanPass::VulkanPass(VkRenderPass renderPass)
-  : _renderPass(renderPass) {}
+  VulkanPass::VulkanPass(VkRenderPass renderPass, uint32_t subPassesCount)
+  : _renderPass(renderPass), _subPassesCount(subPassesCount) {}
 
   VulkanDeviceIdle::VulkanDeviceIdle(VkDevice device)
   : _device(device) {}
@@ -1099,6 +1313,18 @@ namespace Coil
   VulkanVertexBuffer::VulkanVertexBuffer(VkBuffer buffer)
   : _buffer(buffer) {}
 
-  VulkanShader::VulkanShader(VkShaderModule shaderModule, uint8_t stagesMask)
-  : shaderModule(shaderModule), stagesMask(stagesMask) {}
+  VulkanImage::VulkanImage(VkImage image, VkImageView imageView)
+  : _image(image), _imageView(imageView) {}
+
+  VulkanShader::VulkanShader(VkShaderModule shaderModule, VkShaderStageFlags stagesMask)
+  : _shaderModule(shaderModule), _stagesMask(stagesMask) {}
+
+  VulkanPipelineLayout::VulkanPipelineLayout(VkPipelineLayout pipelineLayout)
+  : _pipelineLayout(pipelineLayout) {}
+
+  VulkanPipeline::VulkanPipeline(VkPipeline pipeline)
+  : _pipeline(pipeline) {}
+
+  VulkanFramebuffer::VulkanFramebuffer(VkFramebuffer framebuffer, ivec2 const& size)
+  : _framebuffer(framebuffer), _size(size) {}
 }
