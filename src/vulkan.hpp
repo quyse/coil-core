@@ -124,9 +124,8 @@ namespace Coil
   {
   public:
     VulkanDevice(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device, uint32_t graphicsQueueFamilyIndex);
-    ~VulkanDevice();
 
-    void Init();
+    void Init(Book& book);
 
     VulkanPool& CreatePool(Book& book, uint64_t chunkSize) override;
     VulkanPresenter& CreateWindowPresenter(Book& book, Window& window, std::function<GraphicsRecreatePresentPassFunc>&& recreatePresentPass) override;
@@ -156,7 +155,6 @@ namespace Coil
   {
   public:
     VulkanSystem(VkInstance instance);
-    ~VulkanSystem();
 
     static VulkanSystem& Init(Book& book, Window& window, char const* appName, uint32_t appVersion);
 

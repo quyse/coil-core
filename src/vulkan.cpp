@@ -53,11 +53,6 @@ namespace Coil
   VulkanSystem::VulkanSystem(VkInstance instance)
   : _instance(instance) {}
 
-  VulkanSystem::~VulkanSystem()
-  {
-    vkDestroyInstance(_instance, nullptr);
-  }
-
   VulkanSystem& VulkanSystem::Init(Book& book, Window& window, char const* appName, uint32_t appVersion)
   {
     // get instance version
@@ -100,6 +95,7 @@ namespace Coil
       };
 
       CheckSuccess(vkCreateInstance(&info, nullptr, &instance), "creating Vulkan instance failed");
+      AllocateVulkanObject(book, instance);
     }
 
     return book.Allocate<VulkanSystem>(instance);
@@ -190,10 +186,11 @@ namespace Coil
       };
 
       CheckSuccess(vkCreateDevice(physicalDevice, &info, nullptr, &device), "creating Vulkan device failed");
+      AllocateVulkanObject(book, device);
     }
 
     VulkanDevice& deviceObj = book.Allocate<VulkanDevice>(_instance, physicalDevice, device, graphicsQueueFamilyIndex);
-    deviceObj.Init();
+    deviceObj.Init(book);
     return deviceObj;
   }
 
@@ -337,14 +334,7 @@ namespace Coil
     vkGetDeviceQueue(_device, _graphicsQueueFamilyIndex, 0, &_graphicsQueue);
   }
 
-  VulkanDevice::~VulkanDevice()
-  {
-    if(_commandPool)
-      vkDestroyCommandPool(_device, _commandPool, nullptr);
-    vkDestroyDevice(_device, nullptr);
-  }
-
-  void VulkanDevice::Init()
+  void VulkanDevice::Init(Book& book)
   {
     // create command pool
     {
@@ -356,6 +346,7 @@ namespace Coil
         .queueFamilyIndex = _graphicsQueueFamilyIndex,
       };
       CheckSuccess(vkCreateCommandPool(_device, &info, nullptr, &_commandPool), "creating Vulkan command pool failed");
+      AllocateVulkanObject(book, _device, _commandPool);
     }
 
     // get memory properties
