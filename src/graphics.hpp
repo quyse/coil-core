@@ -189,17 +189,17 @@ namespace Coil
   };
 
   // Function type for recreating resources for present pass.
-  // Accepts special presenter book (which gets freed on next recreate), pixel size of final frame, and number of frame images.
-  using GraphicsRecreatePresentPassFunc = void(Book&, ivec2 const&, uint32_t);
-  // Function type for recreating resources for present pass per frame.
-  // Accepts special presenter book (which gets freed on next recreate), pixel size of final frame, frame image index, and frame image.
-  using GraphicsRecreatePresentFrameFunc = void(Book&, ivec2 const&, uint32_t, GraphicsImage&);
+  // Accepts special presenter book (which gets freed on next recreate), pixel size of final image, and number of images.
+  using GraphicsRecreatePresentFunc = void(Book&, ivec2 const&, uint32_t);
+  // Function type for recreating resources for present pass per image.
+  // Accepts special presenter book (which gets freed on next recreate), pixel size of final image, image index, and image.
+  using GraphicsRecreatePresentPerImageFunc = void(Book&, ivec2 const&, uint32_t, GraphicsImage&);
 
   class GraphicsDevice
   {
   public:
     virtual GraphicsPool& CreatePool(Book& book, uint64_t chunkSize) = 0;
-    virtual GraphicsPresenter& CreateWindowPresenter(Book& book, Window& window, std::function<GraphicsRecreatePresentPassFunc>&& recreatePresentPass, std::function<GraphicsRecreatePresentFrameFunc>&& recreatePresentFrame) = 0;
+    virtual GraphicsPresenter& CreateWindowPresenter(Book& book, Window& window, std::function<GraphicsRecreatePresentFunc>&& recreatePresent, std::function<GraphicsRecreatePresentPerImageFunc>&& recreatePresentPerImage) = 0;
     virtual GraphicsVertexBuffer& CreateVertexBuffer(GraphicsPool& pool, Buffer const& buffer) = 0;
     virtual GraphicsPass& CreatePass(Book& book, GraphicsPassConfig const& config) = 0;
     virtual GraphicsShader& CreateShader(Book& book, GraphicsShaderRoots const& exprs) = 0;

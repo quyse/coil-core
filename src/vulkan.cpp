@@ -240,7 +240,7 @@ namespace Coil
     return book.Allocate<VulkanPool>(*this, chunkSize);
   }
 
-  VulkanPresenter& VulkanDevice::CreateWindowPresenter(Book& book, Window& window, std::function<GraphicsRecreatePresentPassFunc>&& recreatePresentPass, std::function<GraphicsRecreatePresentFrameFunc>&& recreatePresentFrame)
+  VulkanPresenter& VulkanDevice::CreateWindowPresenter(Book& book, Window& window, std::function<GraphicsRecreatePresentFunc>&& recreatePresent, std::function<GraphicsRecreatePresentPerImageFunc>&& recreatePresentPerImage)
   {
     // create surface for window
     VkSurfaceKHR surface = nullptr;
@@ -253,7 +253,7 @@ namespace Coil
     AllocateVulkanObject(book, _instance, surface);
 
     // create presenter
-    VulkanPresenter& presenter = book.Allocate<VulkanPresenter>(*this, book.Allocate<Book>(), surface, std::move(recreatePresentPass), std::move(recreatePresentFrame));
+    VulkanPresenter& presenter = book.Allocate<VulkanPresenter>(*this, book.Allocate<Book>(), surface, std::move(recreatePresent), std::move(recreatePresentPerImage));
 
     presenter.Init();
 
@@ -929,14 +929,14 @@ namespace Coil
     VulkanDevice& device,
     Book& book,
     VkSurfaceKHR surface,
-    std::function<GraphicsRecreatePresentPassFunc>&& recreatePresentPass,
-    std::function<GraphicsRecreatePresentFrameFunc>&& recreatePresentFrame
+    std::function<GraphicsRecreatePresentFunc>&& recreatePresent,
+    std::function<GraphicsRecreatePresentPerImageFunc>&& recreatePresentPerImage
     ) :
   _device(device),
   _book(book),
   _surface(surface),
-  _recreatePresentPass(std::move(recreatePresentPass)),
-  _recreatePresentFrame(std::move(recreatePresentFrame))
+  _recreatePresent(std::move(recreatePresent)),
+  _recreatePresentPerImage(std::move(recreatePresentPerImage))
   {}
 
   void VulkanPresenter::Init()
@@ -1024,9 +1024,9 @@ namespace Coil
 
     // recreate resources linked to images
     ivec2 size = { (int32_t)extent.width, (int32_t)extent.height };
-    _recreatePresentPass(_book, size, _images.size());
+    _recreatePresent(_book, size, _images.size());
     for(size_t i = 0; i < _images.size(); ++i)
-      _recreatePresentFrame(_book, size, i, *_images[i]);
+      _recreatePresentPerImage(_book, size, i, *_images[i]);
 
     _book.Allocate<VulkanDeviceIdle>(_device._device);
   }
