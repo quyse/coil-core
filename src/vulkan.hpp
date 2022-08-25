@@ -208,6 +208,7 @@ namespace Coil
     uint32_t _graphicsQueueFamilyIndex;
     VkQueue _graphicsQueue;
     VkCommandPool _commandPool = nullptr;
+    VkPhysicalDeviceProperties _properties;
     VkPhysicalDeviceMemoryProperties _memoryProperties;
 
     friend class VulkanPresenter;

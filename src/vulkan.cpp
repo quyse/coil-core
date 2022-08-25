@@ -215,6 +215,9 @@ namespace Coil
 
   void VulkanDevice::Init(Book& book)
   {
+    // query physical device properties
+    vkGetPhysicalDeviceProperties(_physicalDevice, &_properties);
+
     // create command pool
     {
       VkCommandPoolCreateInfo info =
@@ -1073,6 +1076,11 @@ namespace Coil
     }
 
     memoryType.offset = offset + size;
+    // round up offset if memory is not host coherent
+    if(!(_device._memoryProperties.memoryTypes[memoryTypeIndex].propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT))
+    {
+      memoryType.offset = (memoryType.offset + _device._properties.limits.nonCoherentAtomSize - 1) & ~(_device._properties.limits.nonCoherentAtomSize - 1);
+    }
 
     return { memoryType.memory, offset };
   }
