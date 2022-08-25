@@ -87,7 +87,7 @@ namespace Coil
           EmitOp(_codeModule, spv::Op::OpExecutionMode, [&]()
           {
             Emit(_codeModule, function.second.resultId);
-            Emit(_codeModule, spv::ExecutionMode::OriginUpperLeft);
+            Emit(_codeModule, spv::ExecutionMode::OriginUpperLeft); // upper-left is actually required by Vulkan spec
           });
         }
       }
