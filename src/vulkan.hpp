@@ -34,14 +34,13 @@ namespace Coil
   class VulkanFrame : public GraphicsFrame
   {
   public:
-    VulkanFrame(VulkanDevice& device, VulkanPresenter& presenter);
+    VulkanFrame(VulkanDevice& device, VulkanPresenter& presenter, Book& book, VkCommandBuffer commandBuffer);
 
     uint32_t GetImageIndex() const override;
     void Pass(GraphicsPass& pass, GraphicsFramebuffer& framebuffer, std::function<void(GraphicsSubPassId, GraphicsContext&)> const& func) override;
     void EndFrame() override;
 
   private:
-    void Init(Book& book, VkCommandBuffer commandBuffer);
     void Begin(std::vector<VulkanImage*> const& pImages, bool& isSubOptimal);
 
     VulkanDevice& _device;
@@ -184,9 +183,7 @@ namespace Coil
   class VulkanDevice : public GraphicsDevice
   {
   public:
-    VulkanDevice(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device, uint32_t graphicsQueueFamilyIndex);
-
-    void Init(Book& book);
+    VulkanDevice(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device, uint32_t graphicsQueueFamilyIndex, Book& book);
 
     VulkanPool& CreatePool(Book& book, uint64_t chunkSize) override;
     VulkanPresenter& CreateWindowPresenter(Book& book, Window& window, std::function<GraphicsRecreatePresentFunc>&& recreatePresent, std::function<GraphicsRecreatePresentPerImageFunc>&& recreatePresentPerImage) override;
@@ -234,7 +231,7 @@ namespace Coil
   public:
     VulkanSystem(VkInstance instance);
 
-    static VulkanSystem& Init(Book& book, Window& window, char const* appName, uint32_t appVersion);
+    static VulkanSystem& Create(Book& book, Window& window, char const* appName, uint32_t appVersion);
 
     VulkanDevice& CreateDefaultDevice(Book& book) override;
 

@@ -45,7 +45,6 @@ namespace
 
     return result;
   }
-
 }
 
 namespace Coil
@@ -53,7 +52,7 @@ namespace Coil
   VulkanSystem::VulkanSystem(VkInstance instance)
   : _instance(instance) {}
 
-  VulkanSystem& VulkanSystem::Init(Book& book, Window& window, char const* appName, uint32_t appVersion)
+  VulkanSystem& VulkanSystem::Create(Book& book, Window& window, char const* appName, uint32_t appVersion)
   {
     // get instance version
     {
@@ -189,9 +188,7 @@ namespace Coil
       AllocateVulkanObject(book, device);
     }
 
-    VulkanDevice& deviceObj = book.Allocate<VulkanDevice>(_instance, physicalDevice, device, graphicsQueueFamilyIndex);
-    deviceObj.Init(book);
-    return deviceObj;
+    return book.Allocate<VulkanDevice>(_instance, physicalDevice, device, graphicsQueueFamilyIndex, book);
   }
 
   void VulkanSystem::RegisterInstanceExtensionsHandler(InstanceExtensionsHandler&& handler)
@@ -207,14 +204,11 @@ namespace Coil
   std::vector<VulkanSystem::InstanceExtensionsHandler> VulkanSystem::_instanceExtensionsHandlers;
   std::vector<VulkanSystem::DeviceSurfaceHandler> VulkanSystem::_deviceSurfaceHandlers;
 
-  VulkanDevice::VulkanDevice(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device, uint32_t graphicsQueueFamilyIndex)
+  VulkanDevice::VulkanDevice(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device, uint32_t graphicsQueueFamilyIndex, Book& book)
   : _instance(instance), _physicalDevice(physicalDevice), _device(device), _graphicsQueueFamilyIndex(graphicsQueueFamilyIndex)
   {
     vkGetDeviceQueue(_device, _graphicsQueueFamilyIndex, 0, &_graphicsQueue);
-  }
 
-  void VulkanDevice::Init(Book& book)
-  {
     // query physical device properties
     vkGetPhysicalDeviceProperties(_physicalDevice, &_properties);
 
@@ -1018,8 +1012,7 @@ namespace Coil
     _frames.reserve(_framesCount);
     for(size_t i = 0; i < _framesCount; ++i)
     {
-      _frames.emplace_back(_device, *this);
-      _frames[i].Init(_book, commandBuffers[i]);
+      _frames.emplace_back(_device, *this, _book, commandBuffers[i]);
     }
 
     // recreate resources linked to images
@@ -1105,12 +1098,9 @@ namespace Coil
     return frame;
   }
 
-  VulkanFrame::VulkanFrame(VulkanDevice& device, VulkanPresenter& presenter)
-  : _device(device), _presenter(presenter) {}
-
-  void VulkanFrame::Init(Book& book, VkCommandBuffer commandBuffer)
+  VulkanFrame::VulkanFrame(VulkanDevice& device, VulkanPresenter& presenter, Book& book, VkCommandBuffer commandBuffer)
+  : _device(device), _presenter(presenter), _commandBuffer(commandBuffer)
   {
-    _commandBuffer = commandBuffer;
     _fenceFrameFinished = _device.CreateFence(book, true);
     _semaphoreImageAvailable = _device.CreateSemaphore(book);
     _semaphoreFrameFinished = _device.CreateSemaphore(book);
