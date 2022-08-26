@@ -247,7 +247,7 @@ namespace Coil
     AllocateVulkanObject(book, _instance, surface);
 
     // create presenter
-    VulkanPresenter& presenter = book.Allocate<VulkanPresenter>(*this, book.Allocate<Book>(), surface, std::move(recreatePresent), std::move(recreatePresentPerImage));
+    VulkanPresenter& presenter = book.Allocate<VulkanPresenter>(*this, book, surface, std::move(recreatePresent), std::move(recreatePresentPerImage));
 
     presenter.Init();
 
@@ -927,11 +927,19 @@ namespace Coil
     std::function<GraphicsRecreatePresentPerImageFunc>&& recreatePresentPerImage
     ) :
   _device(device),
-  _book(book),
+  _book(book.Allocate<Book>()),
   _surface(surface),
   _recreatePresent(std::move(recreatePresent)),
   _recreatePresentPerImage(std::move(recreatePresentPerImage))
-  {}
+  {
+    // create a few frames
+    std::vector<VkCommandBuffer> commandBuffers = VulkanCommandBuffers::Create(book, _device._device, _device._commandPool, _framesCount, true);
+    _frames.reserve(_framesCount);
+    for(size_t i = 0; i < _framesCount; ++i)
+    {
+      _frames.emplace_back(_device, *this, book, commandBuffers[i]);
+    }
+  }
 
   void VulkanPresenter::Init()
   {
@@ -1007,13 +1015,6 @@ namespace Coil
       }
     }
 
-    // create a few frames
-    std::vector<VkCommandBuffer> commandBuffers = VulkanCommandBuffers::Create(_book, _device._device, _device._commandPool, _framesCount, true);
-    _frames.reserve(_framesCount);
-    for(size_t i = 0; i < _framesCount; ++i)
-    {
-      _frames.emplace_back(_device, *this, _book, commandBuffers[i]);
-    }
 
     // recreate resources linked to images
     ivec2 size = { (int32_t)extent.width, (int32_t)extent.height };
@@ -1029,7 +1030,6 @@ namespace Coil
     _book.Free();
     _swapchain = nullptr;
     _images.clear();
-    _frames.clear();
   }
 
   void VulkanPresenter::Resize(ivec2 const& size)
