@@ -3,6 +3,7 @@
 #include "math.hpp"
 #include <array>
 #include <memory>
+#include <type_traits>
 
 namespace Coil
 {
@@ -646,6 +647,10 @@ namespace Coil
 
     return type;
   };
+
+  // identity tranform for struct
+  template <template <template <typename> typename> typename T>
+  using ShaderDataIdentityStruct = T<std::type_identity_t>;
 
   // struct establishing slot for uniform buffer
   // must be used with static storage duration

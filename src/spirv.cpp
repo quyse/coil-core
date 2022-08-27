@@ -25,11 +25,12 @@ namespace Coil
       _glslInstSetResultId = _nextResultId++;
     }
 
-    void TraverseEntryPoint(std::string&& name, spv::ExecutionModel executionModel, ShaderStatementNode* node)
+    void TraverseEntryPoint(std::string&& name, SpirvStageFlag stage, spv::ExecutionModel executionModel, ShaderStatementNode* node)
     {
       SpirvCode code;
       Function function =
       {
+        .stage = stage,
         .executionModel = executionModel,
         .resultId = _nextResultId++,
       };
@@ -37,7 +38,7 @@ namespace Coil
       _functions.insert({ std::move(name), std::move(function) });
     }
 
-    SpirvCode Finalize()
+    SpirvModule Finalize()
     {
       // emit capabilities
       for(spv::Capability capability : _capabilities)
@@ -143,12 +144,36 @@ namespace Coil
       // fix up result id upper bound
       _codeModule[_upperBoundResultIdOffset] = _nextResultId;
 
-      return std::move(_codeModule);
+      // prepare module
+      SpirvModule module =
+      {
+        .code = std::move(_codeModule),
+      };
+
+      // generate descriptor layout
+      if(!_bindings.empty())
+      {
+        module.descriptorSetLayouts.resize(_bindings.rbegin()->first + 1);
+        for(auto const& descriptorSetIt : _bindings)
+        {
+          SpirvDescriptorSetLayout& descriptorSetLayout = module.descriptorSetLayouts[descriptorSetIt.first];
+          if(!descriptorSetIt.second.empty())
+          {
+            descriptorSetLayout.bindings.resize(descriptorSetIt.second.rbegin()->first + 1);
+
+            for(auto const& descriptorBindingIt : descriptorSetIt.second)
+              descriptorSetLayout.bindings[descriptorBindingIt.first] = descriptorBindingIt.second;
+          }
+        }
+      }
+
+      return std::move(module);
     }
 
   private:
     struct Function
     {
+      SpirvStageFlag stage;
       spv::ExecutionModel executionModel;
       ResultId resultId;
       std::map<ShaderExpressionNode*, ResultId> expressionResultIds;
@@ -345,7 +370,8 @@ namespace Coil
           ShaderUniformNode* uniformNode = static_cast<ShaderUniformNode*>(node);
           ResultId typeResultId = TraverseType(uniformNode->dataType);
           ResultId ptrTypeResultId = TraversePointerType(uniformNode->dataType, spv::StorageClass::Uniform);
-          ResultId uniformBufferResultId = TraverseUniformBuffer(uniformNode->uniformBufferNode.get());
+          ShaderUniformBufferNode* uniformBufferNode = uniformNode->uniformBufferNode.get();
+          ResultId uniformBufferResultId = TraverseUniformBuffer(uniformBufferNode);
           ResultId indexResultId = TraverseConst(uniformNode->index);
           ResultId ptrResultId;
           EmitOp(function.code, spv::Op::OpAccessChain, [&]()
@@ -361,6 +387,8 @@ namespace Coil
             resultId = EmitResultId(function.code);
             Emit(function.code, ptrResultId);
           });
+
+          _bindings[uniformBufferNode->slotSet][uniformBufferNode->slot].stageFlags |= (uint32_t)function.stage;
         }
         break;
       default:
@@ -865,6 +893,16 @@ namespace Coil
       });
 
       _uniformBufferResultIds.insert({ node, resultId });
+
+      SpirvDescriptorSetLayoutBinding& binding = _bindings[node->slotSet][node->slot];
+      if(binding.descriptorType != SpirvDescriptorType::UniformBuffer)
+      {
+        if(binding.descriptorType != SpirvDescriptorType::Unused)
+          throw Exception("conflicting SPIR-V descriptor for uniform buffer");
+        binding.descriptorType = SpirvDescriptorType::UniformBuffer;
+        binding.descriptorCount = std::max<uint32_t>(binding.descriptorCount, 1);
+      }
+
       return resultId;
     }
 
@@ -938,16 +976,17 @@ namespace Coil
     ResultId _nextResultId = 1;
     uint32_t _upperBoundResultIdOffset = 0;
     ResultId _glslInstSetResultId = 0;
+    std::map<uint32_t, std::map<uint32_t, SpirvDescriptorSetLayoutBinding>> _bindings;
   };
 
-  SpirvCode SpirvCompile(GraphicsShaderRoots const& roots)
+  SpirvModule SpirvCompile(GraphicsShaderRoots const& roots)
   {
     SpirvModuleCompiler compiler;
 
     if(roots.vertex)
-      compiler.TraverseEntryPoint("mainVertex", spv::ExecutionModel::Vertex, roots.vertex.get());
+      compiler.TraverseEntryPoint("mainVertex", SpirvStageFlag::Vertex, spv::ExecutionModel::Vertex, roots.vertex.get());
     if(roots.fragment)
-      compiler.TraverseEntryPoint("mainFragment", spv::ExecutionModel::Fragment, roots.fragment.get());
+      compiler.TraverseEntryPoint("mainFragment", SpirvStageFlag::Fragment, spv::ExecutionModel::Fragment, roots.fragment.get());
 
     return compiler.Finalize();
   }

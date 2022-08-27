@@ -12,6 +12,8 @@
 namespace Coil
 {
   using GraphicsSubPassId = uint32_t;
+  using GraphicsSlotSetId = uint32_t;
+  using GraphicsSlotId = uint32_t;
 
   struct GraphicsPassConfig
   {
@@ -198,12 +200,12 @@ namespace Coil
   class GraphicsDevice
   {
   public:
-    virtual GraphicsPool& CreatePool(Book& book, uint64_t chunkSize) = 0;
-    virtual GraphicsPresenter& CreateWindowPresenter(Book& book, Window& window, std::function<GraphicsRecreatePresentFunc>&& recreatePresent, std::function<GraphicsRecreatePresentPerImageFunc>&& recreatePresentPerImage) = 0;
+    virtual GraphicsPool& CreatePool(Book& book, size_t chunkSize) = 0;
+    virtual GraphicsPresenter& CreateWindowPresenter(Book& book, GraphicsPool& graphicsPool, Window& window, std::function<GraphicsRecreatePresentFunc>&& recreatePresent, std::function<GraphicsRecreatePresentPerImageFunc>&& recreatePresentPerImage) = 0;
     virtual GraphicsVertexBuffer& CreateVertexBuffer(GraphicsPool& pool, Buffer const& buffer) = 0;
     virtual GraphicsPass& CreatePass(Book& book, GraphicsPassConfig const& config) = 0;
     virtual GraphicsShader& CreateShader(Book& book, GraphicsShaderRoots const& exprs) = 0;
-    virtual GraphicsPipelineLayout& CreatePipelineLayout(Book& book) = 0;
+    virtual GraphicsPipelineLayout& CreatePipelineLayout(Book& book, std::span<GraphicsShader*> const& shaders) = 0;
     virtual GraphicsPipeline& CreatePipeline(Book& book, GraphicsPipelineConfig const& config, GraphicsPipelineLayout& graphicsPipelineLayout, GraphicsPass& pass, GraphicsSubPassId subPassId, GraphicsShader& shader) = 0;
     virtual GraphicsFramebuffer& CreateFramebuffer(Book& book, GraphicsPass& pass, std::span<GraphicsImage*> const& pImages, ivec2 const& size) = 0;
   };
@@ -212,6 +214,7 @@ namespace Coil
   {
   public:
     virtual void BindVertexBuffer(GraphicsVertexBuffer& vertexBuffer) = 0;
+    virtual void BindUniformBuffer(GraphicsSlotSetId slotSet, GraphicsSlotId slot, Buffer const& buffer) = 0;
     virtual void BindPipeline(GraphicsPipeline& pipeline) = 0;
     virtual void Draw(uint32_t verticesCount) = 0;
   };
