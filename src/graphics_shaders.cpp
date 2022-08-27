@@ -2,6 +2,21 @@
 
 namespace Coil
 {
+  ShaderDataScalarType const& ShaderDataTypeGetScalarType(ShaderDataType const& dataType)
+  {
+    switch(dataType.GetKind())
+    {
+    case ShaderDataKind::Scalar:
+      return static_cast<ShaderDataScalarType const&>(dataType);
+    case ShaderDataKind::Vector:
+      return static_cast<ShaderDataVectorType const&>(dataType).baseType;
+    case ShaderDataKind::Matrix:
+      return static_cast<ShaderDataMatrixType const&>(dataType).baseType;
+    default:
+      throw Exception("unsupported SPIR-V shader data kind for getting scalar data type");
+    }
+  }
+
   bool operator<(ShaderDataType const& a, ShaderDataType const& b)
   {
     auto ak = a.GetKind();

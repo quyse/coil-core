@@ -135,6 +135,9 @@ namespace Coil
     }
   };
 
+  // get scalar type of scalar, vector, matrix type
+  ShaderDataScalarType const& ShaderDataTypeGetScalarType(ShaderDataType const& dataType);
+
   // comparison operator supports all kinds of types
   bool operator<(ShaderDataType const& a, ShaderDataType const& b);
 
@@ -241,6 +244,8 @@ namespace Coil
   {
     Const,
     Cast,
+    Construct,
+    Swizzle,
     Index,
     Negate,
     Add,
@@ -331,6 +336,36 @@ namespace Coil
     T value;
   };
 
+  struct ShaderOperationSwizzleNode : public ShaderOperationNode
+  {
+    ShaderOperationSwizzleNode(ShaderDataType const& dataType, std::shared_ptr<ShaderExpressionNode> node, char const* swizzle)
+    : dataType(dataType), node(std::move(node)), swizzle(swizzle) {}
+
+    ShaderDataType const& dataType;
+    std::shared_ptr<ShaderExpressionNode> node;
+    char const* swizzle;
+
+    ShaderOperationType GetOperationType() const override
+    {
+      return ShaderOperationType::Swizzle;
+    }
+
+    ShaderDataType const& GetDataType() const override
+    {
+      return dataType;
+    }
+
+    size_t GetArgsCount() const override
+    {
+      return 1;
+    }
+
+    std::shared_ptr<ShaderExpressionNode> GetArg(size_t i) const override
+    {
+      return node;
+    }
+  };
+
   template <typename T>
   struct ShaderExpression
   {
@@ -356,7 +391,18 @@ namespace Coil
       return std::make_shared<ShaderOperationNodeImpl<TT, ShaderOperationType::Cast, 1>>(std::array { node });
     }
 
+    // swizzle
+    template <size_t n>
+    ShaderExpression<typename VectorTraits<xvec<typename VectorTraits<T>::Scalar, n - 1>>::PossiblyScalar> operator[](char const (&swizzle)[n]) const
+    {
+      return std::make_shared<ShaderOperationSwizzleNode>(ShaderDataTypeOf<typename VectorTraits<xvec<typename VectorTraits<T>::Scalar, n - 1>>::PossiblyScalar>(), node, swizzle);
+    }
+
     // operations
+    ShaderExpression operator-() const
+    {
+      return std::make_shared<ShaderOperationNodeImpl<T, ShaderOperationType::Negate, 1>>(std::array { node });
+    }
     friend ShaderExpression operator+(ShaderExpression const& a, ShaderExpression const& b)
     {
       return std::make_shared<ShaderOperationNodeImpl<T, ShaderOperationType::Add, 2>>(std::array { a.node, b.node });
@@ -746,6 +792,39 @@ namespace Coil
   ShaderVariable<T> ShaderFragment(ShaderFragmentBuiltin builtin)
   {
     return std::make_shared<ShaderVariableFragmentNode>(ShaderDataTypeOf<T>(), builtin);
+  }
+
+  // helper struct for types composing a vector
+  template <typename T, typename... TT>
+  struct ShaderVectorComposeHelper
+  {
+    // size of resulting vector
+    static constexpr size_t N = (VectorTraits<T>::N + ... + VectorTraits<TT>::N);
+    // scalar type of resulting vector
+    using Scalar = typename VectorTraits<T>::Scalar;
+    // is it ok to compose these types into vector
+    static constexpr bool Ok =
+      // all types should have same scalar type
+      (std::is_same_v<Scalar, typename VectorTraits<TT>::Scalar> && ...) &&
+      // size requirements
+      N >= 2 && N <= 4;
+    // result vector type
+    using Result = xvec<Scalar, N>;
+  };
+
+  // construct vector from scalars or vectors
+  template <typename... T>
+  ShaderExpression<typename ShaderVectorComposeHelper<T...>::Result>
+  cvec(ShaderExpression<T>... args)
+  requires ShaderVectorComposeHelper<T...>::Ok
+  {
+    return std::make_shared<
+      ShaderOperationNodeImpl<
+        typename ShaderVectorComposeHelper<T...>::Result,
+        ShaderOperationType::Construct,
+        sizeof...(T)
+      >
+    >(std::array<std::shared_ptr<ShaderExpressionNode>, sizeof...(T)> { (args.node)... });
   }
 
   // convenience namespace

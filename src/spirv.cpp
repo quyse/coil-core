@@ -308,46 +308,151 @@ namespace Coil
               throw Exception("unsupported SPIR-V shader data kind for constant");
             }
             break;
+          case ShaderOperationType::Construct:
+            switch(dataType.GetKind())
+            {
+            case ShaderDataKind::Vector:
+              EmitOp(function.code, spv::Op::OpCompositeConstruct, [&]()
+              {
+                Emit(function.code, typeResultId);
+                resultId = EmitResultId(function.code);
+                for(size_t i = 0; i < argsCount; ++i)
+                  Emit(function.code, argsResultIds[i]);
+              });
+              break;
+            default:
+              throw Exception("unsupported SPIR-V shader data kind for construction");
+            }
+            break;
+          case ShaderOperationType::Swizzle:
+            {
+              ShaderOperationSwizzleNode* swizzleNode = static_cast<ShaderOperationSwizzleNode*>(operationNode);
+              bool singleComponent = swizzleNode->GetDataType().GetKind() == ShaderDataKind::Scalar;
+              EmitOp(function.code, singleComponent ? spv::Op::OpCompositeExtract : spv::Op::OpVectorShuffle, [&]()
+              {
+                Emit(function.code, typeResultId);
+                resultId = EmitResultId(function.code);
+                Emit(function.code, argsResultIds[0]);
+                if(!singleComponent) Emit(function.code, argsResultIds[0]);
+                for(size_t i = 0; swizzleNode->swizzle[i]; ++i)
+                {
+                  uint32_t component;
+                  switch(swizzleNode->swizzle[i])
+                  {
+                  case 'x':
+                  case 'r':
+                    component = 0;
+                    break;
+                  case 'y':
+                  case 'g':
+                    component = 1;
+                    break;
+                  case 'z':
+                  case 'b':
+                    component = 2;
+                    break;
+                  case 'w':
+                  case 'a':
+                    component = 3;
+                    break;
+                  default:
+                    throw Exception("invalid SPIR-V shader swizzle");
+                  }
+                  Emit(function.code, component);
+                }
+              });
+            }
+            break;
           // case ShaderOperationType::Index:
           //   {
           //   }
           //   break;
-          case ShaderOperationType::Add:
-            switch(dataType.GetKind())
+          case ShaderOperationType::Negate:
+            switch(ShaderDataTypeGetScalarType(dataType).type)
             {
-            case ShaderDataKind::Vector:
-              switch(static_cast<ShaderDataVectorType const&>(dataType).baseType.type)
+            case ShaderDataScalarType::Type::_float:
+              EmitOp(function.code, spv::Op::OpFNegate, [&]()
               {
-              case ShaderDataScalarType::Type::_float:
-                EmitOp(function.code, spv::Op::OpFAdd, [&]()
-                {
-                  Emit(function.code, typeResultId);
-                  resultId = EmitResultId(function.code);
-                  Emit(function.code, argsResultIds[0]);
-                  Emit(function.code, argsResultIds[1]);
-                });
-                break;
-              case ShaderDataScalarType::Type::_uint:
-              case ShaderDataScalarType::Type::_int:
-                EmitOp(function.code, spv::Op::OpIAdd, [&]()
-                {
-                  Emit(function.code, typeResultId);
-                  resultId = EmitResultId(function.code);
-                  Emit(function.code, argsResultIds[0]);
-                  Emit(function.code, argsResultIds[1]);
-                });
-                break;
-              default:
-                throw Exception("unsupported SPIR-V shader component type for vector addition");
-              }
+                Emit(function.code, typeResultId);
+                resultId = EmitResultId(function.code);
+                Emit(function.code, argsResultIds[0]);
+              });
+              break;
+            case ShaderDataScalarType::Type::_uint:
+            case ShaderDataScalarType::Type::_int:
+              EmitOp(function.code, spv::Op::OpSNegate, [&]()
+              {
+                Emit(function.code, typeResultId);
+                resultId = EmitResultId(function.code);
+                Emit(function.code, argsResultIds[0]);
+              });
               break;
             default:
-              throw Exception("unsupported SPIR-V shader data kind for addition");
+              throw Exception("unsupported SPIR-V shader component type for scalar/vector negation");
             }
             break;
-          // case ShaderExprOperationType::Subtract:
-          // case ShaderExprOperationType::Multiply:
-          // case ShaderExprOperationType::Divide:
+          case ShaderOperationType::Add:
+          case ShaderOperationType::Subtract:
+            switch(ShaderDataTypeGetScalarType(dataType).type)
+            {
+            case ShaderDataScalarType::Type::_float:
+              EmitOp(function.code,
+                operationNode->GetOperationType() == ShaderOperationType::Add ?
+                  spv::Op::OpFAdd :
+                  spv::Op::OpFSub,
+                [&]()
+              {
+                Emit(function.code, typeResultId);
+                resultId = EmitResultId(function.code);
+                Emit(function.code, argsResultIds[0]);
+                Emit(function.code, argsResultIds[1]);
+              });
+              break;
+            case ShaderDataScalarType::Type::_uint:
+            case ShaderDataScalarType::Type::_int:
+              EmitOp(function.code,
+                operationNode->GetOperationType() == ShaderOperationType::Add ?
+                  spv::Op::OpIAdd :
+                  spv::Op::OpISub,
+                [&]()
+              {
+                Emit(function.code, typeResultId);
+                resultId = EmitResultId(function.code);
+                Emit(function.code, argsResultIds[0]);
+                Emit(function.code, argsResultIds[1]);
+              });
+              break;
+            default:
+              throw Exception("unsupported SPIR-V shader component type for vector addition/subtraction");
+            }
+            break;
+          case ShaderOperationType::Multiply:
+            switch(ShaderDataTypeGetScalarType(dataType).type)
+            {
+            case ShaderDataScalarType::Type::_float:
+              EmitOp(function.code, spv::Op::OpFMul, [&]()
+              {
+                Emit(function.code, typeResultId);
+                resultId = EmitResultId(function.code);
+                Emit(function.code, argsResultIds[0]);
+                Emit(function.code, argsResultIds[1]);
+              });
+              break;
+            case ShaderDataScalarType::Type::_uint:
+            case ShaderDataScalarType::Type::_int:
+              EmitOp(function.code, spv::Op::OpIMul, [&]()
+              {
+                Emit(function.code, typeResultId);
+                resultId = EmitResultId(function.code);
+                Emit(function.code, argsResultIds[0]);
+                Emit(function.code, argsResultIds[1]);
+              });
+              break;
+            default:
+              throw Exception("unsupported SPIR-V shader data scalar type for multiplication");
+            }
+            break;
+          // case ShaderOperationType::Divide:
           default:
             throw Exception("unknown SPIR-V shader operation type");
           }
@@ -394,6 +499,8 @@ namespace Coil
       default:
         throw Exception("unknown SPIR-V shader expression type");
       }
+
+      it->second = resultId;
 
       return resultId;
     }

@@ -152,6 +152,43 @@ namespace Coil
     return t;
   }
 
+  // some vector traits
+  template <typename T, size_t n>
+  struct PossiblyScalarVectorTraits
+  {
+    using PossiblyScalarType = xvec<T, n>;
+  };
+  template <typename T>
+  struct PossiblyScalarVectorTraits<T, 1>
+  {
+    using PossiblyScalarType = T;
+  };
+  template <typename T>
+  struct VectorTraits;
+  template <typename T, size_t n>
+  struct VectorTraits<xvec<T, n>>
+  {
+    // scalar type
+    using Scalar = T;
+    // size of vector
+    static constexpr size_t N = n;
+    // reduced type
+    using PossiblyScalar = typename PossiblyScalarVectorTraits<T, n>::PossiblyScalarType;
+  };
+  // define for selected scalars as well
+  template <typename T>
+  requires
+    std::is_same_v<T, float> ||
+    std::is_same_v<T, uint32_t> ||
+    std::is_same_v<T, int32_t> ||
+    std::is_same_v<T, bool>
+  struct VectorTraits<T>
+  {
+    using Scalar = T;
+    static constexpr size_t N = 1;
+    using PossiblyScalar = T;
+  };
+
   // convenience synonyms
 
   using vec2 = xvec<float, 2>;
