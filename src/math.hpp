@@ -189,6 +189,18 @@ namespace Coil
     using PossiblyScalar = T;
   };
 
+  template <typename T>
+  concept IsScalarOrVector = requires
+  {
+    typename VectorTraits<T>::Scalar;
+  };
+
+  template <typename T>
+  concept IsFloatScalarOrVector = requires
+  {
+    std::is_same_v<typename VectorTraits<T>::Scalar, float>;
+  };
+
   // convenience synonyms
 
   using vec2 = xvec<float, 2>;

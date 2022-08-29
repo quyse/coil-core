@@ -367,92 +367,129 @@ namespace Coil
           //   {
           //   }
           //   break;
-          case ShaderOperationType::Negate:
-            switch(ShaderDataTypeGetScalarType(dataType).type)
-            {
-            case ShaderDataScalarType::Type::_float:
-              EmitOp(function.code, spv::Op::OpFNegate, [&]()
-              {
-                Emit(function.code, typeResultId);
-                resultId = EmitResultId(function.code);
-                Emit(function.code, argsResultIds[0]);
-              });
-              break;
-            case ShaderDataScalarType::Type::_uint:
-            case ShaderDataScalarType::Type::_int:
-              EmitOp(function.code, spv::Op::OpSNegate, [&]()
-              {
-                Emit(function.code, typeResultId);
-                resultId = EmitResultId(function.code);
-                Emit(function.code, argsResultIds[0]);
-              });
-              break;
-            default:
-              throw Exception("unsupported SPIR-V shader component type for scalar/vector negation");
-            }
-            break;
-          case ShaderOperationType::Add:
-          case ShaderOperationType::Subtract:
-            switch(ShaderDataTypeGetScalarType(dataType).type)
-            {
-            case ShaderDataScalarType::Type::_float:
-              EmitOp(function.code,
-                operationNode->GetOperationType() == ShaderOperationType::Add ?
-                  spv::Op::OpFAdd :
-                  spv::Op::OpFSub,
-                [&]()
-              {
-                Emit(function.code, typeResultId);
-                resultId = EmitResultId(function.code);
-                Emit(function.code, argsResultIds[0]);
-                Emit(function.code, argsResultIds[1]);
-              });
-              break;
-            case ShaderDataScalarType::Type::_uint:
-            case ShaderDataScalarType::Type::_int:
-              EmitOp(function.code,
-                operationNode->GetOperationType() == ShaderOperationType::Add ?
-                  spv::Op::OpIAdd :
-                  spv::Op::OpISub,
-                [&]()
-              {
-                Emit(function.code, typeResultId);
-                resultId = EmitResultId(function.code);
-                Emit(function.code, argsResultIds[0]);
-                Emit(function.code, argsResultIds[1]);
-              });
-              break;
-            default:
-              throw Exception("unsupported SPIR-V shader component type for vector addition/subtraction");
-            }
-            break;
-          case ShaderOperationType::Multiply:
-            switch(ShaderDataTypeGetScalarType(dataType).type)
-            {
-            case ShaderDataScalarType::Type::_float:
-              EmitOp(function.code, spv::Op::OpFMul, [&]()
-              {
-                Emit(function.code, typeResultId);
-                resultId = EmitResultId(function.code);
-                Emit(function.code, argsResultIds[0]);
-                Emit(function.code, argsResultIds[1]);
-              });
-              break;
-            case ShaderDataScalarType::Type::_uint:
-            case ShaderDataScalarType::Type::_int:
-              EmitOp(function.code, spv::Op::OpIMul, [&]()
-              {
-                Emit(function.code, typeResultId);
-                resultId = EmitResultId(function.code);
-                Emit(function.code, argsResultIds[0]);
-                Emit(function.code, argsResultIds[1]);
-              });
-              break;
-            default:
-              throw Exception("unsupported SPIR-V shader data scalar type for multiplication");
-            }
-            break;
-          // case ShaderOperationType::Divide:
+
+// helper macros for ops
+#define OP_SCALAR(op, body) \
+          case ShaderOperationType::op: \
+            switch(ShaderDataTypeGetScalarType(dataType).type) \
+            { \
+            body \
+            default: \
+              throw Exception("unsupported SPIR-V shader data scalar type for operation " #op); \
+            } \
+            break
+#define SCALAR_SOP(scalarType, sop) \
+            case ShaderDataScalarType::Type::_##scalarType: \
+              EmitOp(function.code, spv::Op::Op##sop, [&] \
+              { \
+                Emit(function.code, typeResultId); \
+                resultId = EmitResultId(function.code); \
+                for(size_t i = 0; i < argsCount; ++i) \
+                  Emit(function.code, argsResultIds[i]); \
+              }); \
+              break
+
+          OP_SCALAR(Negate,
+            SCALAR_SOP(float, FNegate);
+            SCALAR_SOP(uint, SNegate);
+            SCALAR_SOP(int, SNegate);
+          );
+          OP_SCALAR(Add,
+            SCALAR_SOP(float, FAdd);
+            SCALAR_SOP(uint, IAdd);
+            SCALAR_SOP(int, IAdd);
+          );
+          OP_SCALAR(Subtract,
+            SCALAR_SOP(float, FSub);
+            SCALAR_SOP(uint, ISub);
+            SCALAR_SOP(int, ISub);
+          );
+          OP_SCALAR(Multiply,
+            SCALAR_SOP(float, FMul);
+            SCALAR_SOP(uint, IMul);
+            SCALAR_SOP(int, IMul);
+          );
+          OP_SCALAR(Divide,
+            SCALAR_SOP(float, FDiv);
+            SCALAR_SOP(uint, UDiv);
+            SCALAR_SOP(int, SDiv);
+          );
+          OP_SCALAR(DPdx,
+            SCALAR_SOP(float, DPdx);
+          );
+          OP_SCALAR(DPdy,
+            SCALAR_SOP(float, DPdy);
+          );
+
+#undef OP_SCALAR
+#undef SCALAR_SOP
+
+// helper macros for GLSL instructions
+#define GLSL_OP_INST(op, inst) \
+          case ShaderOperationType::op: \
+            resultId = EmitGLSLInst(function.code, GLSLstd450##inst, typeResultId, argsResultIds, argsCount); \
+            break
+#define GLSL_OP_SCALAR(op, body) \
+          case ShaderOperationType::op: \
+            switch(ShaderDataTypeGetScalarType(dataType).type) \
+            { \
+            body \
+            default: \
+              throw Exception("unsupported SPIR-V shader data scalar type for operation " #op); \
+            } \
+            break
+#define GLSL_SCALAR_INST(scalarType, inst) \
+            case ShaderDataScalarType::Type::_##scalarType: \
+              resultId = EmitGLSLInst(function.code, GLSLstd450##inst, typeResultId, argsResultIds, argsCount); \
+              break
+
+          GLSL_OP_SCALAR(Abs,
+            GLSL_SCALAR_INST(float, FAbs);
+            GLSL_SCALAR_INST(int, SAbs);
+          );
+          GLSL_OP_INST(Floor, Floor);
+          GLSL_OP_INST(Ceil, Ceil);
+          GLSL_OP_INST(Fract, Fract);
+          GLSL_OP_INST(Sqrt, Sqrt);
+          GLSL_OP_INST(InverseSqrt, InverseSqrt);
+          GLSL_OP_INST(Sin, Sin);
+          GLSL_OP_INST(Cos, Cos);
+          GLSL_OP_INST(Tan, Tan);
+          GLSL_OP_INST(Asin, Asin);
+          GLSL_OP_INST(Acos, Acos);
+          GLSL_OP_INST(Atan, Atan);
+          GLSL_OP_INST(Pow, Pow);
+          GLSL_OP_INST(Exp, Exp);
+          GLSL_OP_INST(Log, Log);
+          GLSL_OP_INST(Exp2, Exp2);
+          GLSL_OP_INST(Log2, Log2);
+          GLSL_OP_SCALAR(Min,
+            GLSL_SCALAR_INST(float, FMin);
+            GLSL_SCALAR_INST(uint, UMin);
+            GLSL_SCALAR_INST(int, SMin);
+          );
+          GLSL_OP_SCALAR(Max,
+            GLSL_SCALAR_INST(float, FMax);
+            GLSL_SCALAR_INST(uint, UMax);
+            GLSL_SCALAR_INST(int, SMax);
+          );
+          GLSL_OP_SCALAR(Clamp,
+            GLSL_SCALAR_INST(float, FClamp);
+            GLSL_SCALAR_INST(uint, UClamp);
+            GLSL_SCALAR_INST(int, SClamp);
+          );
+          GLSL_OP_SCALAR(Mix,
+            GLSL_SCALAR_INST(float, FMix);
+          );
+          GLSL_OP_INST(Length, Length);
+          GLSL_OP_INST(Distance, Distance);
+          GLSL_OP_INST(Cross, Cross);
+          GLSL_OP_INST(Normalize, Normalize);
+
+#undef GLSL_OP_INST
+#undef GLSL_OP_SCALAR
+#undef GLSL_SCALAR_INST
+
           default:
             throw Exception("unknown SPIR-V shader operation type");
           }
@@ -1010,6 +1047,21 @@ namespace Coil
         binding.descriptorCount = std::max<uint32_t>(binding.descriptorCount, 1);
       }
 
+      return resultId;
+    }
+
+    ResultId EmitGLSLInst(SpirvCode& code, GLSLstd450 inst, ResultId typeResultId, ResultId* const argsResultIds, size_t argsCount)
+    {
+      ResultId resultId;
+      EmitOp(code, spv::Op::OpExtInst, [&]()
+      {
+        Emit(code, typeResultId);
+        resultId = EmitResultId(code);
+        Emit(code, _glslInstSetResultId);
+        Emit(code, (uint32_t)inst);
+        for(size_t i = 0; i < argsCount; ++i)
+          Emit(code, argsResultIds[i]);
+      });
       return resultId;
     }
 

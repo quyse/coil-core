@@ -252,6 +252,33 @@ namespace Coil
     Subtract,
     Multiply,
     Divide,
+    DPdx,
+    DPdy,
+    Abs,
+    Floor,
+    Ceil,
+    Fract,
+    Sqrt,
+    InverseSqrt,
+    Sin,
+    Cos,
+    Tan,
+    Asin,
+    Acos,
+    Atan,
+    Pow,
+    Exp,
+    Log,
+    Exp2,
+    Log2,
+    Min,
+    Max,
+    Clamp,
+    Mix,
+    Length,
+    Distance,
+    Cross,
+    Normalize,
   };
 
   enum class ShaderStatementType
@@ -403,22 +430,6 @@ namespace Coil
     {
       return std::make_shared<ShaderOperationNodeImpl<T, ShaderOperationType::Negate, 1>>(std::array { node });
     }
-    friend ShaderExpression operator+(ShaderExpression const& a, ShaderExpression const& b)
-    {
-      return std::make_shared<ShaderOperationNodeImpl<T, ShaderOperationType::Add, 2>>(std::array { a.node, b.node });
-    }
-    friend ShaderExpression operator-(ShaderExpression const& a, ShaderExpression const& b)
-    {
-      return std::make_shared<ShaderOperationNodeImpl<T, ShaderOperationType::Subtract, 2>>(std::array { a.node, b.node });
-    }
-    friend ShaderExpression operator*(ShaderExpression const& a, ShaderExpression const& b)
-    {
-      return std::make_shared<ShaderOperationNodeImpl<T, ShaderOperationType::Multiply, 2>>(std::array { a.node, b.node });
-    }
-    friend ShaderExpression operator/(ShaderExpression const& a, ShaderExpression const& b)
-    {
-      return std::make_shared<ShaderOperationNodeImpl<T, ShaderOperationType::Divide, 2>>(std::array { a.node, b.node });
-    }
 
     // mutations
     ShaderExpression& operator+=(ShaderExpression const& b)
@@ -438,6 +449,33 @@ namespace Coil
       return *this = *this / b;
     }
   };
+
+  template <ShaderOperationType op, typename R, typename... Args>
+  ShaderExpression<R> ShaderOperation(ShaderExpression<Args> const&... args)
+  {
+    return std::make_shared<ShaderOperationNodeImpl<R, op, sizeof...(args)>>(std::array<std::shared_ptr<ShaderExpressionNode>, sizeof...(args)> { (args.node)... });
+  }
+
+  template <typename T>
+  ShaderExpression<T> operator+(ShaderExpression<T> const& a, ShaderExpression<T> const& b)
+  {
+    return ShaderOperation<ShaderOperationType::Add, T>(a, b);
+  }
+  template <typename T>
+  ShaderExpression<T> operator-(ShaderExpression<T> const& a, ShaderExpression<T> const& b)
+  {
+    return ShaderOperation<ShaderOperationType::Subtract, T>(a, b);
+  }
+  template <typename T>
+  ShaderExpression<T> operator*(ShaderExpression<T> const& a, ShaderExpression<T> const& b)
+  {
+    return ShaderOperation<ShaderOperationType::Multiply, T>(a, b);
+  }
+  template <typename T>
+  ShaderExpression<T> operator/(ShaderExpression<T> const& a, ShaderExpression<T> const& b)
+  {
+    return ShaderOperation<ShaderOperationType::Divide, T>(a, b);
+  }
 
   struct ShaderStatementNode : public ShaderNode
   {
@@ -812,21 +850,6 @@ namespace Coil
     using Result = xvec<Scalar, N>;
   };
 
-  // construct vector from scalars or vectors
-  template <typename... T>
-  ShaderExpression<typename ShaderVectorComposeHelper<T...>::Result>
-  cvec(ShaderExpression<T>... args)
-  requires ShaderVectorComposeHelper<T...>::Ok
-  {
-    return std::make_shared<
-      ShaderOperationNodeImpl<
-        typename ShaderVectorComposeHelper<T...>::Result,
-        ShaderOperationType::Construct,
-        sizeof...(T)
-      >
-    >(std::array<std::shared_ptr<ShaderExpressionNode>, sizeof...(T)> { (args.node)... });
-  }
-
   // convenience namespace
   namespace Shaders
   {
@@ -848,5 +871,82 @@ namespace Coil
     using bvec2_ = ShaderExpression<bvec2>;
     using bvec3_ = ShaderExpression<bvec3>;
     using bvec4_ = ShaderExpression<bvec4>;
+
+    // construct vector from scalars or vectors
+    template <typename... T>
+    ShaderExpression<typename ShaderVectorComposeHelper<T...>::Result>
+    cvec(ShaderExpression<T> const&... args)
+    requires ShaderVectorComposeHelper<T...>::Ok
+    {
+      return ShaderOperation<ShaderOperationType::Construct, typename ShaderVectorComposeHelper<T...>::Result, T...>(args...);
+    }
+
+    // functions
+
+    // partial derivatives
+    template <IsFloatScalarOrVector T> ShaderExpression<T> dpdx(ShaderExpression<T> const& a)
+    { return ShaderOperation<ShaderOperationType::DPdx, T>(a); }
+    template <IsFloatScalarOrVector T> ShaderExpression<T> dpdy(ShaderExpression<T> const& a)
+    { return ShaderOperation<ShaderOperationType::DPdy, T>(a); }
+
+    // arithmetic
+    template <IsScalarOrVector T> ShaderExpression<T> abs(ShaderExpression<T> const& a)
+    { return ShaderOperation<ShaderOperationType::Abs, T>(a); }
+    template <IsFloatScalarOrVector T> ShaderExpression<T> floor(ShaderExpression<T> const& a)
+    { return ShaderOperation<ShaderOperationType::Floor, T>(a); }
+    template <IsFloatScalarOrVector T> ShaderExpression<T> ceil(ShaderExpression<T> const& a)
+    { return ShaderOperation<ShaderOperationType::Ceil, T>(a); }
+    template <IsFloatScalarOrVector T> ShaderExpression<T> fract(ShaderExpression<T> const& a)
+    { return ShaderOperation<ShaderOperationType::Fract, T>(a); }
+    template <IsFloatScalarOrVector T> ShaderExpression<T> sqrt(ShaderExpression<T> const& a)
+    { return ShaderOperation<ShaderOperationType::Sqrt, T>(a); }
+    template <IsFloatScalarOrVector T> ShaderExpression<T> inverseSqrt(ShaderExpression<T> const& a)
+    { return ShaderOperation<ShaderOperationType::InverseSqrt, T>(a); }
+
+    // transcendental
+    template <IsFloatScalarOrVector T> ShaderExpression<T> sin(ShaderExpression<T> const& a)
+    { return ShaderOperation<ShaderOperationType::Sin, T>(a); }
+    template <IsFloatScalarOrVector T> ShaderExpression<T> cos(ShaderExpression<T> const& a)
+    { return ShaderOperation<ShaderOperationType::Cos, T>(a); }
+    template <IsFloatScalarOrVector T> ShaderExpression<T> tan(ShaderExpression<T> const& a)
+    { return ShaderOperation<ShaderOperationType::Tan, T>(a); }
+    template <IsFloatScalarOrVector T> ShaderExpression<T> asin(ShaderExpression<T> const& a)
+    { return ShaderOperation<ShaderOperationType::Asin, T>(a); }
+    template <IsFloatScalarOrVector T> ShaderExpression<T> acos(ShaderExpression<T> const& a)
+    { return ShaderOperation<ShaderOperationType::Acos, T>(a); }
+    template <IsFloatScalarOrVector T> ShaderExpression<T> atan(ShaderExpression<T> const& a)
+    { return ShaderOperation<ShaderOperationType::Atan, T>(a); }
+
+    // exponential
+    template <IsFloatScalarOrVector T> ShaderExpression<T> pow(ShaderExpression<T> const& a, ShaderExpression<T> const& b)
+    { return ShaderOperation<ShaderOperationType::Pow, T>(a, b); }
+    template <IsFloatScalarOrVector T> ShaderExpression<T> exp(ShaderExpression<T> const& a, ShaderExpression<T> const& b)
+    { return ShaderOperation<ShaderOperationType::Exp, T>(a, b); }
+    template <IsFloatScalarOrVector T> ShaderExpression<T> log(ShaderExpression<T> const& a, ShaderExpression<T> const& b)
+    { return ShaderOperation<ShaderOperationType::Log, T>(a, b); }
+    template <IsFloatScalarOrVector T> ShaderExpression<T> exp2(ShaderExpression<T> const& a)
+    { return ShaderOperation<ShaderOperationType::Exp2, T>(a); }
+    template <IsFloatScalarOrVector T> ShaderExpression<T> log2(ShaderExpression<T> const& a)
+    { return ShaderOperation<ShaderOperationType::Log2, T>(a); }
+
+    // comparisons
+    template <IsScalarOrVector T> ShaderExpression<T> min(ShaderExpression<T> const& a, ShaderExpression<T> const& b)
+    { return ShaderOperation<ShaderOperationType::Min, T>(a, b); }
+    template <IsScalarOrVector T> ShaderExpression<T> max(ShaderExpression<T> const& a, ShaderExpression<T> const& b)
+    { return ShaderOperation<ShaderOperationType::Max, T>(a, b); }
+    template <IsScalarOrVector T> ShaderExpression<T> clamp(ShaderExpression<T> const& a, ShaderExpression<T> const& b, ShaderExpression<T> const& c)
+    { return ShaderOperation<ShaderOperationType::Clamp, T>(a, b, c); }
+    template <IsFloatScalarOrVector T> ShaderExpression<T> mix(ShaderExpression<T> const& a, ShaderExpression<T> const& b, ShaderExpression<T> const& c)
+    { return ShaderOperation<ShaderOperationType::Mix, T>(a, b, c); }
+
+    // vectors
+    template <IsFloatScalarOrVector T> ShaderExpression<typename VectorTraits<T>::Scalar> length(ShaderExpression<T> const& a)
+    { return ShaderOperation<ShaderOperationType::Length, typename VectorTraits<T>::Scalar>(a); }
+    template <IsFloatScalarOrVector T> ShaderExpression<typename VectorTraits<T>::Scalar> distance(ShaderExpression<T> const& a, ShaderExpression<T> const& b)
+    { return ShaderOperation<ShaderOperationType::Distance, typename VectorTraits<T>::Scalar>(a, b); }
+    template <typename T> ShaderExpression<xvec<T, 3>> cross(ShaderExpression<xvec<T, 3>> const& a, ShaderExpression<xvec<T, 3>> const& b, ShaderExpression<xvec<T, 3>> const& c)
+    { return ShaderOperation<ShaderOperationType::Cross, xvec<T, 3>>(a, b, c); }
+    template <IsFloatScalarOrVector T> ShaderExpression<T> normalize(ShaderExpression<T> const& a)
+    { return ShaderOperation<ShaderOperationType::Normalize, T>(a); }
   };
 }
