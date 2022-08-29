@@ -19,18 +19,27 @@ namespace Coil
   {
     using AttachmentId = uint32_t;
 
-    struct Attachment
+    struct ColorAttachmentConfig
     {
       PixelFormat format;
-
+      vec4 clearColor;
+    };
+    struct DepthStencilAttachmentConfig
+    {
+      float clearDepth = 0;
+      uint32_t clearStencil = 0;
+    };
+    using AttachmentConfig = std::variant<ColorAttachmentConfig, DepthStencilAttachmentConfig>;
+    struct Attachment
+    {
       // keep attachment data from before pass
       // otherwise it will be cleared
       bool keepBefore = false;
       // keep attachment data after the pass
       // otherwise it will be undefined
       bool keepAfter = false;
-
-      friend auto operator<=>(Attachment const&, Attachment const&) = default;
+      // attachment config
+      AttachmentConfig config;
     };
 
     class AttachmentRef
@@ -91,7 +100,7 @@ namespace Coil
       GraphicsSubPassId const _id;
     };
 
-    AttachmentRef AddAttachment(PixelFormat format);
+    AttachmentRef AddAttachment(AttachmentConfig const& config);
 
     SubPassRef AddSubPass();
 
@@ -203,6 +212,7 @@ namespace Coil
     virtual GraphicsPool& CreatePool(Book& book, size_t chunkSize) = 0;
     virtual GraphicsPresenter& CreateWindowPresenter(Book& book, GraphicsPool& graphicsPool, Window& window, std::function<GraphicsRecreatePresentFunc>&& recreatePresent, std::function<GraphicsRecreatePresentPerImageFunc>&& recreatePresentPerImage) = 0;
     virtual GraphicsVertexBuffer& CreateVertexBuffer(GraphicsPool& pool, Buffer const& buffer) = 0;
+    virtual GraphicsImage& CreateDepthStencilImage(GraphicsPool& pool, ivec2 const& size) = 0;
     virtual GraphicsPass& CreatePass(Book& book, GraphicsPassConfig const& config) = 0;
     virtual GraphicsShader& CreateShader(Book& book, GraphicsShaderRoots const& exprs) = 0;
     virtual GraphicsPipelineLayout& CreatePipelineLayout(Book& book, std::span<GraphicsShader*> const& shaders) = 0;

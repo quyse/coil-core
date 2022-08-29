@@ -10,6 +10,7 @@ namespace Coil
   void DestroyVulkanObject(VkDevice device, VkDeviceMemory memory)                     { vkFreeMemory(device, memory, nullptr); }
   void DestroyVulkanObject(VkDevice device, VkFence fence)                             { vkDestroyFence(device, fence, nullptr); }
   void DestroyVulkanObject(VkDevice device, VkFramebuffer framebuffer)                 { vkDestroyFramebuffer(device, framebuffer, nullptr); }
+  void DestroyVulkanObject(VkDevice device, VkImage image)                             { vkDestroyImage(device, image, nullptr); }
   void DestroyVulkanObject(VkDevice device, VkImageView imageView)                     { vkDestroyImageView(device, imageView, nullptr); }
   void DestroyVulkanObject(VkDevice device, VkPipeline pipeline)                       { vkDestroyPipeline(device, pipeline, nullptr); }
   void DestroyVulkanObject(VkDevice device, VkPipelineLayout pipelineLayout)           { vkDestroyPipelineLayout(device, pipelineLayout, nullptr); }

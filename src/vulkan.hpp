@@ -186,11 +186,12 @@ namespace Coil
   class VulkanPass : public GraphicsPass
   {
   public:
-    VulkanPass(VkRenderPass renderPass, uint32_t subPassesCount);
+    VulkanPass(VkRenderPass renderPass, std::vector<VkClearValue>&& clearValues, uint32_t subPassesCount);
 
   private:
-    VkRenderPass _renderPass;
-    uint32_t _subPassesCount;
+    VkRenderPass const _renderPass;
+    std::vector<VkClearValue> const _clearValues;
+    uint32_t const _subPassesCount;
 
     friend class VulkanDevice;
     friend class VulkanContext;
@@ -280,6 +281,7 @@ namespace Coil
     VulkanPool& CreatePool(Book& book, size_t chunkSize) override;
     VulkanPresenter& CreateWindowPresenter(Book& book, GraphicsPool& graphicsPool, Window& window, std::function<GraphicsRecreatePresentFunc>&& recreatePresent, std::function<GraphicsRecreatePresentPerImageFunc>&& recreatePresentPerImage) override;
     VulkanVertexBuffer& CreateVertexBuffer(GraphicsPool& pool, Buffer const& buffer) override;
+    VulkanImage& CreateDepthStencilImage(GraphicsPool& pool, ivec2 const& size) override;
     VulkanPass& CreatePass(Book& book, GraphicsPassConfig const& config) override;
     VulkanShader& CreateShader(Book& book, GraphicsShaderRoots const& roots) override;
     VulkanPipelineLayout& CreatePipelineLayout(Book& book, std::span<GraphicsShader*> const& shaders) override;

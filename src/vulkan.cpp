@@ -258,8 +258,10 @@ namespace Coil
     return presenter;
   }
 
-  VulkanVertexBuffer& VulkanDevice::CreateVertexBuffer(GraphicsPool& pool, Buffer const& buffer)
+  VulkanVertexBuffer& VulkanDevice::CreateVertexBuffer(GraphicsPool& graphicsPool, Buffer const& buffer)
   {
+    VulkanPool& pool = static_cast<VulkanPool&>(graphicsPool);
+
     // create buffer
     VkBuffer vertexBuffer;
     {
@@ -285,7 +287,7 @@ namespace Coil
     // allocate memory
     // temporary, for simplicity we use host coherent memory
     // Vulkan spec guarantees that buffer's memory requirements allow such memory, and it exists on device
-    std::pair<VkDeviceMemory, VkDeviceSize> memory = AllocateMemory(static_cast<VulkanPool&>(pool), memoryRequirements, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    std::pair<VkDeviceMemory, VkDeviceSize> memory = AllocateMemory(pool, memoryRequirements, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     // copy data
     {
@@ -304,6 +306,79 @@ namespace Coil
     CheckSuccess(vkBindBufferMemory(_device, vertexBuffer, memory.first, memory.second), "binding Vulkan memory to vertex buffer failed");
 
     return pool.GetBook().Allocate<VulkanVertexBuffer>(vertexBuffer);
+  }
+
+  VulkanImage& VulkanDevice::CreateDepthStencilImage(GraphicsPool& graphicsPool, ivec2 const& size)
+  {
+    VulkanPool& pool = static_cast<VulkanPool&>(graphicsPool);
+    Book& book = pool.GetBook();
+
+    VkFormat const format = VK_FORMAT_D24_UNORM_S8_UINT;
+
+    // create image
+    VkImage image;
+    {
+      VkImageCreateInfo info =
+      {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+        .imageType = VK_IMAGE_TYPE_2D,
+        .format = format,
+        .extent =
+        {
+          .width = (uint32_t)size.x,
+          .height = (uint32_t)size.y,
+          .depth = 1,
+        },
+        .mipLevels = 1,
+        .arrayLayers = 1,
+        .samples = VK_SAMPLE_COUNT_1_BIT,
+        .tiling = VK_IMAGE_TILING_OPTIMAL,
+        .usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .queueFamilyIndexCount = 0,
+        .pQueueFamilyIndices = nullptr,
+        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+      };
+      CheckSuccess(vkCreateImage(_device, &info, nullptr, &image), "creating Vulkan depth stencil image failed");
+      AllocateVulkanObject(book, _device, image);
+    }
+
+    // get memory requirements
+    VkMemoryRequirements memoryRequirements;
+    vkGetImageMemoryRequirements(_device, image, &memoryRequirements);
+    // allocate memory
+    std::pair<VkDeviceMemory, VkDeviceSize> memory = AllocateMemory(pool, memoryRequirements, 0);
+    // bind memory
+    CheckSuccess(vkBindImageMemory(_device, image, memory.first, memory.second), "binding Vulkan memory to depth stencil image failed");
+
+    // create image view
+    VkImageView imageView;
+    {
+      VkImageViewCreateInfo info =
+      {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+        .image = image,
+        .viewType = VK_IMAGE_VIEW_TYPE_2D,
+        .format = format,
+        .components = {},
+        .subresourceRange =
+        {
+          .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
+          .baseMipLevel = 0,
+          .levelCount = 1,
+          .baseArrayLayer = 0,
+          .layerCount = 1,
+        },
+      };
+      CheckSuccess(vkCreateImageView(_device, &info, nullptr, &imageView), "creating Vulkan depth stencil image view failed");
+      AllocateVulkanObject(book, _device, imageView);
+    }
+
+    return book.Allocate<VulkanImage>(image, imageView);
   }
 
   VulkanPass& VulkanDevice::CreatePass(Book& book, GraphicsPassConfig const& config)
@@ -583,13 +658,44 @@ namespace Coil
     }
 
     // attachments
+    std::vector<VkClearValue> clearValues(attachmentsCount);
     for(AttachmentId attachmentId = 0; attachmentId < attachmentsCount; ++attachmentId)
     {
       GraphicsPassConfig::Attachment const& attachment = config.attachments[attachmentId];
+      VkFormat format = VK_FORMAT_UNDEFINED;
+      VkClearValue& clearValue = clearValues[attachmentId];
+      std::visit([&](auto const& config)
+      {
+        using T = std::decay_t<decltype(config)>;
+        if constexpr(std::is_same_v<T, GraphicsPassConfig::ColorAttachmentConfig>)
+        {
+          format = VulkanSystem::GetPixelFormat(config.format);
+          clearValue.color =
+          {
+            .float32 =
+            {
+              config.clearColor.x,
+              config.clearColor.y,
+              config.clearColor.z,
+              config.clearColor.w,
+            },
+          };
+        }
+        if constexpr(std::is_same_v<T, GraphicsPassConfig::DepthStencilAttachmentConfig>)
+        {
+          format = VK_FORMAT_D24_UNORM_S8_UINT;
+          clearValue.depthStencil =
+          {
+            .depth = config.clearDepth,
+            .stencil = config.clearStencil,
+          };
+        }
+      }, attachment.config);
+
       attachmentsDescriptions[attachmentId] =
       {
         .flags = 0,
-        .format = VulkanSystem::GetPixelFormat(attachment.format),
+        .format = format,
         .samples = VK_SAMPLE_COUNT_1_BIT,
         .loadOp = attachment.keepBefore ? VK_ATTACHMENT_LOAD_OP_LOAD : VK_ATTACHMENT_LOAD_OP_CLEAR,
         .storeOp = attachment.keepAfter ? VK_ATTACHMENT_STORE_OP_STORE : VK_ATTACHMENT_STORE_OP_DONT_CARE,
@@ -615,7 +721,8 @@ namespace Coil
     VkRenderPass renderPass;
     CheckSuccess(vkCreateRenderPass(_device, &info, nullptr, &renderPass), "creating Vulkan render pass failed");
     AllocateVulkanObject(book, _device, renderPass);
-    return book.Allocate<VulkanPass>(renderPass, subPassesCount);
+
+    return book.Allocate<VulkanPass>(renderPass, std::move(clearValues), subPassesCount);
   }
 
   VulkanShader& VulkanDevice::CreateShader(Book& book, GraphicsShaderRoots const& roots)
@@ -852,6 +959,22 @@ namespace Coil
       .lineWidth = 1,
     };
 
+    VkPipelineDepthStencilStateCreateInfo depthStencilState =
+    {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
+      .depthTestEnable = VK_TRUE,
+      .depthWriteEnable = VK_TRUE,
+      .depthCompareOp = VK_COMPARE_OP_LESS,
+      .depthBoundsTestEnable = VK_FALSE,
+      .stencilTestEnable = VK_FALSE,
+      .front = {},
+      .back = {},
+      .minDepthBounds = 0,
+      .maxDepthBounds = 0,
+    };
+
     VkPipelineColorBlendAttachmentState colorBlendAttachmentState =
     {
       .blendEnable = VK_TRUE,
@@ -903,7 +1026,7 @@ namespace Coil
       .pViewportState = &viewportStateInfo,
       .pRasterizationState = &rasterizationState,
       .pMultisampleState = nullptr,
-      .pDepthStencilState = nullptr,
+      .pDepthStencilState = &depthStencilState,
       .pColorBlendState = &colorBlendStateInfo,
       .pDynamicState = &dynamicStateInfo,
       .layout = pipelineLayout._pipelineLayout,
@@ -1322,7 +1445,7 @@ namespace Coil
           },
         };
         VkImageView imageView;
-        CheckSuccess(vkCreateImageView(_device._device, &info, nullptr, &imageView), "creating Vulkan image view failed");
+        CheckSuccess(vkCreateImageView(_device._device, &info, nullptr, &imageView), "creating Vulkan swapchain image view failed");
         AllocateVulkanObject(_book, _device._device, imageView);
         _images.push_back(&_book.Allocate<VulkanImage>(images[i], imageView));
       }
@@ -1515,10 +1638,6 @@ namespace Coil
 
     // start render pass
     {
-      VkClearValue clearValues[] =
-      {
-        { .color = { .float32 = { 0, 0, 0, 0 } } },
-      };
       VkRenderPassBeginInfo info =
       {
         .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
@@ -1530,8 +1649,8 @@ namespace Coil
           .offset = { 0, 0 },
           .extent = { (uint32_t)framebuffer._size.x, (uint32_t)framebuffer._size.y },
         },
-        .clearValueCount = 1,
-        .pClearValues = clearValues,
+        .clearValueCount = (uint32_t)pass._clearValues.size(),
+        .pClearValues = pass._clearValues.data(),
       };
       vkCmdBeginRenderPass(_commandBuffer, &info, VK_SUBPASS_CONTENTS_INLINE);
     }
@@ -1643,8 +1762,8 @@ namespace Coil
     }
   }
 
-  VulkanPass::VulkanPass(VkRenderPass renderPass, uint32_t subPassesCount)
-  : _renderPass(renderPass), _subPassesCount(subPassesCount) {}
+  VulkanPass::VulkanPass(VkRenderPass renderPass, std::vector<VkClearValue>&& clearValues, uint32_t subPassesCount)
+  : _renderPass(renderPass), _clearValues(std::move(clearValues)), _subPassesCount(subPassesCount) {}
 
   VulkanDeviceIdle::VulkanDeviceIdle(VkDevice device)
   : _device(device) {}

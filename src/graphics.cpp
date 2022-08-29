@@ -44,11 +44,12 @@ namespace Coil
     return &_config.subPasses[_id];
   }
 
-  GraphicsPassConfig::AttachmentRef GraphicsPassConfig::AddAttachment(PixelFormat format)
+  GraphicsPassConfig::AttachmentRef GraphicsPassConfig::AddAttachment(AttachmentConfig const& config)
   {
     AttachmentId attachmentId = (AttachmentId)attachments.size();
-    attachments.push_back({
-      .format = format,
+    attachments.push_back(
+    {
+      .config = config,
     });
     return AttachmentRef(*this, attachmentId);
   }
