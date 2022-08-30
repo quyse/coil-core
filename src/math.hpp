@@ -40,15 +40,18 @@ namespace Coil
       T t[2];
     };
 
-    xvec(T x = T(), T y = T())
+    consteval xvec()
+    : x{}, y{} {}
+
+    constexpr xvec(T x, T y)
     : x(x), y(y) {}
 
-    T& operator()(size_t i)
+    constexpr T& operator()(size_t i)
     {
       return t[i];
     }
 
-    T operator()(size_t i) const
+    constexpr T operator()(size_t i) const
     {
       return t[i];
     }
@@ -68,15 +71,18 @@ namespace Coil
       T t[3];
     };
 
-    xvec(T x = T(), T y = T(), T z = T())
+    consteval xvec()
+    : x{}, y{}, z{} {}
+
+    constexpr xvec(T x, T y, T z)
     : x(x), y(y), z(z) {}
 
-    T& operator()(size_t i)
+    constexpr T& operator()(size_t i)
     {
       return t[i];
     }
 
-    T operator()(size_t i) const
+    constexpr T operator()(size_t i) const
     {
       return t[i];
     }
@@ -96,15 +102,18 @@ namespace Coil
       T t[4];
     };
 
-    xvec(T x = T(), T y = T(), T z = T(), T w = T())
+    consteval xvec()
+    : x{}, y{}, z{}, w{} {}
+
+    constexpr xvec(T x, T y, T z, T w)
     : x(x), y(y), z(z), w(w) {}
 
-    T& operator()(size_t i)
+    constexpr T& operator()(size_t i)
     {
       return t[i];
     }
 
-    T operator()(size_t i) const
+    constexpr T operator()(size_t i) const
     {
       return t[i];
     }
@@ -129,6 +138,16 @@ namespace Coil
           t[i].t[j] = {};
     }
 
+    constexpr xmat(std::initializer_list<T> const& list)
+    {
+      T const* data = std::data(list);
+      size_t k = 0;
+      size_t listSize = list.size();
+      for(size_t i = 0; i < n; ++i)
+        for(size_t j = 0; j < m; ++j)
+          t[i].t[j] = k < listSize ? data[k++] : T{};
+    }
+
     constexpr T& operator()(size_t i, size_t j)
     {
       return t[i].t[j];
@@ -143,13 +162,150 @@ namespace Coil
   };
 
   template <typename T, size_t n>
-  xmat<T, n, n> mat_identity()
+  constexpr xmat<T, n, n> mat_identity()
   {
     xmat<T, n, n> t;
     for(size_t i = 0; i < n; ++i)
       for(size_t j = 0; j < n; ++j)
         t(i, j) = i == j;
     return t;
+  }
+
+  template <typename T>
+  struct xquat : public xvec<T, 4>
+  {
+    consteval xquat()
+    {
+      this->w = 1;
+    }
+
+    constexpr xquat(T x, T y, T z, T w)
+    : xvec<T, 4>(x, y, z, w) {}
+  };
+
+  // vector addition
+  template <typename T, size_t n>
+  constexpr xvec<T, n> operator+(xvec<T, n> const& a, xvec<T, n> const& b)
+  {
+    xvec<T, n> r;
+    for(size_t i = 0; i < n; ++i)
+      r(i) = a(i) + b(i);
+    return r;
+  }
+  // vector subtraction
+  template <typename T, size_t n>
+  constexpr xvec<T, n> operator-(xvec<T, n> const& a, xvec<T, n> const& b)
+  {
+    xvec<T, n> r;
+    for(size_t i = 0; i < n; ++i)
+      r(i) = a(i) - b(i);
+    return r;
+  }
+
+  // matrix addition
+  template <typename T, size_t n, size_t m>
+  constexpr xmat<T, n, m> operator+(xmat<T, n, m> const& a, xmat<T, n, m> const& b)
+  {
+    xmat<T, n, m> r;
+    for(size_t i = 0; i < n; ++i)
+      for(size_t j = 0; j < m; ++j)
+        r(i, j) = a(i, j) + b(i, j);
+    return r;
+  }
+  // matrix subtraction
+  template <typename T, size_t n, size_t m>
+  constexpr xmat<T, n, m> operator-(xmat<T, n, m> const& a, xmat<T, n, m> const& b)
+  {
+    xmat<T, n, m> r;
+    for(size_t i = 0; i < n; ++i)
+      for(size_t j = 0; j < m; ++j)
+        r(i, j) = a(i, j) - b(i, j);
+    return r;
+  }
+
+  template <typename T, size_t n, size_t m, size_t k>
+  constexpr xmat<T, n, m> operator*(xmat<T, n, k> const& a, xmat<T, k, m> const& b)
+  {
+    xmat<T, n, m> r;
+    for(size_t i = 0; i < n; ++i)
+      for(size_t j = 0; j < m; ++j)
+      {
+        T p = {};
+        for(size_t q = 0; q < k; ++q)
+          p += a(i, q) * b(q, j);
+        r(i, j) = p;
+      }
+    return r;
+  }
+
+  template <typename T, size_t n, size_t m>
+  constexpr xvec<T, n> operator*(xmat<T, n, m> const& a, xvec<T, m> const& b)
+  {
+    xvec<T, n> r;
+    for(size_t i = 0; i < n; ++i)
+    {
+      T p = {};
+      for(size_t j = 0; j < m; ++j)
+        p += a(i, j) * b(j);
+      r(i) = p;
+    }
+    return r;
+  }
+
+  template <typename T, size_t n, size_t m>
+  constexpr xvec<T, m> operator*(xvec<T, n> const& a, xmat<T, n, m> const& b)
+  {
+    xvec<T, m> r;
+    for(size_t j = 0; j < m; ++j)
+    {
+      T p = {};
+      for(size_t i = 0; i < n; ++i)
+        p += a(i) * b(i, j);
+      r(j) = p;
+    }
+    return r;
+  }
+
+  template <typename T, size_t n>
+  constexpr T dot(xvec<T, n> const& a, xvec<T, n> const& b)
+  {
+    T r = {};
+    for(size_t i = 0; i < n; ++i)
+      r += a(i) * b(i);
+    return r;
+  }
+
+  template <typename T, size_t n>
+  constexpr T length2(xvec<T, n> const& a)
+  {
+    return dot(a, a);
+  }
+
+  template <typename T, size_t n>
+  constexpr T length(xvec<T, n> const& a)
+  {
+    return sqrt(length2(a));
+  }
+
+  template <typename T, size_t n>
+  constexpr xvec<T, n> normalize(xvec<T, n> const& a)
+  {
+    T s = 1 / length(a);
+    xvec<T, n> r = {};
+    for(size_t i = 0; i < n; ++i)
+      r(i) = a(i) * s;
+    return r;
+  }
+
+  template <typename T>
+  constexpr xvec<T, 3> cross(xvec<T, 3> const& a, xvec<T, 3> const& b)
+  {
+    return
+    {
+      a.y * b.z - a.z * b.y,
+      a.z * b.x - a.x * b.z,
+      a.x * b.y - a.y * b.x,
+    };
   }
 
   // some vector traits
@@ -279,8 +435,6 @@ namespace Coil
   using bmat4x3 = xmat<bool, 4, 3>;
   using bmat4x4 = xmat<bool, 4, 4>;
 
-  template <typename T>
-  using xquat = xvec<T, 4>;
   using quat = xquat<float>;
   using dquat = xquat<double>;
 
