@@ -172,9 +172,63 @@ namespace Coil
   {
   };
 
+  enum class GraphicsCompareOp
+  {
+    Never,
+    Less,
+    LessOrEqual,
+    Equal,
+    NonEqual,
+    GreaterOrEqual,
+    Greater,
+    Always,
+  };
+
+  enum class GraphicsColorBlendFactor
+  {
+    Zero,
+    One,
+    Src,
+    InvSrc,
+    SrcAlpha,
+    InvSrcAlpha,
+    Dst,
+    InvDst,
+    DstAlpha,
+    InvDstAlpha,
+    SecondSrc,
+    InvSecondSrc,
+    SecondSrcAlpha,
+    InvSecondSrcAlpha,
+  };
+
+  enum class GraphicsAlphaBlendFactor
+  {
+    Zero,
+    One,
+    Src,
+    InvSrc,
+    Dst,
+    InvDst,
+    SecondSrc,
+    InvSecondSrc,
+  };
+
+  enum class GraphicsBlendOp
+  {
+    Add,
+    SubtractAB,
+    SubtractBA,
+    Min,
+    Max,
+  };
+
   struct GraphicsPipelineConfig
   {
     ivec2 viewport;
+    bool depthTest = true;
+    bool depthWrite = true;
+    GraphicsCompareOp depthCompareOp = GraphicsCompareOp::Less;
 
     struct VertexSlot
     {
@@ -191,6 +245,22 @@ namespace Coil
       VertexFormat format;
     };
     std::vector<VertexAttribute> vertexAttributes;
+
+    struct Blending
+    {
+      // default config for blending with premultiplied alpha
+      GraphicsColorBlendFactor srcColorBlendFactor = GraphicsColorBlendFactor::One;
+      GraphicsColorBlendFactor dstColorBlendFactor = GraphicsColorBlendFactor::InvSrcAlpha;
+      GraphicsBlendOp colorBlendOp = GraphicsBlendOp::Add;
+      GraphicsAlphaBlendFactor srcAlphaBlendFactor = GraphicsAlphaBlendFactor::One;
+      GraphicsAlphaBlendFactor dstAlphaBlendFactor = GraphicsAlphaBlendFactor::InvSrc;
+      GraphicsBlendOp alphaBlendOp = GraphicsBlendOp::Add;
+    };
+    struct Attachment
+    {
+      std::optional<Blending> blending;
+    };
+    std::vector<Attachment> attachments;
   };
 
   class GraphicsPipeline

@@ -978,9 +978,9 @@ namespace Coil
       .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
       .pNext = nullptr,
       .flags = 0,
-      .depthTestEnable = VK_TRUE,
-      .depthWriteEnable = VK_TRUE,
-      .depthCompareOp = VK_COMPARE_OP_LESS,
+      .depthTestEnable = config.depthTest ? VK_TRUE : VK_FALSE,
+      .depthWriteEnable = config.depthWrite ? VK_TRUE : VK_FALSE,
+      .depthCompareOp = VulkanSystem::GetCompareOp(config.depthCompareOp),
       .depthBoundsTestEnable = VK_FALSE,
       .stencilTestEnable = VK_FALSE,
       .front = {},
@@ -989,17 +989,34 @@ namespace Coil
       .maxDepthBounds = 0,
     };
 
-    VkPipelineColorBlendAttachmentState colorBlendAttachmentState =
+    std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachmentStates(config.attachments.size());
+    for(size_t i = 0; i < config.attachments.size(); ++i)
     {
-      .blendEnable = VK_TRUE,
-      .srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
-      .dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
-      .colorBlendOp = VK_BLEND_OP_ADD,
-      .srcAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
-      .dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
-      .alphaBlendOp = VK_BLEND_OP_ADD,
-      .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
-    };
+      auto const& optionalBlending = config.attachments[i].blending;
+      if(optionalBlending.has_value())
+      {
+        auto const& blending = optionalBlending.value();
+        colorBlendAttachmentStates[i] =
+        {
+          .blendEnable = VK_TRUE,
+          .srcColorBlendFactor = VulkanSystem::GetColorBlendFactor(blending.srcColorBlendFactor),
+          .dstColorBlendFactor = VulkanSystem::GetColorBlendFactor(blending.dstColorBlendFactor),
+          .colorBlendOp = VulkanSystem::GetBlendOp(blending.colorBlendOp),
+          .srcAlphaBlendFactor = VulkanSystem::GetAlphaBlendFactor(blending.srcAlphaBlendFactor),
+          .dstAlphaBlendFactor = VulkanSystem::GetAlphaBlendFactor(blending.dstAlphaBlendFactor),
+          .alphaBlendOp = VulkanSystem::GetBlendOp(blending.alphaBlendOp),
+          .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+        };
+      }
+      else
+      {
+        colorBlendAttachmentStates[i] =
+        {
+          .blendEnable = VK_FALSE,
+          .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+        };
+      }
+    }
 
     VkPipelineColorBlendStateCreateInfo colorBlendStateInfo =
     {
@@ -1008,8 +1025,8 @@ namespace Coil
       .flags = 0,
       .logicOpEnable = VK_FALSE,
       .logicOp = VK_LOGIC_OP_CLEAR,
-      .attachmentCount = 1,
-      .pAttachments = &colorBlendAttachmentState,
+      .attachmentCount = (uint32_t)colorBlendAttachmentStates.size(),
+      .pAttachments = colorBlendAttachmentStates.data(),
       .blendConstants = { 0 },
     };
 
@@ -1031,7 +1048,7 @@ namespace Coil
       .pDynamicState = nullptr,
       .layout = pipelineLayout._pipelineLayout,
       .renderPass = pass._renderPass,
-      .subpass = 0,
+      .subpass = subPassId,
       .basePipelineHandle = nullptr,
       .basePipelineIndex = -1,
     };

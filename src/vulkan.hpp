@@ -325,6 +325,10 @@ namespace Coil
 
     static VkFormat GetVertexFormat(VertexFormat format);
     static VkFormat GetPixelFormat(PixelFormat format);
+    static VkCompareOp GetCompareOp(GraphicsCompareOp op);
+    static VkBlendFactor GetColorBlendFactor(GraphicsColorBlendFactor factor);
+    static VkBlendFactor GetAlphaBlendFactor(GraphicsAlphaBlendFactor factor);
+    static VkBlendOp GetBlendOp(GraphicsBlendOp op);
 
   private:
     VkInstance _instance;

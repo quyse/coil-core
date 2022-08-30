@@ -401,4 +401,87 @@ namespace Coil
 #undef X
 #undef R
   }
+
+  VkCompareOp VulkanSystem::GetCompareOp(GraphicsCompareOp op)
+  {
+    switch(op)
+    {
+#define R(a, b) case GraphicsCompareOp::a: return VK_COMPARE_OP_##b
+
+    R(Never, NEVER);
+    R(Less, LESS);
+    R(LessOrEqual, LESS_OR_EQUAL);
+    R(Equal, EQUAL);
+    R(NonEqual, NOT_EQUAL);
+    R(GreaterOrEqual, GREATER_OR_EQUAL);
+    R(Greater, GREATER);
+    R(Always, ALWAYS);
+
+#undef R
+    }
+    throw Exception("unsupported Vulkan compare op");
+  }
+
+  VkBlendFactor VulkanSystem::GetColorBlendFactor(GraphicsColorBlendFactor factor)
+  {
+    switch(factor)
+    {
+#define R(a, b) case GraphicsColorBlendFactor::a: return VK_BLEND_FACTOR_##b
+
+    R(Zero, ZERO);
+    R(One, ONE);
+    R(Src, SRC_COLOR);
+    R(InvSrc, ONE_MINUS_SRC_COLOR);
+    R(SrcAlpha, SRC_ALPHA);
+    R(InvSrcAlpha, ONE_MINUS_SRC_ALPHA);
+    R(Dst, DST_COLOR);
+    R(InvDst, ONE_MINUS_DST_COLOR);
+    R(DstAlpha, DST_ALPHA);
+    R(InvDstAlpha, ONE_MINUS_DST_ALPHA);
+    R(SecondSrc, SRC1_COLOR);
+    R(InvSecondSrc, ONE_MINUS_SRC1_COLOR);
+    R(SecondSrcAlpha, SRC1_ALPHA);
+    R(InvSecondSrcAlpha, ONE_MINUS_SRC1_ALPHA);
+
+#undef R
+    }
+    throw Exception("unsupported Vulkan color blend factor");
+  }
+
+  VkBlendFactor VulkanSystem::GetAlphaBlendFactor(GraphicsAlphaBlendFactor factor)
+  {
+    switch(factor)
+    {
+#define R(a, b) case GraphicsAlphaBlendFactor::a: return VK_BLEND_FACTOR_##b
+
+    R(Zero, ZERO);
+    R(One, ONE);
+    R(Src, SRC_ALPHA);
+    R(InvSrc, ONE_MINUS_SRC_ALPHA);
+    R(Dst, DST_ALPHA);
+    R(InvDst, ONE_MINUS_DST_ALPHA);
+    R(SecondSrc, SRC1_ALPHA);
+    R(InvSecondSrc, ONE_MINUS_SRC1_ALPHA);
+
+#undef R
+    }
+    throw Exception("unsupported Vulkan alpha blend factor");
+  }
+
+  VkBlendOp VulkanSystem::GetBlendOp(GraphicsBlendOp op)
+  {
+    switch(op)
+    {
+#define R(a, b) case GraphicsBlendOp::a: return VK_BLEND_OP_##b
+
+    R(Add, ADD);
+    R(SubtractAB, SUBTRACT);
+    R(SubtractBA, REVERSE_SUBTRACT);
+    R(Min, MIN);
+    R(Max, MAX);
+
+#undef R
+    }
+    throw Exception("unsupported Vulkan blend op");
+  }
 }
