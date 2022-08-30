@@ -418,13 +418,6 @@ namespace Coil
       return std::make_shared<ShaderOperationNodeImpl<TT, ShaderOperationType::Cast, 1>>(std::array { node });
     }
 
-    // swizzle
-    template <size_t n>
-    ShaderExpression<typename VectorTraits<xvec<typename VectorTraits<T>::Scalar, n - 1>>::PossiblyScalar> operator[](char const (&swizzle)[n]) const
-    {
-      return std::make_shared<ShaderOperationSwizzleNode>(ShaderDataTypeOf<typename VectorTraits<xvec<typename VectorTraits<T>::Scalar, n - 1>>::PossiblyScalar>(), node, swizzle);
-    }
-
     // operations
     ShaderExpression operator-() const
     {
@@ -475,6 +468,32 @@ namespace Coil
   ShaderExpression<T> operator/(ShaderExpression<T> const& a, ShaderExpression<T> const& b)
   {
     return ShaderOperation<ShaderOperationType::Divide, T>(a, b);
+  }
+
+  // matrix-matrix multiplication
+  template <size_t n, size_t m, size_t k>
+  ShaderExpression<xmat<float, n, m>> operator*(ShaderExpression<xmat<float, n, k>> const& a, ShaderExpression<xmat<float, k, m>> const& b)
+  {
+    return ShaderOperation<ShaderOperationType::Multiply, xmat<float, n, m>>(a, b);
+  }
+  // matrix-vector multiplication
+  template <size_t n, size_t m>
+  ShaderExpression<xvec<float, n>> operator*(ShaderExpression<xmat<float, n, m>> const& a, ShaderExpression<xvec<float, m>> const& b)
+  {
+    return ShaderOperation<ShaderOperationType::Multiply, xvec<float, n>>(a, b);
+  }
+  // vector-matrix multiplication
+  template <size_t n, size_t m>
+  ShaderExpression<xvec<float, m>> operator*(ShaderExpression<xvec<float, n>> const& a, ShaderExpression<xmat<float, n, m>> const& b)
+  {
+    return ShaderOperation<ShaderOperationType::Multiply, xvec<float, m>>(a, b);
+  }
+
+  // swizzle
+  template <typename T, size_t n>
+  ShaderExpression<typename VectorTraits<xvec<typename VectorTraits<T>::Scalar, n - 1>>::PossiblyScalar> swizzle(ShaderExpression<T> const& a, char const (&swizzle)[n])
+  {
+    return std::make_shared<ShaderOperationSwizzleNode>(ShaderDataTypeOf<typename VectorTraits<xvec<typename VectorTraits<T>::Scalar, n - 1>>::PossiblyScalar>(), a.node, swizzle);
   }
 
   struct ShaderStatementNode : public ShaderNode

@@ -404,11 +404,56 @@ namespace Coil
             SCALAR_SOP(uint, ISub);
             SCALAR_SOP(int, ISub);
           );
-          OP_SCALAR(Multiply,
-            SCALAR_SOP(float, FMul);
-            SCALAR_SOP(uint, IMul);
-            SCALAR_SOP(int, IMul);
-          );
+
+          // multiply is complicated
+          case ShaderOperationType::Multiply:
+            {
+              ShaderDataKind kind0 = operationNode->GetArg(0)->GetDataType().GetKind();
+              ShaderDataKind kind1 = operationNode->GetArg(1)->GetDataType().GetKind();
+
+              // scalar-scalar or vector-vector
+              if(kind0 == kind1 && (kind0 == ShaderDataKind::Scalar || kind0 == ShaderDataKind::Vector))
+              {
+                switch(ShaderDataTypeGetScalarType(dataType).type)
+                {
+                SCALAR_SOP(float, FMul);
+                SCALAR_SOP(uint, IMul);
+                SCALAR_SOP(int, IMul);
+                default:
+                  throw Exception("unsupported SPIR-V shader data scalar type for multiplication");
+                }
+                break;
+              }
+
+              spv::Op op;
+              // vector-scalar
+              if(kind0 == ShaderDataKind::Vector && kind1 == ShaderDataKind::Scalar)
+                op = spv::Op::OpVectorTimesScalar;
+              // matrix-scalar
+              else if(kind0 == ShaderDataKind::Matrix && kind1 == ShaderDataKind::Scalar)
+                op = spv::Op::OpMatrixTimesScalar;
+              // matrix-vector
+              else if(kind0 == ShaderDataKind::Matrix && kind1 == ShaderDataKind::Vector)
+                op = spv::Op::OpMatrixTimesVector;
+              // vector-matrix
+              else if(kind0 == ShaderDataKind::Vector && kind1 == ShaderDataKind::Matrix)
+                op = spv::Op::OpVectorTimesMatrix;
+              // matrix-matrix
+              else if(kind0 == ShaderDataKind::Matrix && kind1 == ShaderDataKind::Matrix)
+                op = spv::Op::OpMatrixTimesMatrix;
+              else
+                throw Exception("unsupported SPIR-V shader data kind combination for multiplication");
+
+              EmitOp(function.code, op, [&]
+              {
+                Emit(function.code, typeResultId);
+                resultId = EmitResultId(function.code);
+                for(size_t i = 0; i < argsCount; ++i)
+                  Emit(function.code, argsResultIds[i]);
+              });
+            }
+            break;
+
           OP_SCALAR(Divide,
             SCALAR_SOP(float, FDiv);
             SCALAR_SOP(uint, UDiv);
