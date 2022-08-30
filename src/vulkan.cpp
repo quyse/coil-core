@@ -931,15 +931,29 @@ namespace Coil
       .primitiveRestartEnable = VK_FALSE,
     };
 
+    VkViewport viewport =
+    {
+      .x = 0,
+      .y = 0,
+      .width = (float)config.viewport.x,
+      .height = (float)config.viewport.y,
+      .minDepth = 0,
+      .maxDepth = 1,
+    };
+    VkRect2D scissor =
+    {
+      .offset = { 0, 0 },
+      .extent = { (uint32_t)config.viewport.x, (uint32_t)config.viewport.y },
+    };
     VkPipelineViewportStateCreateInfo viewportStateInfo =
     {
       .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
       .pNext = nullptr,
       .flags = 0,
       .viewportCount = 1,
-      .pViewports = nullptr, // dynamic
+      .pViewports = &viewport,
       .scissorCount = 1,
-      .pScissors = nullptr, // dynamic
+      .pScissors = &scissor,
     };
 
     VkPipelineRasterizationStateCreateInfo rasterizationState =
@@ -999,20 +1013,6 @@ namespace Coil
       .blendConstants = { 0 },
     };
 
-    VkDynamicState dynamicStates[] =
-    {
-      VK_DYNAMIC_STATE_VIEWPORT,
-      VK_DYNAMIC_STATE_SCISSOR,
-    };
-    VkPipelineDynamicStateCreateInfo dynamicStateInfo =
-    {
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
-      .pNext = nullptr,
-      .flags = 0,
-      .dynamicStateCount = sizeof(dynamicStates) / sizeof(dynamicStates[0]),
-      .pDynamicStates = dynamicStates,
-    };
-
     VkGraphicsPipelineCreateInfo info =
     {
       .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
@@ -1028,7 +1028,7 @@ namespace Coil
       .pMultisampleState = nullptr,
       .pDepthStencilState = &depthStencilState,
       .pColorBlendState = &colorBlendStateInfo,
-      .pDynamicState = &dynamicStateInfo,
+      .pDynamicState = nullptr,
       .layout = pipelineLayout._pipelineLayout,
       .renderPass = pass._renderPass,
       .subpass = 0,
@@ -1653,26 +1653,6 @@ namespace Coil
         .pClearValues = pass._clearValues.data(),
       };
       vkCmdBeginRenderPass(_commandBuffer, &info, VK_SUBPASS_CONTENTS_INLINE);
-    }
-
-    // set viewport & scissor
-    {
-      VkViewport viewport =
-      {
-        .x = 0,
-        .y = 0,
-        .width = (float)framebuffer._size.x,
-        .height = (float)framebuffer._size.y,
-        .minDepth = 0,
-        .maxDepth = 1,
-      };
-      vkCmdSetViewport(_commandBuffer, 0, 1, &viewport);
-      VkRect2D scissor =
-      {
-        .offset = { 0, 0 },
-        .extent = { (uint32_t)framebuffer._size.x, (uint32_t)framebuffer._size.y },
-      };
-      vkCmdSetScissor(_commandBuffer, 0, 1, &scissor);
     }
 
     // perform subpasses

@@ -174,6 +174,8 @@ namespace Coil
 
   struct GraphicsPipelineConfig
   {
+    ivec2 viewport;
+
     struct VertexSlot
     {
       uint32_t stride = 0;
