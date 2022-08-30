@@ -550,10 +550,6 @@ namespace Coil
               _presenter->Resize(GetDrawableSize());
             }
             break;
-          case SDL_WINDOWEVENT_CLOSE:
-            Close();
-            // hard quit from event loop
-            return;
           case SDL_WINDOWEVENT_MINIMIZED:
             _visible = false;
             break;
@@ -570,7 +566,7 @@ namespace Coil
           }
           break;
         case SDL_QUIT:
-          Close();
+          Stop();
           break;
         }
       }
