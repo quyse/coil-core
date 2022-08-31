@@ -130,11 +130,6 @@ namespace Coil
   // Represents memory pool.
   class GraphicsPool
   {
-  public:
-    Book& GetBook();
-
-  protected:
-    Book _book;
   };
 
   class GraphicsPresenter
@@ -283,8 +278,8 @@ namespace Coil
   public:
     virtual GraphicsPool& CreatePool(Book& book, size_t chunkSize) = 0;
     virtual GraphicsPresenter& CreateWindowPresenter(Book& book, GraphicsPool& graphicsPool, Window& window, std::function<GraphicsRecreatePresentFunc>&& recreatePresent, std::function<GraphicsRecreatePresentPerImageFunc>&& recreatePresentPerImage) = 0;
-    virtual GraphicsVertexBuffer& CreateVertexBuffer(GraphicsPool& pool, Buffer const& buffer) = 0;
-    virtual GraphicsImage& CreateDepthStencilImage(GraphicsPool& pool, ivec2 const& size) = 0;
+    virtual GraphicsVertexBuffer& CreateVertexBuffer(Book& book, GraphicsPool& pool, Buffer const& buffer) = 0;
+    virtual GraphicsImage& CreateDepthStencilImage(Book& book, GraphicsPool& pool, ivec2 const& size) = 0;
     virtual GraphicsPass& CreatePass(Book& book, GraphicsPassConfig const& config) = 0;
     virtual GraphicsShader& CreateShader(Book& book, GraphicsShaderRoots const& exprs) = 0;
     virtual GraphicsPipelineLayout& CreatePipelineLayout(Book& book, std::span<GraphicsShader*> const& shaders) = 0;

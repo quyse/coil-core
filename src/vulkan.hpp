@@ -25,6 +25,7 @@ namespace Coil
 
     VulkanDevice& _device;
     VkDeviceSize _chunkSize;
+    Book _book;
 
     struct MemoryType
     {
@@ -150,7 +151,7 @@ namespace Coil
       VulkanDevice& device,
       Book& book,
       VkSurfaceKHR surface,
-      VulkanPool& pool,
+      VulkanPool& persistentPool,
       std::function<GraphicsRecreatePresentFunc>&& recreatePresent,
       std::function<GraphicsRecreatePresentPerImageFunc>&& recreatePresentPerImage
       );
@@ -163,7 +164,8 @@ namespace Coil
 
   private:
     VulkanDevice& _device;
-    Book& _book;
+    // Book for resources recreated on resize.
+    Book _sizeDependentBook;
     VkSurfaceKHR _surface;
     std::function<GraphicsRecreatePresentFunc> _recreatePresent;
     std::function<GraphicsRecreatePresentPerImageFunc> _recreatePresentPerImage;
@@ -280,8 +282,8 @@ namespace Coil
 
     VulkanPool& CreatePool(Book& book, size_t chunkSize) override;
     VulkanPresenter& CreateWindowPresenter(Book& book, GraphicsPool& graphicsPool, Window& window, std::function<GraphicsRecreatePresentFunc>&& recreatePresent, std::function<GraphicsRecreatePresentPerImageFunc>&& recreatePresentPerImage) override;
-    VulkanVertexBuffer& CreateVertexBuffer(GraphicsPool& pool, Buffer const& buffer) override;
-    VulkanImage& CreateDepthStencilImage(GraphicsPool& pool, ivec2 const& size) override;
+    VulkanVertexBuffer& CreateVertexBuffer(Book& book, GraphicsPool& pool, Buffer const& buffer) override;
+    VulkanImage& CreateDepthStencilImage(Book& book, GraphicsPool& pool, ivec2 const& size) override;
     VulkanPass& CreatePass(Book& book, GraphicsPassConfig const& config) override;
     VulkanShader& CreateShader(Book& book, GraphicsShaderRoots const& roots) override;
     VulkanPipelineLayout& CreatePipelineLayout(Book& book, std::span<GraphicsShader*> const& shaders) override;

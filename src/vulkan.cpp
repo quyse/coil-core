@@ -258,7 +258,7 @@ namespace Coil
     return presenter;
   }
 
-  VulkanVertexBuffer& VulkanDevice::CreateVertexBuffer(GraphicsPool& graphicsPool, Buffer const& buffer)
+  VulkanVertexBuffer& VulkanDevice::CreateVertexBuffer(Book& book, GraphicsPool& graphicsPool, Buffer const& buffer)
   {
     VulkanPool& pool = static_cast<VulkanPool&>(graphicsPool);
 
@@ -277,7 +277,7 @@ namespace Coil
         .pQueueFamilyIndices = nullptr,
       };
       CheckSuccess(vkCreateBuffer(_device, &info, nullptr, &vertexBuffer), "creating Vulkan vertex buffer failed");
-      AllocateVulkanObject(pool.GetBook(), _device, vertexBuffer);
+      AllocateVulkanObject(book, _device, vertexBuffer);
     }
 
     // get memory requirements
@@ -305,13 +305,12 @@ namespace Coil
     // bind it to buffer
     CheckSuccess(vkBindBufferMemory(_device, vertexBuffer, memory.first, memory.second), "binding Vulkan memory to vertex buffer failed");
 
-    return pool.GetBook().Allocate<VulkanVertexBuffer>(vertexBuffer);
+    return book.Allocate<VulkanVertexBuffer>(vertexBuffer);
   }
 
-  VulkanImage& VulkanDevice::CreateDepthStencilImage(GraphicsPool& graphicsPool, ivec2 const& size)
+  VulkanImage& VulkanDevice::CreateDepthStencilImage(Book& book, GraphicsPool& graphicsPool, ivec2 const& size)
   {
     VulkanPool& pool = static_cast<VulkanPool&>(graphicsPool);
-    Book& book = pool.GetBook();
 
     VkFormat const format = VK_FORMAT_D24_UNORM_S8_UINT;
 
@@ -1375,12 +1374,11 @@ namespace Coil
     VulkanDevice& device,
     Book& book,
     VkSurfaceKHR surface,
-    VulkanPool& pool,
+    VulkanPool& persistentPool,
     std::function<GraphicsRecreatePresentFunc>&& recreatePresent,
     std::function<GraphicsRecreatePresentPerImageFunc>&& recreatePresentPerImage
     ) :
   _device(device),
-  _book(book.Allocate<Book>()),
   _surface(surface),
   _recreatePresent(std::move(recreatePresent)),
   _recreatePresentPerImage(std::move(recreatePresentPerImage))
@@ -1390,7 +1388,7 @@ namespace Coil
     _frames.reserve(_framesCount);
     for(size_t i = 0; i < _framesCount; ++i)
     {
-      _frames.emplace_back(book, _device, *this, pool, commandBuffers[i]);
+      _frames.emplace_back(book, _device, *this, persistentPool, commandBuffers[i]);
     }
   }
 
@@ -1430,7 +1428,7 @@ namespace Coil
       };
 
       CheckSuccess(vkCreateSwapchainKHR(_device._device, &info, nullptr, &_swapchain), "creating Vulkan swapchain failed");
-      AllocateVulkanObject(_book, _device._device, _swapchain);
+      AllocateVulkanObject(_sizeDependentBook, _device._device, _swapchain);
     }
 
     // get swapchain images
@@ -1463,24 +1461,24 @@ namespace Coil
         };
         VkImageView imageView;
         CheckSuccess(vkCreateImageView(_device._device, &info, nullptr, &imageView), "creating Vulkan swapchain image view failed");
-        AllocateVulkanObject(_book, _device._device, imageView);
-        _images.push_back(&_book.Allocate<VulkanImage>(images[i], imageView));
+        AllocateVulkanObject(_sizeDependentBook, _device._device, imageView);
+        _images.push_back(&_sizeDependentBook.Allocate<VulkanImage>(images[i], imageView));
       }
     }
 
 
     // recreate resources linked to images
     ivec2 size = { (int32_t)extent.width, (int32_t)extent.height };
-    _recreatePresent(_book, size, _images.size());
+    _recreatePresent(_sizeDependentBook, size, _images.size());
     for(size_t i = 0; i < _images.size(); ++i)
-      _recreatePresentPerImage(_book, size, i, *_images[i]);
+      _recreatePresentPerImage(_sizeDependentBook, size, i, *_images[i]);
 
-    _book.Allocate<VulkanDeviceIdle>(_device._device);
+    _sizeDependentBook.Allocate<VulkanDeviceIdle>(_device._device);
   }
 
   void VulkanPresenter::Clear()
   {
-    _book.Free();
+    _sizeDependentBook.Free();
     _swapchain = nullptr;
     _images.clear();
   }
