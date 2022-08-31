@@ -1498,13 +1498,27 @@ namespace Coil
   {
     MemoryType& memoryType = _memoryTypes[memoryTypeIndex];
 
+    // if requested size is bigger than chunk, perform dedicated allocation
+    if(size > _chunkSize)
+    {
+      VkMemoryAllocateInfo info =
+      {
+        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+        .pNext = nullptr,
+        .allocationSize = size,
+        .memoryTypeIndex = memoryTypeIndex,
+      };
+      VkDeviceMemory memory;
+      CheckSuccess(vkAllocateMemory(_device._device, &info, nullptr, &memory), "allocating Vulkan memory failed");
+      AllocateVulkanObject(_book, _device._device, memory);
+      return { memory, 0 };
+    }
+
     // align up
     VkDeviceSize offset = (memoryType.offset + alignment - 1) & ~(alignment - 1);
 
     if(offset + size > memoryType.size)
     {
-      if(size > _chunkSize) throw Exception("too big Vulkan memory allocation");
-
       memoryType = {};
       offset = 0;
 
