@@ -668,7 +668,14 @@ namespace Coil
         using T = std::decay_t<decltype(config)>;
         if constexpr(std::is_same_v<T, GraphicsPassConfig::ColorAttachmentConfig>)
         {
-          format = VulkanSystem::GetPixelFormat(config.format);
+          format = std::visit([&](auto const& attachmentPixelFormat) -> VkFormat
+          {
+            using T = std::decay_t<decltype(attachmentPixelFormat)>;
+            if constexpr(std::is_same_v<T, PixelFormat>)
+              return VulkanSystem::GetPixelFormat(attachmentPixelFormat);
+            if constexpr(std::is_same_v<T, GraphicsOpaquePixelFormat>)
+              return (VkFormat)attachmentPixelFormat;
+          }, config.format);
           clearValue.color =
           {
             .float32 =
@@ -1398,6 +1405,31 @@ namespace Coil
     VkSurfaceCapabilitiesKHR surfaceCapabilities;
     CheckSuccess(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(_device._physicalDevice, _surface, &surfaceCapabilities), "getting Vulkan physical device surface capabilities failed");
 
+    // get surface formats
+    std::vector<VkSurfaceFormatKHR> surfaceFormats;
+    {
+      uint32_t surfaceFormatsCount = 0;
+      CheckSuccess(vkGetPhysicalDeviceSurfaceFormatsKHR(_device._physicalDevice, _surface, &surfaceFormatsCount, nullptr), "getting Vulkan physical device surface formats failed");
+      surfaceFormats.resize(surfaceFormatsCount);
+      CheckSuccess(vkGetPhysicalDeviceSurfaceFormatsKHR(_device._physicalDevice, _surface, &surfaceFormatsCount, surfaceFormats.data()), "getting Vulkan physical device surface formats failed");
+    }
+
+    // choose surface format
+    VkSurfaceFormatKHR const* pSurfaceFormat = nullptr;
+    for(size_t i = 0; i < surfaceFormats.size(); ++i)
+    {
+      auto const& surfaceFormat = surfaceFormats[i];
+      if((surfaceFormat.format == VK_FORMAT_R8G8B8A8_SRGB || surfaceFormat.format == VK_FORMAT_B8G8R8A8_SRGB) &&
+        surfaceFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+      {
+        pSurfaceFormat = &surfaceFormat;
+        break;
+      }
+    }
+    if(!pSurfaceFormat) throw Exception("no suitable Vulkan surface format supported");
+
+    _surfaceFormat = pSurfaceFormat->format;
+
     VkExtent2D extent = surfaceCapabilities.currentExtent;
 
     // create swapchain
@@ -1412,8 +1444,8 @@ namespace Coil
           surfaceCapabilities.minImageCount + 1,
           surfaceCapabilities.maxImageCount > 0 ? surfaceCapabilities.maxImageCount : std::numeric_limits<uint32_t>::max()
           ),
-        .imageFormat = VK_FORMAT_R8G8B8A8_SRGB,
-        .imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR,
+        .imageFormat = pSurfaceFormat->format,
+        .imageColorSpace = pSurfaceFormat->colorSpace,
         .imageExtent = surfaceCapabilities.currentExtent,
         .imageArrayLayers = 1,
         .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
@@ -1448,7 +1480,7 @@ namespace Coil
           .flags = 0,
           .image = images[i],
           .viewType = VK_IMAGE_VIEW_TYPE_2D,
-          .format = VK_FORMAT_R8G8B8A8_SRGB,
+          .format = _surfaceFormat,
           .components = {},
           .subresourceRange =
           {
@@ -1468,10 +1500,15 @@ namespace Coil
 
 
     // recreate resources linked to images
-    ivec2 size = { (int32_t)extent.width, (int32_t)extent.height };
-    _recreatePresent(_sizeDependentBook, size, _images.size());
+    GraphicsPresentConfig const presentConfig =
+    {
+      .book = _sizeDependentBook,
+      .size = { (int32_t)extent.width, (int32_t)extent.height },
+      .pixelFormat = _surfaceFormat,
+    };
+    _recreatePresent(presentConfig, _images.size());
     for(size_t i = 0; i < _images.size(); ++i)
-      _recreatePresentPerImage(_sizeDependentBook, size, i, *_images[i]);
+      _recreatePresentPerImage(presentConfig, i, *_images[i]);
 
     _sizeDependentBook.Allocate<VulkanDeviceIdle>(_device._device);
   }

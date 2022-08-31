@@ -15,13 +15,17 @@ namespace Coil
   using GraphicsSlotSetId = uint32_t;
   using GraphicsSlotId = uint32_t;
 
+  using GraphicsOpaquePixelFormat = uint32_t;
+
   struct GraphicsPassConfig
   {
     using AttachmentId = uint32_t;
 
+    using ColorAttachmentPixelFormat = std::variant<PixelFormat, GraphicsOpaquePixelFormat>;
+
     struct ColorAttachmentConfig
     {
-      PixelFormat format;
+      ColorAttachmentPixelFormat format;
       vec4 clearColor;
     };
     struct DepthStencilAttachmentConfig
@@ -266,12 +270,20 @@ namespace Coil
   {
   };
 
+  struct GraphicsPresentConfig
+  {
+    // special presenter book which gets freed on next recreate
+    Book& book;
+    ivec2 size;
+    GraphicsOpaquePixelFormat pixelFormat;
+  };
+
   // Function type for recreating resources for present pass.
-  // Accepts special presenter book (which gets freed on next recreate), pixel size of final image, and number of images.
-  using GraphicsRecreatePresentFunc = void(Book&, ivec2 const&, uint32_t);
+  // Accepts config, and number of images.
+  using GraphicsRecreatePresentFunc = void(GraphicsPresentConfig const&, uint32_t);
   // Function type for recreating resources for present pass per image.
-  // Accepts special presenter book (which gets freed on next recreate), pixel size of final image, image index, and image.
-  using GraphicsRecreatePresentPerImageFunc = void(Book&, ivec2 const&, uint32_t, GraphicsImage&);
+  // Accepts config, image index, and image.
+  using GraphicsRecreatePresentPerImageFunc = void(GraphicsPresentConfig const&, uint32_t, GraphicsImage&);
 
   class GraphicsDevice
   {

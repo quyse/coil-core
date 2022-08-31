@@ -170,6 +170,7 @@ namespace Coil
     std::function<GraphicsRecreatePresentFunc> _recreatePresent;
     std::function<GraphicsRecreatePresentPerImageFunc> _recreatePresentPerImage;
     VkSwapchainKHR _swapchain = nullptr;
+    VkFormat _surfaceFormat = VK_FORMAT_UNDEFINED;
     // swapchain images
     std::vector<VulkanImage*> _images;
 
