@@ -756,24 +756,26 @@ namespace Coil
   using ShaderDataIdentityStruct = T<std::type_identity_t>;
 
   // struct establishing slot for uniform buffer
-  // must be used with static storage duration
-  template <template <template <typename> typename> typename T>
-  struct ShaderDataUniformStructSlot
+  template <template <template <typename> typename> typename T, uint32_t slotSet, uint32_t slot>
+  struct ShaderDataUniformStructSlotInitializer
   {
     template <template <typename> typename Q>
     using Struct = T<Q>;
 
-    ShaderDataUniformStructSlot(uint32_t slotSet, uint32_t slot)
-    : structType(ShaderDataStructTypeOf<T>()),
-      node(std::make_shared<ShaderUniformBufferNode>(structType, slotSet, slot))
-    {}
-
-    ShaderDataStructType const& structType;
-    std::shared_ptr<ShaderUniformBufferNode> node;
+    std::shared_ptr<ShaderUniformBufferNode> node =
+      std::make_shared<ShaderUniformBufferNode>(ShaderDataStructTypeOf<T>(), slotSet, slot);
 
     // counter for member initialization
     mutable uint32_t nextMember = 0;
   };
+
+  // initializer object for uniform struct slots
+  // It would be nicer to make it local static variable of GetShaderDataUniformStruct,
+  // as C++ >=17 allows to reference local variable in template argument,
+  // but in practice it hits linker debug info bugs.
+  // So, a template variable instead.
+  template <template <template <typename> typename> typename T, uint32_t slotSet, uint32_t slot>
+  ShaderDataUniformStructSlotInitializer<T, slotSet, slot> shaderDataUniformStructSlotInitializer;
 
   template <auto& initializer>
   struct ShaderDataUniformStructHelper
@@ -790,8 +792,16 @@ namespace Coil
     };
   };
 
-  template <auto& initializer>
-  using ShaderDataUniformStruct = typename std::remove_cvref_t<decltype(initializer)>::template Struct<ShaderDataUniformStructHelper<initializer>::template Member>;
+  template <template <template <typename> typename> typename T, uint32_t slotSet, uint32_t slot>
+  auto const& GetShaderDataUniformStruct()
+  {
+    static
+      typename ShaderDataUniformStructSlotInitializer<T, slotSet, slot>::template Struct<
+        ShaderDataUniformStructHelper<shaderDataUniformStructSlotInitializer<T, slotSet, slot>>::template Member
+      > const uniformStruct;
+
+    return uniformStruct;
+  }
 
   template <typename T>
   struct ShaderVariable
