@@ -143,10 +143,6 @@ namespace Coil
     char const* const _message;
   };
 
-  // Big size, unlike size_t not depending on size of addressable memory.
-  // Should be used for things like file/stream sizes.
-  using bigsize_t = uint64_t;
-
   // Output stream.
   class OutputStream
   {

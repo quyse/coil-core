@@ -3,6 +3,11 @@
 
 namespace Coil
 {
+  void EndianSwap(uint32_t& value)
+  {
+    value = ((value & 0xFF) << 24) | ((value & 0xFF00) << 8) | ((value & 0xFF0000) >> 8) | ((value & 0xFF000000) >> 24);
+  }
+
   StreamWriter::StreamWriter(OutputStream& stream)
   : _stream(stream) {}
 
@@ -84,7 +89,7 @@ namespace Coil
     Write(value.data(), value.length());
   }
 
-  bigsize_t StreamWriter::GetWrittenSize() const
+  uint64_t StreamWriter::GetWrittenSize() const
   {
     return _written;
   }
@@ -163,7 +168,7 @@ namespace Coil
     Read(bytes, length);
 
     // calculate value
-    uint64_t value = ((bigsize_t)first) << (length * 8);
+    uint64_t value = ((uint64_t)first) << (length * 8);
     for(uint8_t i = 0; i < length; ++i)
       value |= ((uint64_t)bytes[i]) << ((length - 1 - i) * 8);
 
@@ -177,7 +182,7 @@ namespace Coil
       throw Exception("StreamReader: no end of stream");
   }
 
-  bigsize_t StreamReader::GetReadSize() const
+  uint64_t StreamReader::GetReadSize() const
   {
     return _read;
   }
@@ -190,5 +195,24 @@ namespace Coil
       uint8_t* data = (uint8_t*)alloca(alignment);
       Read(data, alignment);
     }
+  }
+
+  StdStreamOutputStream::StdStreamOutputStream(std::ostream& stream)
+  : _stream(stream) {}
+
+  void StdStreamOutputStream::Write(Buffer const& buffer)
+  {
+    _stream.write((char const*)buffer.data, buffer.size);
+    if(_stream.fail()) throw Exception("failed to write to std stream");
+  }
+
+  StdStreamInputStream::StdStreamInputStream(std::istream& stream)
+  : _stream(stream) {}
+
+  size_t StdStreamInputStream::Read(Buffer const& buffer)
+  {
+    _stream.read((char*)buffer.data, buffer.size);
+    if(_stream.fail()) throw Exception("failed to read from std stream");
+    return _stream.gcount();
   }
 }

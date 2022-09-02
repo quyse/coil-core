@@ -2,9 +2,22 @@
 
 #include "base.hpp"
 #include <string>
+#include <istream>
+#include <ostream>
+#include <bit>
 
 namespace Coil
 {
+  static_assert((std::endian::native == std::endian::big) != (std::endian::native == std::endian::little));
+
+  void EndianSwap(uint32_t& value);
+
+  template <typename T>
+  concept EndianSwappable = requires(T value)
+  {
+    EndianSwap(value);
+  };
+
   // Writer of various data types.
   class StreamWriter
   {
@@ -21,6 +34,21 @@ namespace Coil
       Write(&value, sizeof(value));
     }
 
+    // Write number in little-endian.
+    template <EndianSwappable T>
+    void WriteLE(T value)
+    {
+      if constexpr(std::endian::native == std::endian::big) EndianSwap(value);
+      Write<T>(value);
+    }
+    // Write number in big-endian.
+    template <EndianSwappable T>
+    void WriteBE(T value)
+    {
+      if constexpr(std::endian::native == std::endian::little) EndianSwap(value);
+      Write<T>(value);
+    }
+
     // Write number in shortened format.
     void WriteNumber(uint64_t value);
     // Write string.
@@ -34,13 +62,13 @@ namespace Coil
       _WriteGap(alignment);
     }
 
-    bigsize_t GetWrittenSize() const;
+    uint64_t GetWrittenSize() const;
 
   private:
     void _WriteGap(size_t alignment);
 
     OutputStream& _stream;
-    bigsize_t _written = 0;
+    uint64_t _written = 0;
   };
 
   class StreamReader
@@ -56,6 +84,23 @@ namespace Coil
     {
       T value;
       Read(&value, sizeof(value));
+      return value;
+    }
+
+    // Read number in little-endian.
+    template <EndianSwappable T>
+    T ReadLE()
+    {
+      T value = Read<T>();
+      if constexpr(std::endian::native == std::endian::big) EndianSwap(value);
+      return value;
+    }
+    // Read number in big-endian.
+    template <EndianSwappable T>
+    T ReadBE()
+    {
+      T value = Read<T>();
+      if constexpr(std::endian::native == std::endian::little) EndianSwap(value);
       return value;
     }
 
@@ -75,12 +120,35 @@ namespace Coil
     // Ensure stream has ended.
     void ReadEnd();
 
-    bigsize_t GetReadSize() const;
+    uint64_t GetReadSize() const;
 
   private:
     void _ReadGap(size_t alignment);
 
     InputStream& _stream;
-    bigsize_t _read = 0;
+    uint64_t _read = 0;
   };
+
+  class StdStreamOutputStream : public OutputStream
+  {
+  public:
+    StdStreamOutputStream(std::ostream& stream);
+
+    void Write(Buffer const& buffer) override;
+
+  private:
+    std::ostream& _stream;
+  };
+
+  class StdStreamInputStream : public InputStream
+  {
+  public:
+    StdStreamInputStream(std::istream& stream);
+
+    size_t Read(Buffer const& buffer) override;
+
+  private:
+    std::istream& _stream;
+  };
+
 }
