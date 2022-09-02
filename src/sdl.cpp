@@ -1,6 +1,6 @@
 #include "sdl.hpp"
 #include "graphics.hpp"
-#include "utf8.hpp"
+#include "unicode.hpp"
 
 namespace Coil
 {
@@ -61,7 +61,7 @@ namespace Coil
       }
       break;
     case SDL_TEXTINPUT:
-      for(Utf8::Char32Iterator i(sdlEvent.text.text); *i; ++i)
+      for(Unicode::Iterator<char, char32_t, char const*> i(sdlEvent.text.text); *i; ++i)
       {
         InputEvent event;
         event.device = InputEvent::deviceKeyboard;
