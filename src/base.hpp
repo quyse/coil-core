@@ -136,6 +136,12 @@ namespace Coil
   class Exception
   {
   public:
+#if defined(__cpp_lib_source_location)
+    Exception(std::source_location location = std::source_location::current());
+#else
+    Exception() = default;
+#endif
+
     template <typename T>
     Exception(T&& value
 #if defined(__cpp_lib_source_location)

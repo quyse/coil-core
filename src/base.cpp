@@ -62,6 +62,13 @@ namespace Coil
     return Buffer(data, size);
   }
 
+#if defined(__cpp_lib_source_location)
+  Exception::Exception(std::source_location location)
+  {
+    std::move(*this) << location.file_name() << ':' << location.line() << ' ' << location.function_name() << ": ";
+  }
+#endif
+
   std::string Exception::GetMessage() const
   {
     return _message.str();

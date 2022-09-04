@@ -6,6 +6,7 @@
 , SDL2
 , vulkan-headers
 , spirv-headers
+, nlohmann_json
 }: let
   sources = lib.pipe ./src [
     builtins.readDir
@@ -33,6 +34,7 @@ in stdenv.mkDerivation {
     SDL2
     vulkan-headers
     spirv-headers
+    nlohmann_json
   ];
   configurePhase = ''
     ln -s ${buildfile} build.ninja
