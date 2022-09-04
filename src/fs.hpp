@@ -1,6 +1,7 @@
 #pragma once
 
 #include "base.hpp"
+#include <string>
 
 namespace Coil
 {
@@ -20,8 +21,8 @@ namespace Coil
     size_t Read(uint64_t offset, Buffer& buffer);
     uint64_t GetSize() const;
 
-    static File Open(char const* name);
-    static Buffer Map(Book& book, char const* name);
+    static File Open(std::string const& name);
+    static Buffer Map(Book& book, std::string const& name);
 
   private:
 #if defined(___COIL_PLATFORM_WINDOWS)
@@ -44,4 +45,17 @@ namespace Coil
     uint64_t _offset;
     uint64_t _size;
   };
+
+  constexpr char FilePathSeparator =
+#if defined(___COIL_PLATFORM_WINDOWS)
+    '\\'
+#else
+    '/'
+#endif
+  ;
+
+  // Get file name from file path.
+  std::string GetFilePathName(std::string const& path);
+  // Get directory from file path.
+  std::string GetFilePathDirectory(std::string const& path);
 }

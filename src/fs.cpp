@@ -112,29 +112,29 @@ namespace Coil
 #endif
   }
 
-  File File::Open(char const* name)
+  File File::Open(std::string const& name)
   {
 #if defined(___COIL_PLATFORM_WINDOWS)
     std::vector<wchar_t> s;
-    Unicode::Convert<char, char16_t>(name, s);
+    Unicode::Convert<char, char16_t>(name.c_str(), s);
     HANDLE hFile = ::CreateFileW(s.data(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, NULL);
     if(hFile == INVALID_HANDLE_VALUE)
       throw Exception("opening file failed");
     return hFile;
 #elif defined(___COIL_PLATFORM_POSIX)
-    int fd = ::open(name, O_RDONLY, 0);
+    int fd = ::open(name.c_str(), O_RDONLY, 0);
     if(fd < 0)
       throw Exception("opening file failed");
     return fd;
 #endif
   }
 
-  Buffer File::Map(Book& book, char const* name)
+  Buffer File::Map(Book& book, std::string const& name)
   {
 #if defined(___COIL_PLATFORM_WINDOWS)
     // open file
     std::vector<wchar_t> s;
-    Unicode::Convert<char, char16_t>(name, s);
+    Unicode::Convert<char, char16_t>(name.c_str(), s);
     HANDLE hFile = ::CreateFileW(s.data(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, NULL);
     if(hFile == INVALID_HANDLE_VALUE)
       throw Exception("opening file failed");
@@ -158,7 +158,7 @@ namespace Coil
 
     return Buffer(pMapping, size);
 #elif defined(___COIL_PLATFORM_POSIX)
-    int fd = ::open(name, O_RDONLY, 0);
+    int fd = ::open(name.c_str(), O_RDONLY, 0);
     if(fd < 0)
       throw Exception("opening file failed");
     File file = fd;
@@ -176,4 +176,19 @@ namespace Coil
     return Buffer(pMapping, size);
 #endif
   }
+
+  std::string GetFilePathName(std::string const& path)
+  {
+    size_t i;
+    for(i = path.length(); i > 0 && path[i - 1] != FilePathSeparator; --i);
+    return path.substr(i);
+  }
+
+  std::string GetFilePathDirectory(std::string const& path)
+  {
+    size_t i;
+    for(i = path.length() - 1; i > 0 && path[i] != FilePathSeparator; --i);
+    return path.substr(0, i);
+  }
+
 }
