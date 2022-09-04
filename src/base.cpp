@@ -62,6 +62,17 @@ namespace Coil
     return Buffer(data, size);
   }
 
+  std::string Exception::GetMessage() const
+  {
+    return _message.str();
+  }
+
+  Exception&& operator<<(Exception&& e, Exception&& inner)
+  {
+    e._message << '\n' << inner._message.str();
+    return std::move(e);
+  }
+
   BufferOutputStream::BufferOutputStream(Buffer const& buffer)
   : _buffer(buffer) {}
 

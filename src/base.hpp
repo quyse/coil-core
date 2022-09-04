@@ -1,6 +1,11 @@
 #pragma once
 
 #include <vector>
+#include <sstream>
+#include <version>
+#if defined(__cpp_lib_source_location)
+#include <source_location>
+#endif
 #include <cstddef>
 #include <cstdint>
 
@@ -131,17 +136,38 @@ namespace Coil
   class Exception
   {
   public:
-    Exception(char const* message)
-    : _message(message) {}
-
-    char const* GetMessage() const
+    template <typename T>
+    Exception(T&& value
+#if defined(__cpp_lib_source_location)
+      , std::source_location location = std::source_location::current()
+#endif
+    )
     {
-      return _message;
+      std::move(*this)
+#if defined(__cpp_lib_source_location)
+        << location.file_name() << ':' << location.line() << ' ' << location.function_name() << ": "
+#endif
+        << std::forward<T>(value);
+    }
+
+    Exception(Exception const&) = delete;
+    Exception(Exception&&) = default;
+
+    std::string GetMessage() const;
+
+    friend Exception&& operator<<(Exception&& e, Exception&& inner);
+
+    template <typename T>
+    friend Exception&& operator<<(Exception&& e, T&& value)
+    {
+      e._message << std::forward<T>(value);
+      return std::move(e);
     }
 
   private:
-    char const* const _message;
+    std::ostringstream _message;
   };
+
 
   // Output stream.
   class OutputStream
