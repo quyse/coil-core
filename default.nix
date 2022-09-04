@@ -4,7 +4,9 @@
 }:
 
 rec {
-  coil-core = pkgs.callPackage ./coil-core.nix {};
+  coil-core = pkgs.callPackage ./coil-core.nix {
+    clang = pkgs.clang_14;
+  };
 
   touch = {
     inherit coil-core;
