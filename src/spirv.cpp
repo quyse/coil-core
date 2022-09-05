@@ -205,6 +205,17 @@ namespace Coil
           for(size_t i = 0; i < argsCount; ++i)
             argsResultIds[i] = TraverseExpression(function, operationNode->GetArg(i).get());
 
+          auto emitSimpleOp = [&](spv::Op op)
+          {
+            EmitOp(function.code, op, [&]()
+            {
+              Emit(function.code, typeResultId);
+              resultId = EmitResultId(function.code);
+              for(size_t i = 0; i < argsCount; ++i)
+                Emit(function.code, argsResultIds[i]);
+            });
+          };
+
           // operation types
           switch(operationNode->GetOperationType())
           {
@@ -526,6 +537,9 @@ namespace Coil
           GLSL_OP_SCALAR(Mix,
             GLSL_SCALAR_INST(float, FMix);
           );
+          case ShaderOperationType::Dot:
+            emitSimpleOp(spv::Op::OpDot);
+            break;
           GLSL_OP_INST(Length, Length);
           GLSL_OP_INST(Distance, Distance);
           GLSL_OP_INST(Cross, Cross);

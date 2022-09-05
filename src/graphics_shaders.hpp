@@ -275,6 +275,7 @@ namespace Coil
     Max,
     Clamp,
     Mix,
+    Dot,
     Length,
     Distance,
     Cross,
@@ -470,6 +471,19 @@ namespace Coil
     return ShaderOperation<ShaderOperationType::Divide, T>(a, b);
   }
 
+  // vector-scalar multiplication
+  template <typename T, size_t n>
+  ShaderExpression<xvec<T, n>> operator*(ShaderExpression<xvec<T, n>> const& a, ShaderExpression<T> const& b)
+  {
+    return ShaderOperation<ShaderOperationType::Multiply, xvec<T, n>>(a, b);
+  }
+  // scalar-vector multiplication
+  template <typename T, size_t n>
+  ShaderExpression<xvec<T, n>> operator*(ShaderExpression<T> const& a, ShaderExpression<xvec<T, n>> const& b)
+  {
+    return ShaderOperation<ShaderOperationType::Multiply, xvec<T, n>>(a, b);
+  }
+
   // matrix-matrix multiplication
   template <size_t n, size_t m, size_t k>
   ShaderExpression<xmat<float, n, m>> operator*(ShaderExpression<xmat<float, n, k>> const& a, ShaderExpression<xmat<float, k, m>> const& b)
@@ -490,10 +504,10 @@ namespace Coil
   }
 
   // swizzle
-  template <typename T, size_t n>
-  ShaderExpression<typename VectorTraits<xvec<typename VectorTraits<T>::Scalar, n - 1>>::PossiblyScalar> swizzle(ShaderExpression<T> const& a, char const (&swizzle)[n])
+  template <typename T, size_t n, size_t m>
+  ShaderExpression<typename VectorTraits<xvec<T, m - 1>>::PossiblyScalar> swizzle(ShaderExpression<xvec<T, n>> const& a, char const (&swizzle)[m])
   {
-    return std::make_shared<ShaderOperationSwizzleNode>(ShaderDataTypeOf<typename VectorTraits<xvec<typename VectorTraits<T>::Scalar, n - 1>>::PossiblyScalar>(), a.node, swizzle);
+    return std::make_shared<ShaderOperationSwizzleNode>(ShaderDataTypeOf<typename VectorTraits<xvec<T, m - 1>>::PossiblyScalar>(), a.node, swizzle);
   }
 
   struct ShaderStatementNode : public ShaderNode
@@ -969,6 +983,8 @@ namespace Coil
     { return ShaderOperation<ShaderOperationType::Mix, T>(a, b, c); }
 
     // vectors
+    template <size_t n> ShaderExpression<float> dot(ShaderExpression<xvec<float, n>> const& a, ShaderExpression<xvec<float, n>> const& b)
+    { return ShaderOperation<ShaderOperationType::Dot, float>(a, b); }
     template <IsFloatScalarOrVector T> ShaderExpression<typename VectorTraits<T>::Scalar> length(ShaderExpression<T> const& a)
     { return ShaderOperation<ShaderOperationType::Length, typename VectorTraits<T>::Scalar>(a); }
     template <IsFloatScalarOrVector T> ShaderExpression<typename VectorTraits<T>::Scalar> distance(ShaderExpression<T> const& a, ShaderExpression<T> const& b)
