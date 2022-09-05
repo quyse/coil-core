@@ -308,6 +308,56 @@ namespace Coil
     return book.Allocate<VulkanVertexBuffer>(vertexBuffer);
   }
 
+  VulkanIndexBuffer& VulkanDevice::CreateIndexBuffer(Book& book, GraphicsPool& graphicsPool, Buffer const& buffer, bool is32Bit)
+  {
+    VulkanPool& pool = static_cast<VulkanPool&>(graphicsPool);
+
+    // create buffer
+    VkBuffer indexBuffer;
+    {
+      VkBufferCreateInfo info =
+      {
+        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+        .size = buffer.size,
+        .usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .queueFamilyIndexCount = 0,
+        .pQueueFamilyIndices = nullptr,
+      };
+      CheckSuccess(vkCreateBuffer(_device, &info, nullptr, &indexBuffer), "creating Vulkan index buffer failed");
+      AllocateVulkanObject(book, _device, indexBuffer);
+    }
+
+    // get memory requirements
+    VkMemoryRequirements memoryRequirements;
+    vkGetBufferMemoryRequirements(_device, indexBuffer, &memoryRequirements);
+
+    // allocate memory
+    // temporary, for simplicity we use host coherent memory
+    // Vulkan spec guarantees that buffer's memory requirements allow such memory, and it exists on device
+    std::pair<VkDeviceMemory, VkDeviceSize> memory = AllocateMemory(pool, memoryRequirements, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+    // copy data
+    {
+      // map memory
+      void* data;
+      CheckSuccess(vkMapMemory(_device, memory.first, memory.second, memoryRequirements.size, 0, &data), "mapping Vulkan memory failed");
+
+      // copy data
+      memcpy(data, buffer.data, buffer.size);
+
+      // unmap memory
+      vkUnmapMemory(_device, memory.first);
+    }
+
+    // bind it to buffer
+    CheckSuccess(vkBindBufferMemory(_device, indexBuffer, memory.first, memory.second), "binding Vulkan memory to index buffer failed");
+
+    return book.Allocate<VulkanIndexBuffer>(indexBuffer, is32Bit);
+  }
+
   VulkanImage& VulkanDevice::CreateDepthStencilImage(Book& book, GraphicsPool& graphicsPool, ivec2 const& size)
   {
     VulkanPool& pool = static_cast<VulkanPool&>(graphicsPool);
@@ -907,7 +957,7 @@ namespace Coil
     std::vector<VkVertexInputAttributeDescription> vertexAttributeDescriptions;
     for(size_t i = 0; i < config.vertexAttributes.size(); ++i)
     {
-      GraphicsPipelineConfig::VertexAttribute const& attribute = config.vertexAttributes[i];
+      GraphicsVertexAttribute const& attribute = config.vertexAttributes[i];
       vertexAttributeDescriptions.push_back(
       {
         .location = attribute.location,
@@ -1137,12 +1187,37 @@ namespace Coil
   VulkanContext::VulkanContext(VulkanDevice& device, VulkanPool& pool, Book& book, VkCommandBuffer commandBuffer)
   : _device(device), _pool(pool), _book(book), _commandBuffer(commandBuffer) {}
 
-  void VulkanContext::BindVertexBuffer(GraphicsVertexBuffer& graphicsVertexBuffer)
+  void VulkanContext::BindVertexBuffer(uint32_t slot, GraphicsVertexBuffer& graphicsVertexBuffer)
   {
     VulkanVertexBuffer& vertexBuffer = static_cast<VulkanVertexBuffer&>(graphicsVertexBuffer);
 
     VkDeviceSize offset = 0;
-    vkCmdBindVertexBuffers(_commandBuffer, 0, 1, &vertexBuffer._buffer, &offset);
+    vkCmdBindVertexBuffers(_commandBuffer, slot, 1, &vertexBuffer._buffer, &offset);
+  }
+
+  void VulkanContext::BindDynamicVertexBuffer(uint32_t slot, Buffer const& buffer)
+  {
+    // allocate buffer
+    auto buf = AllocateBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, buffer.size);
+    // upload data
+    void* data;
+    CheckSuccess(vkMapMemory(_device._device, buf.buffer.memory, buf.buffer.memoryOffset + buf.bufferOffset, buffer.size, 0, &data), "mapping Vulkan dynamic vertex buffer memory failed");
+    memcpy(data, buffer.data, buffer.size);
+    vkUnmapMemory(_device._device, buf.buffer.memory);
+
+    // bind buffer
+    vkCmdBindVertexBuffers(_commandBuffer, slot, 1, &buf.buffer.buffer, &buf.bufferOffset);
+  }
+
+  void VulkanContext::BindIndexBuffer(GraphicsIndexBuffer* pGraphicsIndexBuffer)
+  {
+    VulkanIndexBuffer* pIndexBuffer = static_cast<VulkanIndexBuffer*>(pGraphicsIndexBuffer);
+
+    _hasBoundIndexBuffer = !!pIndexBuffer;
+    if(_hasBoundIndexBuffer)
+    {
+      vkCmdBindIndexBuffer(_commandBuffer, pIndexBuffer->_buffer, 0, pIndexBuffer->_is32Bit ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_UINT16);
+    }
   }
 
   void VulkanContext::BindUniformBuffer(GraphicsSlotSetId slotSet, GraphicsSlotId slot, Buffer const& buffer)
@@ -1178,10 +1253,17 @@ namespace Coil
     _pPipeline = &pipeline;
   }
 
-  void VulkanContext::Draw(uint32_t verticesCount)
+  void VulkanContext::Draw(uint32_t indicesCount, uint32_t instancesCount)
   {
     PrepareDraw();
-    vkCmdDraw(_commandBuffer, verticesCount, 1, 0, 0);
+    if(_hasBoundIndexBuffer)
+    {
+      vkCmdDrawIndexed(_commandBuffer, indicesCount, instancesCount, 0, 0, 0);
+    }
+    else
+    {
+      vkCmdDraw(_commandBuffer, indicesCount, instancesCount, 0, 0);
+    }
   }
 
   void VulkanContext::BeginFrame()
@@ -1189,6 +1271,7 @@ namespace Coil
     _pBoundPipeline = nullptr;
     _pBoundPipelineLayout = nullptr;
     _pBoundDescriptorSets.clear();
+    _hasBoundIndexBuffer = false;
     for(auto& cacheIt : _descriptorSetLayoutCaches)
       cacheIt.second.nextDescriptorSet = 0;
     for(auto& cacheIt : _bufferCaches)
@@ -1857,6 +1940,9 @@ namespace Coil
 
   VulkanVertexBuffer::VulkanVertexBuffer(VkBuffer buffer)
   : _buffer(buffer) {}
+
+  VulkanIndexBuffer::VulkanIndexBuffer(VkBuffer buffer, bool is32Bit)
+  : _buffer(buffer), _is32Bit(is32Bit) {}
 
   VulkanImage::VulkanImage(VkImage image, VkImageView imageView)
   : _image(image), _imageView(imageView) {}

@@ -46,10 +46,12 @@ namespace Coil
   public:
     VulkanContext(VulkanDevice& device, VulkanPool& pool, Book& book, VkCommandBuffer commandBuffer);
 
-    void BindVertexBuffer(GraphicsVertexBuffer& vertexBuffer) override;
+    void BindVertexBuffer(uint32_t slot, GraphicsVertexBuffer& vertexBuffer) override;
+    void BindDynamicVertexBuffer(uint32_t slot, Buffer const& buffer) override;
+    void BindIndexBuffer(GraphicsIndexBuffer* pIndexBuffer) override;
     void BindUniformBuffer(GraphicsSlotSetId slotSet, GraphicsSlotId slot, Buffer const& buffer) override;
     void BindPipeline(GraphicsPipeline& pipeline) override;
-    void Draw(uint32_t verticesCount) override;
+    void Draw(uint32_t indicesCount, uint32_t instancesCount) override;
 
   private:
     struct CachedBuffer
@@ -93,6 +95,7 @@ namespace Coil
     VkPipeline _pBoundPipeline = nullptr;
     VkPipelineLayout _pBoundPipelineLayout = nullptr;
     std::vector<VkDescriptorSet> _pBoundDescriptorSets;
+    bool _hasBoundIndexBuffer = false;
 
     // temporary buffers
     std::vector<VkDescriptorSet> _bufDescriptorSets;
@@ -212,6 +215,18 @@ namespace Coil
     friend class VulkanContext;
   };
 
+  class VulkanIndexBuffer : public GraphicsIndexBuffer
+  {
+  public:
+    VulkanIndexBuffer(VkBuffer buffer, bool is32Bit);
+
+  private:
+    VkBuffer _buffer;
+    bool _is32Bit;
+
+    friend class VulkanContext;
+  };
+
   class VulkanImage : public GraphicsImage
   {
   public:
@@ -284,6 +299,7 @@ namespace Coil
     VulkanPool& CreatePool(Book& book, size_t chunkSize) override;
     VulkanPresenter& CreateWindowPresenter(Book& book, GraphicsPool& graphicsPool, Window& window, std::function<GraphicsRecreatePresentFunc>&& recreatePresent, std::function<GraphicsRecreatePresentPerImageFunc>&& recreatePresentPerImage) override;
     VulkanVertexBuffer& CreateVertexBuffer(Book& book, GraphicsPool& pool, Buffer const& buffer) override;
+    VulkanIndexBuffer& CreateIndexBuffer(Book& book, GraphicsPool& pool, Buffer const& buffer, bool is32Bit) override;
     VulkanImage& CreateDepthStencilImage(Book& book, GraphicsPool& pool, ivec2 const& size) override;
     VulkanPass& CreatePass(Book& book, GraphicsPassConfig const& config) override;
     VulkanShader& CreateShader(Book& book, GraphicsShaderRoots const& roots) override;

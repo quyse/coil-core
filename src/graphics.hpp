@@ -152,6 +152,10 @@ namespace Coil
   {
   };
 
+  class GraphicsIndexBuffer
+  {
+  };
+
   class GraphicsImage
   {
   };
@@ -222,6 +226,14 @@ namespace Coil
     Max,
   };
 
+  struct GraphicsVertexAttribute
+  {
+    uint32_t location;
+    uint32_t slot;
+    uint32_t offset;
+    VertexFormat format;
+  };
+
   struct GraphicsPipelineConfig
   {
     ivec2 viewport;
@@ -236,14 +248,7 @@ namespace Coil
     };
     std::vector<VertexSlot> vertexSlots;
 
-    struct VertexAttribute
-    {
-      uint32_t location;
-      uint32_t slot;
-      uint32_t offset;
-      VertexFormat format;
-    };
-    std::vector<VertexAttribute> vertexAttributes;
+    std::vector<GraphicsVertexAttribute> vertexAttributes;
 
     struct Blending
     {
@@ -291,6 +296,7 @@ namespace Coil
     virtual GraphicsPool& CreatePool(Book& book, size_t chunkSize) = 0;
     virtual GraphicsPresenter& CreateWindowPresenter(Book& book, GraphicsPool& graphicsPool, Window& window, std::function<GraphicsRecreatePresentFunc>&& recreatePresent, std::function<GraphicsRecreatePresentPerImageFunc>&& recreatePresentPerImage) = 0;
     virtual GraphicsVertexBuffer& CreateVertexBuffer(Book& book, GraphicsPool& pool, Buffer const& buffer) = 0;
+    virtual GraphicsIndexBuffer& CreateIndexBuffer(Book& book, GraphicsPool& pool, Buffer const& buffer, bool is32Bit) = 0;
     virtual GraphicsImage& CreateDepthStencilImage(Book& book, GraphicsPool& pool, ivec2 const& size) = 0;
     virtual GraphicsPass& CreatePass(Book& book, GraphicsPassConfig const& config) = 0;
     virtual GraphicsShader& CreateShader(Book& book, GraphicsShaderRoots const& exprs) = 0;
@@ -299,12 +305,28 @@ namespace Coil
     virtual GraphicsFramebuffer& CreateFramebuffer(Book& book, GraphicsPass& pass, std::span<GraphicsImage*> const& pImages, ivec2 const& size) = 0;
   };
 
+  class GraphicsMesh
+  {
+  public:
+    GraphicsMesh(GraphicsVertexBuffer& vertexBuffer, GraphicsIndexBuffer* _pIndexBuffer = nullptr);
+
+  private:
+    GraphicsVertexBuffer& _vertexBuffer;
+    GraphicsIndexBuffer* _pIndexBuffer;
+
+    friend class GraphicsContext;
+  };
+
   class GraphicsContext
   {
   public:
-    virtual void BindVertexBuffer(GraphicsVertexBuffer& vertexBuffer) = 0;
+    virtual void BindVertexBuffer(uint32_t slot, GraphicsVertexBuffer& vertexBuffer) = 0;
+    virtual void BindDynamicVertexBuffer(uint32_t slot, Buffer const& buffer) = 0;
+    virtual void BindIndexBuffer(GraphicsIndexBuffer* pIndexBuffer) = 0;
     virtual void BindUniformBuffer(GraphicsSlotSetId slotSet, GraphicsSlotId slot, Buffer const& buffer) = 0;
     virtual void BindPipeline(GraphicsPipeline& pipeline) = 0;
-    virtual void Draw(uint32_t verticesCount) = 0;
+    virtual void Draw(uint32_t indicesCount, uint32_t instancesCount = 1) = 0;
+
+    void BindMesh(GraphicsMesh const& mesh, uint32_t vertexBufferSlot);
   };
 }
