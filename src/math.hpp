@@ -120,8 +120,8 @@ namespace Coil
     return t;
   }
 
-  template <typename T>
-  struct xquat : public xvec<T, 4>
+  template <typename T, size_t alignment = 4 * sizeof(T)>
+  struct xquat : public xvec<T, 4, alignment>
   {
     consteval xquat()
     {
@@ -129,7 +129,27 @@ namespace Coil
     }
 
     constexpr xquat(T x, T y, T z, T w)
-    : xvec<T, 4>(x, y, z, w) {}
+    : xvec<T, 4, alignment>(x, y, z, w) {}
+
+    constexpr xquat(xquat const&) = default;
+    constexpr xquat& operator=(xquat const&) = default;
+
+    // tolerate another alignment when copying
+    template <size_t alignment2>
+    constexpr xquat(xquat<T, alignment2> const& value)
+    : xvec<T, 4, alignment>(value) {}
+    template <size_t alignment2>
+    constexpr xquat& operator=(xquat<T, alignment2> const& value)
+    {
+      static_cast<xvec<T, 4, alignment>&>(*this) = value;
+      return *this;
+    }
+
+    // quaternion conjugation
+    constexpr xquat operator-() const
+    {
+      return xquat(-this->x(), -this->y(), -this->z(), this->w());
+    }
   };
 
   // vector addition
@@ -172,6 +192,7 @@ namespace Coil
     return r;
   }
 
+  // matrix-matrix multiplication
   template <typename T, size_t n, size_t m, size_t k>
   constexpr xmat<T, n, m> operator*(xmat<T, n, k> const& a, xmat<T, k, m> const& b)
   {
@@ -187,6 +208,7 @@ namespace Coil
     return r;
   }
 
+  // matrix-vector multiplication
   template <typename T, size_t n, size_t m>
   constexpr xvec<T, n> operator*(xmat<T, n, m> const& a, xvec<T, m> const& b)
   {
@@ -201,6 +223,7 @@ namespace Coil
     return r;
   }
 
+  // vector-matrix multiplication
   template <typename T, size_t n, size_t m>
   constexpr xvec<T, m> operator*(xvec<T, n> const& a, xmat<T, n, m> const& b)
   {
@@ -213,6 +236,17 @@ namespace Coil
       r(j) = p;
     }
     return r;
+  }
+
+  // quaternion multiplication
+  template <typename T>
+  constexpr xquat<T> operator*(xquat<T> const& a, xquat<T> const& b)
+  {
+    return xquat<T>(
+      a.w() * b.x() + a.x() * b.w() + a.y() * b.z() - a.z() * b.y(),
+      a.w() * b.y() - a.x() * b.z() + a.y() * b.w() + a.z() * b.x(),
+      a.w() * b.z() + a.x() * b.y() - a.y() * b.x() + a.z() * b.w(),
+      a.w() * b.w() - a.x() * b.x() - a.y() * b.y() - a.z() * b.z());
   }
 
   template <typename T, size_t n>
@@ -280,6 +314,8 @@ namespace Coil
     // reduced type
     using PossiblyScalar = typename PossiblyScalarVectorTraits<T, n>::PossiblyScalarType;
   };
+  template <typename T>
+  struct VectorTraits<xquat<T>> : public VectorTraits<xvec<T, 4>> {};
   // define for selected scalars as well
   template <typename T>
   requires

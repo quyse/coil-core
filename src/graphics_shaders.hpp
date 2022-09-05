@@ -190,6 +190,15 @@ namespace Coil
       return t;
     }
   };
+  // quaternions are simply vectors
+  template <typename T>
+  struct ShaderDataTypeOfHelper<xquat<T>>
+  {
+    static ShaderDataVectorType const& GetType()
+    {
+      return ShaderDataTypeOfHelper<xvec<T, 4>>::GetType();
+    }
+  };
 
   template <typename T, uint32_t n, uint32_t m>
   struct ShaderDataTypeOfHelper<xmat<T, n, m>>
@@ -506,6 +515,11 @@ namespace Coil
   // swizzle
   template <typename T, size_t n, size_t m>
   ShaderExpression<typename VectorTraits<xvec<T, m - 1>>::PossiblyScalar> swizzle(ShaderExpression<xvec<T, n>> const& a, char const (&swizzle)[m])
+  {
+    return std::make_shared<ShaderOperationSwizzleNode>(ShaderDataTypeOf<typename VectorTraits<xvec<T, m - 1>>::PossiblyScalar>(), a.node, swizzle);
+  }
+  template <typename T, size_t m>
+  ShaderExpression<typename VectorTraits<xvec<T, m - 1>>::PossiblyScalar> swizzle(ShaderExpression<xquat<T>> const& a, char const (&swizzle)[m])
   {
     return std::make_shared<ShaderOperationSwizzleNode>(ShaderDataTypeOf<typename VectorTraits<xvec<T, m - 1>>::PossiblyScalar>(), a.node, swizzle);
   }
@@ -989,8 +1003,8 @@ namespace Coil
     { return ShaderOperation<ShaderOperationType::Length, typename VectorTraits<T>::Scalar>(a); }
     template <IsFloatScalarOrVector T> ShaderExpression<typename VectorTraits<T>::Scalar> distance(ShaderExpression<T> const& a, ShaderExpression<T> const& b)
     { return ShaderOperation<ShaderOperationType::Distance, typename VectorTraits<T>::Scalar>(a, b); }
-    template <typename T> ShaderExpression<xvec<T, 3>> cross(ShaderExpression<xvec<T, 3>> const& a, ShaderExpression<xvec<T, 3>> const& b, ShaderExpression<xvec<T, 3>> const& c)
-    { return ShaderOperation<ShaderOperationType::Cross, xvec<T, 3>>(a, b, c); }
+    template <typename T> ShaderExpression<xvec<T, 3>> cross(ShaderExpression<xvec<T, 3>> const& a, ShaderExpression<xvec<T, 3>> const& b)
+    { return ShaderOperation<ShaderOperationType::Cross, xvec<T, 3>>(a, b); }
     template <IsFloatScalarOrVector T> ShaderExpression<T> normalize(ShaderExpression<T> const& a)
     { return ShaderOperation<ShaderOperationType::Normalize, T>(a); }
   };
