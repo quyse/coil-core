@@ -111,6 +111,13 @@ namespace Coil
     Buffer(void const* data, size_t size)
     : data(const_cast<void*>(data)), size(size) {}
 
+    template <typename T>
+    Buffer(std::vector<T>& v)
+    : data(v.data()), size(v.size() * sizeof(T)) {}
+    template <typename T>
+    Buffer(std::vector<T> const& v)
+    : data(const_cast<void*>(v.data())), size(v.size() * sizeof(T)) {}
+
     Buffer slice(size_t sliceOffset, size_t sliceSize)
     {
       return Buffer(static_cast<uint8_t* const>(data) + sliceOffset, sliceSize);
