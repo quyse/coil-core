@@ -323,13 +323,7 @@ namespace Coil
             switch(dataType.GetKind())
             {
             case ShaderDataKind::Vector:
-              EmitOp(function.code, spv::Op::OpCompositeConstruct, [&]()
-              {
-                Emit(function.code, typeResultId);
-                resultId = EmitResultId(function.code);
-                for(size_t i = 0; i < argsCount; ++i)
-                  Emit(function.code, argsResultIds[i]);
-              });
+              emitSimpleOp(spv::Op::OpCompositeConstruct);
               break;
             default:
               throw Exception("unsupported SPIR-V shader data kind for construction");
@@ -391,13 +385,7 @@ namespace Coil
             break
 #define SCALAR_SOP(scalarType, sop) \
             case ShaderDataScalarType::Type::_##scalarType: \
-              EmitOp(function.code, spv::Op::Op##sop, [&] \
-              { \
-                Emit(function.code, typeResultId); \
-                resultId = EmitResultId(function.code); \
-                for(size_t i = 0; i < argsCount; ++i) \
-                  Emit(function.code, argsResultIds[i]); \
-              }); \
+              emitSimpleOp(spv::Op::Op##sop); \
               break
 
           OP_SCALAR(Negate,
@@ -455,13 +443,7 @@ namespace Coil
               else
                 throw Exception("unsupported SPIR-V shader data kind combination for multiplication");
 
-              EmitOp(function.code, op, [&]
-              {
-                Emit(function.code, typeResultId);
-                resultId = EmitResultId(function.code);
-                for(size_t i = 0; i < argsCount; ++i)
-                  Emit(function.code, argsResultIds[i]);
-              });
+              emitSimpleOp(op);
             }
             break;
 
