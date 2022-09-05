@@ -9,9 +9,9 @@ namespace Coil
   {
     return
     {
-      1,  0,  0,  t.x,
-      0,  1,  0,  t.y,
-      0,  0,  1,  t.z,
+      1,  0,  0,  t.x(),
+      0,  1,  0,  t.y(),
+      0,  0,  1,  t.z(),
       0,  0,  0,  1,
     };
   }
@@ -21,10 +21,10 @@ namespace Coil
   {
     return
     {
-      s.x,  0,    0,    0,
-      0,    s.y,  0,    0,
-      0,    0,    s.z,  0,
-      0,    0,    0,    1,
+      s.x(),  0,      0,      0,
+      0,      s.y(),  0,      0,
+      0,      0,      s.z(),  0,
+      0,      0,      0,      1,
     };
   }
 
@@ -38,10 +38,10 @@ namespace Coil
     xvec<T, 3> y = cross(z, x);
     return
     {
-      x.x,  x.y,  x.z,  -dot(x, eye),
-      y.x,  y.y,  y.z,  -dot(y, eye),
-      z.x,  z.y,  z.z,  -dot(z, eye),
-      0,    0,    0,    1,
+      x.x(),  x.y(),  x.z(),  -dot(x, eye),
+      y.x(),  y.y(),  y.z(),  -dot(y, eye),
+      z.x(),  z.y(),  z.z(),  -dot(z, eye),
+      0,      0,      0,      1,
     };
   }
 
@@ -85,9 +85,9 @@ namespace Coil
     T cosHalfAngle = cos(halfAngle);
     return
     {
-      axis.x * sinHalfAngle,
-      axis.y * sinHalfAngle,
-      axis.z * sinHalfAngle,
+      axis.x() * sinHalfAngle,
+      axis.y() * sinHalfAngle,
+      axis.z() * sinHalfAngle,
       cosHalfAngle,
     };
   }
@@ -96,16 +96,16 @@ namespace Coil
   template <typename T>
   xmat<T, 4, 4> AffineFromQuat(xquat<T> const& q)
   {
-    T ww  = q.w * q.w;
-    T xx  = q.x * q.x;
-    T yy  = q.y * q.y;
-    T zz  = q.z * q.z;
-    T wx2 = q.w * q.x * 2;
-    T wy2 = q.w * q.y * 2;
-    T wz2 = q.w * q.z * 2;
-    T xy2 = q.x * q.y * 2;
-    T xz2 = q.x * q.z * 2;
-    T yz2 = q.y * q.z * 2;
+    T ww  = q.w() * q.w();
+    T xx  = q.x() * q.x();
+    T yy  = q.y() * q.y();
+    T zz  = q.z() * q.z();
+    T wx2 = q.w() * q.x() * 2;
+    T wy2 = q.w() * q.y() * 2;
+    T wz2 = q.w() * q.z() * 2;
+    T xy2 = q.x() * q.y() * 2;
+    T xz2 = q.x() * q.z() * 2;
+    T yz2 = q.y() * q.z() * 2;
     return
     {
       (ww + xx - yy - zz), (xy2 - wz2),         (xz2 + wy2),         0,

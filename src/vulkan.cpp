@@ -326,8 +326,8 @@ namespace Coil
         .format = format,
         .extent =
         {
-          .width = (uint32_t)size.x,
-          .height = (uint32_t)size.y,
+          .width = (uint32_t)size.x(),
+          .height = (uint32_t)size.y(),
           .depth = 1,
         },
         .mipLevels = 1,
@@ -680,10 +680,10 @@ namespace Coil
           {
             .float32 =
             {
-              config.clearColor.x,
-              config.clearColor.y,
-              config.clearColor.z,
-              config.clearColor.w,
+              config.clearColor.x(),
+              config.clearColor.y(),
+              config.clearColor.z(),
+              config.clearColor.w(),
             },
           };
         }
@@ -941,15 +941,15 @@ namespace Coil
     {
       .x = 0,
       .y = 0,
-      .width = (float)config.viewport.x,
-      .height = (float)config.viewport.y,
+      .width = (float)config.viewport.x(),
+      .height = (float)config.viewport.y(),
       .minDepth = 0,
       .maxDepth = 1,
     };
     VkRect2D scissor =
     {
       .offset = { 0, 0 },
-      .extent = { (uint32_t)config.viewport.x, (uint32_t)config.viewport.y },
+      .extent = { (uint32_t)config.viewport.x(), (uint32_t)config.viewport.y() },
     };
     VkPipelineViewportStateCreateInfo viewportStateInfo =
     {
@@ -1082,8 +1082,8 @@ namespace Coil
       .renderPass = pass._renderPass,
       .attachmentCount = (uint32_t)attachments.size(),
       .pAttachments = attachments.data(),
-      .width = (uint32_t)size.x,
-      .height = (uint32_t)size.y,
+      .width = (uint32_t)size.x(),
+      .height = (uint32_t)size.y(),
       .layers = 1,
     };
     VkFramebuffer framebuffer;
@@ -1713,7 +1713,7 @@ namespace Coil
         .renderArea =
         {
           .offset = { 0, 0 },
-          .extent = { (uint32_t)framebuffer._size.x, (uint32_t)framebuffer._size.y },
+          .extent = { (uint32_t)framebuffer._size.x(), (uint32_t)framebuffer._size.y() },
         },
         .clearValueCount = (uint32_t)pass._clearValues.size(),
         .pClearValues = pass._clearValues.data(),

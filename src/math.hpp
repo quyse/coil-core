@@ -5,8 +5,8 @@
 
 namespace Coil
 {
-  template <typename T, size_t n>
-  struct alignas((n <= 1 ? 1 : n <= 2 ? 2 : 4) * sizeof(T)) xvec
+  template <typename T, size_t n, size_t alignment = (n <= 1 ? 1 : n <= 2 ? 2 : 4) * sizeof(T)>
+  struct alignas(alignment) xvec
   {
     T t[n];
 
@@ -14,6 +14,38 @@ namespace Coil
     {
       for(size_t i = 0; i < n; ++i)
         t[i] = {};
+    }
+
+    constexpr xvec(xvec const&) = default;
+    constexpr xvec& operator=(xvec const&) = default;
+
+    // tolerate another alignment when copying
+    template <size_t alignment2>
+    constexpr xvec(xvec<T, n, alignment2> const& value)
+    {
+      for(size_t i = 0; i < n; ++i)
+        t[i] = value.t[i];
+    }
+    template <size_t alignment2>
+    constexpr xvec& operator=(xvec<T, n, alignment2> const& value)
+    {
+      for(size_t i = 0; i < n; ++i)
+        t[i] = value.t[i];
+      return *this;
+    }
+
+    template <typename... Args>
+    constexpr xvec(Args const... args)
+    requires (std::is_convertible_v<Args, T> && ...)
+    : xvec({ static_cast<T>(args)... }) {}
+
+    constexpr xvec(std::initializer_list<T> const& list)
+    {
+      T const* data = std::data(list);
+      size_t k = 0;
+      size_t listSize = list.size();
+      for(size_t i = 0; i < n; ++i)
+        t[i] = k < listSize ? data[k++] : T{};
     }
 
     T& operator()(size_t i)
@@ -26,98 +58,14 @@ namespace Coil
       return t[i];
     }
 
-    friend auto operator<=>(xvec const&, xvec const&) = default;
-  };
-
-  template <typename T>
-  struct alignas(2 * sizeof(T)) xvec<T, 2>
-  {
-    union
-    {
-      struct
-      {
-        T x, y;
-      };
-      T t[2];
-    };
-
-    consteval xvec()
-    : x{}, y{} {}
-
-    constexpr xvec(T x, T y)
-    : x(x), y(y) {}
-
-    constexpr T& operator()(size_t i)
-    {
-      return t[i];
-    }
-
-    constexpr T operator()(size_t i) const
-    {
-      return t[i];
-    }
-
-    friend auto operator<=>(xvec const&, xvec const&) = default;
-  };
-
-  template <typename T>
-  struct alignas(4 * sizeof(T)) xvec<T, 3>
-  {
-    union
-    {
-      struct
-      {
-        T x, y, z;
-      };
-      T t[3];
-    };
-
-    consteval xvec()
-    : x{}, y{}, z{} {}
-
-    constexpr xvec(T x, T y, T z)
-    : x(x), y(y), z(z) {}
-
-    constexpr T& operator()(size_t i)
-    {
-      return t[i];
-    }
-
-    constexpr T operator()(size_t i) const
-    {
-      return t[i];
-    }
-
-    friend auto operator<=>(xvec const&, xvec const&) = default;
-  };
-
-  template <typename T>
-  struct alignas(4 * sizeof(T)) xvec<T, 4>
-  {
-    union
-    {
-      struct
-      {
-        T x, y, z, w;
-      };
-      T t[4];
-    };
-
-    consteval xvec()
-    : x{}, y{}, z{}, w{} {}
-
-    constexpr xvec(T x, T y, T z, T w)
-    : x(x), y(y), z(z), w(w) {}
-
-    constexpr T& operator()(size_t i)
-    {
-      return t[i];
-    }
-
-    constexpr T operator()(size_t i) const
-    {
-      return t[i];
-    }
+    constexpr T x() const { return t[0]; }
+    constexpr T y() const { return t[1]; }
+    constexpr T z() const { return t[2]; }
+    constexpr T w() const { return t[3]; }
+    constexpr T& x() { return t[0]; }
+    constexpr T& y() { return t[1]; }
+    constexpr T& z() { return t[2]; }
+    constexpr T& w() { return t[3]; }
 
     friend auto operator<=>(xvec const&, xvec const&) = default;
   };
@@ -177,7 +125,7 @@ namespace Coil
   {
     consteval xquat()
     {
-      this->w = 1;
+      this->w() = 1;
     }
 
     constexpr xquat(T x, T y, T z, T w)
@@ -303,9 +251,9 @@ namespace Coil
   {
     return
     {
-      a.y * b.z - a.z * b.y,
-      a.z * b.x - a.x * b.z,
-      a.x * b.y - a.y * b.x,
+      a.y() * b.z() - a.z() * b.y(),
+      a.z() * b.x() - a.x() * b.z(),
+      a.x() * b.y() - a.y() * b.x(),
     };
   }
 
@@ -360,9 +308,11 @@ namespace Coil
 
   // convenience synonyms
 
+  using vec1 = float;
   using vec2 = xvec<float, 2>;
   using vec3 = xvec<float, 3>;
   using vec4 = xvec<float, 4>;
+  using mat1x1 = float;
   using mat1x2 = xmat<float, 1, 2>;
   using mat1x3 = xmat<float, 1, 3>;
   using mat1x4 = xmat<float, 1, 4>;
@@ -379,9 +329,11 @@ namespace Coil
   using mat4x3 = xmat<float, 4, 3>;
   using mat4x4 = xmat<float, 4, 4>;
 
+  using uvec1 = uint32_t;
   using uvec2 = xvec<uint32_t, 2>;
   using uvec3 = xvec<uint32_t, 3>;
   using uvec4 = xvec<uint32_t, 4>;
+  using umat1x1 = uint32_t;
   using umat1x2 = xmat<uint32_t, 1, 2>;
   using umat1x3 = xmat<uint32_t, 1, 3>;
   using umat1x4 = xmat<uint32_t, 1, 4>;
@@ -398,9 +350,11 @@ namespace Coil
   using umat4x3 = xmat<uint32_t, 4, 3>;
   using umat4x4 = xmat<uint32_t, 4, 4>;
 
+  using ivec1 = int32_t;
   using ivec2 = xvec<int32_t, 2>;
   using ivec3 = xvec<int32_t, 3>;
   using ivec4 = xvec<int32_t, 4>;
+  using imat1x1 = int32_t;
   using imat1x2 = xmat<int32_t, 1, 2>;
   using imat1x3 = xmat<int32_t, 1, 3>;
   using imat1x4 = xmat<int32_t, 1, 4>;
@@ -417,9 +371,11 @@ namespace Coil
   using imat4x3 = xmat<int32_t, 4, 3>;
   using imat4x4 = xmat<int32_t, 4, 4>;
 
+  using bvec1 = bool;
   using bvec2 = xvec<bool, 2>;
   using bvec3 = xvec<bool, 3>;
   using bvec4 = xvec<bool, 4>;
+  using bmat1x1 = bool;
   using bmat1x2 = xmat<bool, 1, 2>;
   using bmat1x3 = xmat<bool, 1, 3>;
   using bmat1x4 = xmat<bool, 1, 4>;
@@ -439,11 +395,21 @@ namespace Coil
   using quat = xquat<float>;
   using dquat = xquat<double>;
 
+  // unaligned
+
+  using vec1_ua = float;
+  using vec2_ua = xvec<float, 2, 0>;
+  using vec3_ua = xvec<float, 3, 0>;
+  using vec4_ua = xvec<float, 4, 0>;
+
   // some alignment/size tests
   static_assert(sizeof(xvec<float, 1>) == 4 && alignof(xvec<float, 1>) == 4);
   static_assert(sizeof(vec2) == 8 && alignof(vec2) == 8);
   static_assert(sizeof(vec3) == 16 && alignof(vec3) == 16);
   static_assert(sizeof(vec4) == 16 && alignof(vec4) == 16);
+  static_assert(sizeof(vec2_ua) == 8 && alignof(vec2_ua) == 4);
+  static_assert(sizeof(vec3_ua) == 12 && alignof(vec3_ua) == 4);
+  static_assert(sizeof(vec4_ua) == 16 && alignof(vec3_ua) == 4);
   static_assert(sizeof(mat2x3) == 32 && alignof(mat2x3) == 16);
   static_assert(sizeof(mat3x2) == 24 && alignof(mat3x2) == 8);
   static_assert(sizeof(mat3x4) == 48 && alignof(mat3x4) == 16);
