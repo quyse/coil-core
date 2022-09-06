@@ -43,7 +43,7 @@ namespace Coil
       BufferIndex buffer;
       uint32_t byteOffset;
       uint32_t byteLength;
-      uint32_t byteStride;
+      std::optional<uint32_t> byteStride;
     };
     std::vector<BufferView> bufferViews;
 

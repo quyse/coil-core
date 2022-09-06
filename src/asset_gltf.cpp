@@ -1,4 +1,4 @@
-#include "graphics_gltf.hpp"
+#include "asset_gltf.hpp"
 #include "data.hpp"
 #include "json.hpp"
 
@@ -62,7 +62,7 @@ namespace Coil
         .buffer = JsonParser<GLTF::BufferIndex>::ParseField(j, "buffer"),
         .byteOffset = JsonParser<uint32_t>::ParseField(j, "byteOffset", 0),
         .byteLength = JsonParser<uint32_t>::ParseField(j, "byteLength"),
-        .byteStride = JsonParser<uint32_t>::ParseField(j, "byteStride", 0),
+        .byteStride = JsonParser<std::optional<uint32_t>>::ParseField(j, "byteStride", {}),
       };
     }
   };
@@ -200,7 +200,10 @@ namespace Coil
     {
       shouldBeBinaryChunk = jsonRoot.at("/buffers/0/uri"_json_pointer).is_null();
     }
-    catch(json::exception const&) {}
+    catch(json::exception const&)
+    {
+      shouldBeBinaryChunk = true;
+    }
 
     // read binary chunk if it exists
     if(shouldBeBinaryChunk)

@@ -304,8 +304,8 @@ namespace Coil
   };
   template <typename T>
   struct VectorTraits;
-  template <typename T, size_t n>
-  struct VectorTraits<xvec<T, n>>
+  template <typename T, size_t n, size_t alignment>
+  struct VectorTraits<xvec<T, n, alignment>>
   {
     // scalar type
     using Scalar = T;
@@ -314,14 +314,18 @@ namespace Coil
     // reduced type
     using PossiblyScalar = typename PossiblyScalarVectorTraits<T, n>::PossiblyScalarType;
   };
-  template <typename T>
-  struct VectorTraits<xquat<T>> : public VectorTraits<xvec<T, 4>> {};
+  template <typename T, size_t alignment>
+  struct VectorTraits<xquat<T, alignment>> : public VectorTraits<xvec<T, 4, alignment>> {};
   // define for selected scalars as well
   template <typename T>
   requires
     std::is_same_v<T, float> ||
     std::is_same_v<T, uint32_t> ||
+    std::is_same_v<T, uint16_t> ||
+    std::is_same_v<T, uint8_t> ||
     std::is_same_v<T, int32_t> ||
+    std::is_same_v<T, int16_t> ||
+    std::is_same_v<T, int8_t> ||
     std::is_same_v<T, bool>
   struct VectorTraits<T>
   {
