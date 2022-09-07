@@ -60,27 +60,47 @@ namespace Coil
   static_assert(IsVertexWithTexcoord<VertexPNT<>>);
   static_assert(sizeof(VertexPNT<>) == 32 && alignof(VertexPNT<>) == 4);
 
-  template <typename V, typename I>
-  struct AssetGeometry
+  // untyped mesh container
+  struct AssetMeshBuffer
+  {
+    uint32_t verticesCount;
+    uint32_t vertexStride;
+    std::vector<uint8_t> vertices;
+    uint32_t indicesCount;
+    uint32_t indexStride;
+    std::vector<uint8_t> indices;
+  };
+
+  // typed mesh container
+  template <typename V>
+  struct AssetMesh
   {
     using Vertex = V;
-    using Index = I;
 
     std::vector<Vertex> vertices;
-    std::vector<Index> indices;
-  };
+    std::vector<uint32_t> indices;
 
-  template <size_t n>
-  struct OptimalIndexHelper
-  {
-    using Index = uint32_t;
+    AssetMeshBuffer ToBuffer()
+    {
+      AssetMeshBuffer buffer;
+      buffer.verticesCount = (uint32_t)vertices.size();
+      buffer.vertexStride = sizeof(Vertex);
+      buffer.vertices.resize(buffer.verticesCount * buffer.vertexStride);
+      buffer.indicesCount = (uint32_t)indices.size();
+      buffer.indexStride = buffer.indicesCount <= 0xFFFF ? sizeof(uint16_t) : sizeof(uint32_t);
+      buffer.indices.resize(buffer.indicesCount * buffer.indexStride);
+
+      std::copy_n(vertices.data(), buffer.verticesCount, (Vertex*)buffer.vertices.data());
+      if(buffer.indexStride == sizeof(uint16_t))
+      {
+        std::copy_n(indices.data(), buffer.indicesCount, (uint16_t*)buffer.indices.data());
+      }
+      else
+      {
+        std::copy_n(indices.data(), buffer.indicesCount, (uint32_t*)buffer.indices.data());
+      }
+
+      return std::move(buffer);
+    }
   };
-  template <size_t n>
-  requires(n <= 0xFFFF)
-  struct OptimalIndexHelper<n>
-  {
-    using Index = uint16_t;
-  };
-  template <size_t n>
-  using OptimalIndex = typename OptimalIndexHelper<n>::Index;
 }

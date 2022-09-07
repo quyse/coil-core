@@ -88,12 +88,28 @@ namespace Coil
     };
   }
 
-  GraphicsMesh::GraphicsMesh(GraphicsVertexBuffer& vertexBuffer, GraphicsIndexBuffer* pIndexBuffer)
-  : _vertexBuffer(vertexBuffer), _pIndexBuffer(pIndexBuffer) {}
+  GraphicsMesh::GraphicsMesh(GraphicsVertexBuffer& vertexBuffer, uint32_t verticesCount)
+  : _vertexBuffer(vertexBuffer), _count(verticesCount) {}
 
-  void GraphicsContext::BindMesh(GraphicsMesh const& mesh, uint32_t vertexBufferSlot)
+  GraphicsMesh::GraphicsMesh(GraphicsVertexBuffer& vertexBuffer, GraphicsIndexBuffer& indexBuffer, uint32_t indicesCount)
+  : _vertexBuffer(vertexBuffer), _pIndexBuffer(&indexBuffer), _count(indicesCount) {}
+
+  GraphicsVertexBuffer& GraphicsMesh::GetVertexBuffer() const
   {
-    BindVertexBuffer(vertexBufferSlot, mesh._vertexBuffer);
+    return _vertexBuffer;
+  }
+  GraphicsIndexBuffer* GraphicsMesh::GetIndexBuffer() const
+  {
+    return _pIndexBuffer;
+  }
+  uint32_t GraphicsMesh::GetCount() const
+  {
+    return _count;
+  }
+
+  void GraphicsContext::BindMesh(GraphicsMesh const& mesh)
+  {
+    BindVertexBuffer(0, mesh._vertexBuffer);
     BindIndexBuffer(mesh._pIndexBuffer);
   }
 }

@@ -308,11 +308,17 @@ namespace Coil
   class GraphicsMesh
   {
   public:
-    GraphicsMesh(GraphicsVertexBuffer& vertexBuffer, GraphicsIndexBuffer* _pIndexBuffer = nullptr);
+    GraphicsMesh(GraphicsVertexBuffer& vertexBuffer, uint32_t verticesCount);
+    GraphicsMesh(GraphicsVertexBuffer& vertexBuffer, GraphicsIndexBuffer& _indexBuffer, uint32_t indicesCount);
+
+    GraphicsVertexBuffer& GetVertexBuffer() const;
+    GraphicsIndexBuffer* GetIndexBuffer() const;
+    uint32_t GetCount() const;
 
   private:
     GraphicsVertexBuffer& _vertexBuffer;
-    GraphicsIndexBuffer* _pIndexBuffer;
+    GraphicsIndexBuffer* _pIndexBuffer = nullptr;
+    uint32_t _count;
 
     friend class GraphicsContext;
   };
@@ -327,6 +333,6 @@ namespace Coil
     virtual void BindPipeline(GraphicsPipeline& pipeline) = 0;
     virtual void Draw(uint32_t indicesCount, uint32_t instancesCount = 1) = 0;
 
-    void BindMesh(GraphicsMesh const& mesh, uint32_t vertexBufferSlot);
+    void BindMesh(GraphicsMesh const& mesh);
   };
 }

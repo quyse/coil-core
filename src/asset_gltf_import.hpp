@@ -1,6 +1,6 @@
 #pragma once
 
-#include "asset_geometry.hpp"
+#include "asset_mesh.hpp"
 #include "asset_gltf.hpp"
 #include <limits>
 
@@ -128,11 +128,11 @@ namespace Coil
     GLTF const& _gltf;
   };
 
-  template <typename Vertex, typename Index = uint32_t>
+  template <typename Vertex>
   class GLTFMeshImporter : public GLTFImporter
   {
   public:
-    static AssetGeometry<Vertex, Index> Import(GLTF const& gltf, GLTF::MeshIndex meshIndex)
+    static AssetMesh<Vertex> Import(GLTF const& gltf, GLTF::MeshIndex meshIndex)
     {
       GLTFMeshImporter importer(gltf);
       importer.DoImport(meshIndex);
@@ -148,7 +148,6 @@ namespace Coil
       try
       {
         auto const& mesh = GetMesh(meshIndex);
-        AssetGeometry<Vertex, Index> geometry;
 
         // supporting only one primitive currently
         if(mesh.primitives.size() != 1)
@@ -191,7 +190,7 @@ namespace Coil
         // import indices
         if(meshPrimitive.indices.has_value())
         {
-          CopyAccessorData<Index, Index>(_geometry.indices, 0, meshPrimitive.indices.value());
+          CopyAccessorData<uint32_t, uint32_t>(_geometry.indices, 0, meshPrimitive.indices.value());
         }
       }
       catch(Exception& exception)
@@ -200,6 +199,6 @@ namespace Coil
       }
     }
 
-    AssetGeometry<Vertex, Index> _geometry;
+    AssetMesh<Vertex> _geometry;
   };
 }
