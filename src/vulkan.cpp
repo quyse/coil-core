@@ -943,9 +943,9 @@ namespace Coil
     addShaderStage(VK_SHADER_STAGE_FRAGMENT_BIT, "mainFragment");
 
     std::vector<VkVertexInputBindingDescription> vertexBindingDescriptions;
-    for(size_t i = 0; i < config.vertexSlots.size(); ++i)
+    for(size_t i = 0; i < config.vertexLayout.slots.size(); ++i)
     {
-      GraphicsPipelineConfig::VertexSlot const& slot = config.vertexSlots[i];
+      auto const& slot = config.vertexLayout.slots[i];
       vertexBindingDescriptions.push_back(
       {
         .binding = (uint32_t)i,
@@ -955,12 +955,12 @@ namespace Coil
     }
 
     std::vector<VkVertexInputAttributeDescription> vertexAttributeDescriptions;
-    for(size_t i = 0; i < config.vertexAttributes.size(); ++i)
+    for(size_t i = 0; i < config.vertexLayout.attributes.size(); ++i)
     {
-      GraphicsVertexAttribute const& attribute = config.vertexAttributes[i];
+      auto const& attribute = config.vertexLayout.attributes[i];
       vertexAttributeDescriptions.push_back(
       {
-        .location = attribute.location,
+        .location = (uint32_t)i,
         .binding = attribute.slot,
         .format = VulkanSystem::GetVertexFormat(attribute.format),
         .offset = attribute.offset,

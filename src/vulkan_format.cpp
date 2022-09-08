@@ -5,7 +5,7 @@ namespace Coil
   VkFormat VulkanSystem::GetVertexFormat(VertexFormat format)
   {
 #define F(f) VertexFormat::Format::f
-#define S(s) VertexFormat::Size::_##s
+#define S(s) s
 #define R(r) VK_FORMAT_##r
     switch(format.format)
     {
@@ -15,11 +15,11 @@ namespace Coil
       case 1:
         switch(format.size)
         {
-        case S(16bit):
+        case S(2):
           return R(R16_SFLOAT);
-        case S(32bit):
+        case S(4):
           return R(R32_SFLOAT);
-        case S(64bit):
+        case S(8):
           return R(R64_SFLOAT);
         default: break;
         }
@@ -27,11 +27,11 @@ namespace Coil
       case 2:
         switch(format.size)
         {
-        case S(32bit):
+        case S(4):
           return R(R16G16_SFLOAT);
-        case S(64bit):
+        case S(8):
           return R(R32G32_SFLOAT);
-        case S(128bit):
+        case S(16):
           return R(R64G64_SFLOAT);
         default: break;
         }
@@ -39,9 +39,9 @@ namespace Coil
       case 3:
         switch(format.size)
         {
-        case S(48bit):
+        case S(6):
           return R(R16G16B16_SFLOAT);
-        case S(96bit):
+        case S(12):
           return R(R32G32B32_SFLOAT);
         default: break;
         }
@@ -49,9 +49,9 @@ namespace Coil
       case 4:
         switch(format.size)
         {
-        case S(64bit):
+        case S(8):
           return R(R16G16B16A16_SFLOAT);
-        case S(128bit):
+        case S(16):
           return R(R32G32B32A32_SFLOAT);
         default: break;
         }
@@ -65,13 +65,13 @@ namespace Coil
       case 1:
         switch(format.size)
         {
-        case S(8bit):
+        case S(3):
           return R(R8_SINT);
-        case S(16bit):
+        case S(2):
           return R(R16_SINT);
-        case S(32bit):
+        case S(4):
           return R(R32_SINT);
-        case S(64bit):
+        case S(8):
           return R(R64_SINT);
         default: break;
         }
@@ -79,13 +79,13 @@ namespace Coil
       case 2:
         switch(format.size)
         {
-        case S(16bit):
+        case S(2):
           return R(R8G8_SINT);
-        case S(32bit):
+        case S(4):
           return R(R16G16_SINT);
-        case S(64bit):
+        case S(8):
           return R(R32G32_SINT);
-        case S(128bit):
+        case S(16):
           return R(R64G64_SINT);
         default: break;
         }
@@ -93,11 +93,11 @@ namespace Coil
       case 3:
         switch(format.size)
         {
-        case S(24bit):
+        case S(3):
           return R(R8G8B8_SINT);
-        case S(48bit):
+        case S(6):
           return R(R16G16B16_SINT);
-        case S(96bit):
+        case S(12):
           return R(R32G32B32_SINT);
         default: break;
         }
@@ -105,11 +105,11 @@ namespace Coil
       case 4:
         switch(format.size)
         {
-        case S(32bit):
+        case S(4):
           return R(R8G8B8A8_SINT);
-        case S(64bit):
+        case S(8):
           return R(R16G16B16A16_SINT);
-        case S(128bit):
+        case S(16):
           return R(R32G32B32A32_SINT);
         default: break;
         }
@@ -123,13 +123,13 @@ namespace Coil
       case 1:
         switch(format.size)
         {
-        case S(8bit):
+        case S(1):
           return R(R8_UINT);
-        case S(16bit):
+        case S(2):
           return R(R16_UINT);
-        case S(32bit):
+        case S(4):
           return R(R32_UINT);
-        case S(64bit):
+        case S(8):
           return R(R64_UINT);
         default: break;
         }
@@ -137,13 +137,13 @@ namespace Coil
       case 2:
         switch(format.size)
         {
-        case S(16bit):
+        case S(2):
           return R(R8G8_UINT);
-        case S(32bit):
+        case S(4):
           return R(R16G16_UINT);
-        case S(64bit):
+        case S(8):
           return R(R32G32_UINT);
-        case S(128bit):
+        case S(16):
           return R(R64G64_UINT);
         default: break;
         }
@@ -151,11 +151,11 @@ namespace Coil
       case 3:
         switch(format.size)
         {
-        case S(24bit):
+        case S(3):
           return R(R8G8B8_UINT);
-        case S(48bit):
+        case S(6):
           return R(R16G16B16_UINT);
-        case S(96bit):
+        case S(12):
           return R(R32G32B32_UINT);
         default: break;
         }
@@ -163,11 +163,11 @@ namespace Coil
       case 4:
         switch(format.size)
         {
-        case S(32bit):
+        case S(4):
           return R(R8G8B8A8_UINT);
-        case S(64bit):
+        case S(8):
           return R(R16G16B16A16_UINT);
-        case S(128bit):
+        case S(16):
           return R(R32G32B32A32_UINT);
         default: break;
         }
@@ -181,9 +181,9 @@ namespace Coil
       case 1:
         switch(format.size)
         {
-        case S(8bit):
+        case S(1):
           return R(R8_SNORM);
-        case S(16bit):
+        case S(2):
           return R(R16_SNORM);
         default: break;
         }
@@ -191,9 +191,9 @@ namespace Coil
       case 2:
         switch(format.size)
         {
-        case S(16bit):
+        case S(2):
           return R(R8G8_SNORM);
-        case S(32bit):
+        case S(4):
           return R(R16G16_SNORM);
         default: break;
         }
@@ -201,9 +201,9 @@ namespace Coil
       case 3:
         switch(format.size)
         {
-        case S(24bit):
+        case S(3):
           return R(R8G8B8_SNORM);
-        case S(48bit):
+        case S(6):
           return R(R16G16B16_SNORM);
         default: break;
         }
@@ -211,9 +211,9 @@ namespace Coil
       case 4:
         switch(format.size)
         {
-        case S(32bit):
+        case S(4):
           return R(R8G8B8A8_SNORM);
-        case S(64bit):
+        case S(8):
           return R(R16G16B16A16_SNORM);
         default: break;
         }
@@ -227,9 +227,9 @@ namespace Coil
       case 1:
         switch(format.size)
         {
-        case S(8bit):
+        case S(1):
           return R(R8_UNORM);
-        case S(16bit):
+        case S(2):
           return R(R16_UNORM);
         default: break;
         }
@@ -237,9 +237,9 @@ namespace Coil
       case 2:
         switch(format.size)
         {
-        case S(16bit):
+        case S(2):
           return R(R8G8_UNORM);
-        case S(32bit):
+        case S(4):
           return R(R16G16_UNORM);
         default: break;
         }
@@ -247,9 +247,9 @@ namespace Coil
       case 3:
         switch(format.size)
         {
-        case S(24bit):
+        case S(3):
           return R(R8G8B8_UNORM);
-        case S(48bit):
+        case S(6):
           return R(R16G16B16_UNORM);
         default: break;
         }
@@ -257,9 +257,9 @@ namespace Coil
       case 4:
         switch(format.size)
         {
-        case S(32bit):
+        case S(4):
           return R(R8G8B8A8_UNORM);
-        case S(64bit):
+        case S(8):
           return R(R16G16B16A16_UNORM);
         default: break;
         }

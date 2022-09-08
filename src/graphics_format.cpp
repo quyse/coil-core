@@ -2,9 +2,6 @@
 
 namespace Coil
 {
-  VertexFormat::VertexFormat(Format format, uint8_t components, Size size)
-  : format(format), components(components), size(size) {}
-
   PixelFormat::PixelFormat(Components components, Format format, Size size, bool srgb)
   : type(Type::Uncompressed), components(components), format(format), size(size), srgb(srgb)
   {

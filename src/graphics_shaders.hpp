@@ -1,6 +1,7 @@
 #pragma once
 
 #include "math.hpp"
+#include "graphics_format.hpp"
 #include <array>
 #include <memory>
 #include <type_traits>
@@ -779,22 +780,21 @@ namespace Coil
     return type;
   };
 
+
   // identity tranform for struct
   template <template <template <typename> typename> typename T>
   using ShaderDataIdentityStruct = T<std::type_identity_t>;
+
 
   // struct establishing slot for uniform buffer
   template <template <template <typename> typename> typename T, uint32_t slotSet, uint32_t slot>
   struct ShaderDataUniformStructSlotInitializer
   {
-    template <template <typename> typename Q>
-    using Struct = T<Q>;
-
     std::shared_ptr<ShaderUniformBufferNode> node =
       std::make_shared<ShaderUniformBufferNode>(ShaderDataStructTypeOf<T>(), slotSet, slot);
 
     // counter for member initialization
-    mutable uint32_t nextMember = 0;
+    uint32_t nextMember = 0;
   };
 
   // initializer object for uniform struct slots
@@ -823,13 +823,11 @@ namespace Coil
   template <template <template <typename> typename> typename T, uint32_t slotSet, uint32_t slot>
   auto const& GetShaderDataUniformStruct()
   {
-    static
-      typename ShaderDataUniformStructSlotInitializer<T, slotSet, slot>::template Struct<
-        ShaderDataUniformStructHelper<shaderDataUniformStructSlotInitializer<T, slotSet, slot>>::template Member
-      > const uniformStruct;
+    static T<ShaderDataUniformStructHelper<shaderDataUniformStructSlotInitializer<T, slotSet, slot>>::template Member> const uniformStruct;
 
     return uniformStruct;
   }
+
 
   template <typename T>
   struct ShaderVariable
@@ -888,6 +886,119 @@ namespace Coil
   {
     return std::make_shared<ShaderVariableFragmentNode>(ShaderDataTypeOf<T>(), builtin);
   }
+
+
+  // vertex layout description
+  class GraphicsVertexLayout
+  {
+  public:
+    struct Slot
+    {
+      uint32_t stride;
+      bool perInstance = false;
+    };
+
+    struct Attribute
+    {
+      uint32_t slot;
+      uint32_t offset;
+      VertexFormat format;
+    };
+
+    std::vector<Slot> slots;
+    std::vector<Attribute> attributes;
+  };
+
+  template <template <template <typename> typename> typename... Structs>
+  struct ShaderDataVertexStructLayoutInitializer
+  {
+    GraphicsVertexLayout layout;
+    void const* pStructs[sizeof...(Structs)];
+    uint32_t nextLocation = 0;
+  };
+
+  template <template <template <typename> typename> typename... Structs>
+  ShaderDataVertexStructLayoutInitializer<Structs...> shaderDataVertexStructLayoutInitializer;
+
+  template <auto& initializer>
+  struct ShaderDataVertexStructLayoutHelper
+  {
+    template <template <template <typename> typename> typename Struct, uint32_t slot>
+    struct SlotInitializer
+    {
+      SlotInitializer()
+      : pStruct(initializer.pStructs[slot] = &s)
+      {
+        initializer.layout.slots.push_back(
+        {
+          .stride = sizeof(s),
+        });
+      }
+
+      template <typename Field>
+      struct InitializerMember
+      {
+        InitializerMember()
+        {
+          initializer.layout.attributes.push_back(
+          {
+            .slot = slot,
+            .offset = (uint32_t)((uint8_t const*)this - (uint8_t const*)initializer.pStructs[slot]),
+            .format = VertexFormatTraits<Field>::format,
+          });
+        }
+
+        Field field;
+      };
+
+      void const* const pStruct;
+      Struct<InitializerMember> const s;
+    };
+
+    template <typename Field>
+    struct ValueMember : public ShaderVariable<typename VertexFormatTraits<Field>::Value>
+    {
+      ValueMember()
+      : ShaderVariable<typename VertexFormatTraits<Field>::Value>(std::make_shared<ShaderVariableAttributeNode>(
+          ShaderDataTypeOf<typename VertexFormatTraits<Field>::Value>(),
+          initializer.nextLocation++
+        )) {}
+    };
+  };
+
+  template <typename Slots>
+  struct GraphicsVertexStructLayout
+  {
+    GraphicsVertexStructLayout(GraphicsVertexLayout const& layout, Slots const& slots)
+    : layout(layout), slots(slots) {}
+
+    GraphicsVertexLayout const& layout;
+    Slots const& slots;
+  };
+
+  template <template <template <typename> typename> typename... Structs>
+  auto GetGraphicsVertexStructLayout()
+  {
+    static std::tuple<
+      Structs<
+        ShaderDataVertexStructLayoutHelper<
+          shaderDataVertexStructLayoutInitializer<Structs...>
+        >::template ValueMember
+      >...
+    > const structSlots;
+
+    return GraphicsVertexStructLayout([]<uint32_t... I>(std::integer_sequence<uint32_t, I...> seq) -> GraphicsVertexLayout const&
+    {
+      static std::tuple<
+        typename ShaderDataVertexStructLayoutHelper<
+          shaderDataVertexStructLayoutInitializer<Structs...>
+        >::template SlotInitializer<Structs, I>...
+      > const structSlots;
+
+      return shaderDataVertexStructLayoutInitializer<Structs...>.layout;
+    }(std::make_integer_sequence<uint32_t, sizeof...(Structs)>()), structSlots);
+  }
+
 
   // helper struct for types composing a vector
   template <typename T, typename... TT>

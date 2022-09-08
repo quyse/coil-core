@@ -441,6 +441,7 @@ namespace Coil
   using vec2_ua = xvec<float, 2, 0>;
   using vec3_ua = xvec<float, 3, 0>;
   using vec4_ua = xvec<float, 4, 0>;
+  using quat_ua = xquat<float, 0>;
 
   // some alignment/size tests
   static_assert(sizeof(xvec<float, 1>) == 4 && alignof(xvec<float, 1>) == 4);

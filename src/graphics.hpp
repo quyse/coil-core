@@ -1,7 +1,6 @@
 #pragma once
 
 #include "platform.hpp"
-#include "graphics_format.hpp"
 #include "graphics_shaders.hpp"
 #include <vector>
 #include <map>
@@ -226,14 +225,6 @@ namespace Coil
     Max,
   };
 
-  struct GraphicsVertexAttribute
-  {
-    uint32_t location;
-    uint32_t slot;
-    uint32_t offset;
-    VertexFormat format;
-  };
-
   struct GraphicsPipelineConfig
   {
     ivec2 viewport;
@@ -241,14 +232,7 @@ namespace Coil
     bool depthWrite = true;
     GraphicsCompareOp depthCompareOp = GraphicsCompareOp::Less;
 
-    struct VertexSlot
-    {
-      uint32_t stride = 0;
-      bool perInstance = false;
-    };
-    std::vector<VertexSlot> vertexSlots;
-
-    std::vector<GraphicsVertexAttribute> vertexAttributes;
+    GraphicsVertexLayout vertexLayout;
 
     struct Blending
     {

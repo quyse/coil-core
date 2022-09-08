@@ -1,6 +1,6 @@
 #pragma once
 
-#include "base.hpp"
+#include "math.hpp"
 
 namespace Coil
 {
@@ -20,26 +20,78 @@ namespace Coil
       // unsigned int, normalized to 0..1 float
       UNorm,
     };
-    Format format;
+    Format format : 3;
 
     // number of components, 1..4
-    uint8_t components = 1;
+    uint8_t components : 3 = 1;
 
     // size of attribute, in bytes
-    enum class Size : uint8_t
-    {
-      _8bit,
-      _16bit,
-      _24bit,
-      _32bit,
-      _48bit,
-      _64bit,
-      _96bit,
-      _128bit
-    };
-    Size size;
+    uint8_t size : 5;
 
-    VertexFormat(Format format, uint8_t components, Size size);
+    constexpr VertexFormat(Format format, uint8_t components, uint8_t size)
+    : format(format), components(components), size(size) {}
+  };
+
+  // scalar traits
+  template <typename T>
+  struct VertexFormatScalarTraits;
+  template <>
+  struct VertexFormatScalarTraits<float>
+  {
+    static constexpr VertexFormat::Format format = VertexFormat::Format::Float;
+  };
+  template <>
+  struct VertexFormatScalarTraits<uint32_t>
+  {
+    static constexpr VertexFormat::Format format = VertexFormat::Format::UInt;
+    static constexpr VertexFormat::Format normFormat = VertexFormat::Format::UNorm;
+  };
+  template <>
+  struct VertexFormatScalarTraits<int32_t>
+  {
+    static constexpr VertexFormat::Format format = VertexFormat::Format::SInt;
+    static constexpr VertexFormat::Format normFormat = VertexFormat::Format::SNorm;
+  };
+
+  template <typename T>
+  concept IsVertexFormatScalar = requires
+  {
+    VertexFormatScalarTraits<T>::format;
+  };
+  template <typename T>
+  concept IsVertexFormatNormScalar = requires
+  {
+    VertexFormatScalarTraits<T>::normFormat;
+  };
+
+  // vector of normalized values
+  template <typename T, size_t n>
+  struct norm_xvec : public xvec<T, n, 0>
+  {
+  };
+
+  template <typename T>
+  struct VertexFormatTraits;
+  template <IsVertexFormatScalar T, size_t n>
+  struct VertexFormatTraits<xvec<T, n, 0>>
+  {
+    using Value = xvec<T, n>;
+    static constexpr size_t components = n;
+    static constexpr size_t size = sizeof(xvec<T, n, 0>);
+    static constexpr VertexFormat format = VertexFormat(VertexFormatScalarTraits<T>::format, n, sizeof(xvec<T, n, 0>));
+  };
+  template <typename T>
+  struct VertexFormatTraits<xquat<T, 0>> : public VertexFormatTraits<xvec<T, 4, 0>>
+  {
+    using Value = xquat<T>;
+  };
+  template <IsVertexFormatNormScalar T, size_t n>
+  struct VertexFormatTraits<norm_xvec<T, n>>
+  {
+    using Value = xvec<float, n>;
+    static constexpr size_t components = n;
+    static constexpr size_t size = sizeof(norm_xvec<T, n>);
+    static constexpr VertexFormat format = VertexFormat(VertexFormatScalarTraits<T>::normFormat, n, sizeof(norm_xvec<T, n>));
   };
 
   // Pixel format.

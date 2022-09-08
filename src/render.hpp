@@ -223,7 +223,7 @@ namespace Coil
     void ApplyInstance(std::tuple<Knobs...> const& instance, size_t i, std::index_sequence<knobIndices...> seq)
     {
       using ApplyFunc = void (RenderCache::*)(std::tuple<Knobs...> const&);
-      static constexpr ApplyFunc const applyFuncs[] = { &RenderCache::ApplyKnob<knobIndices>... };
+      static constinit ApplyFunc const applyFuncs[] = { &RenderCache::ApplyKnob<knobIndices>... };
       for(; i < sizeof...(Knobs); ++i)
         (this->*applyFuncs[i])(instance);
     }
