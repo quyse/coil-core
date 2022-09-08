@@ -20,7 +20,7 @@ namespace Coil
     uint32_t _flags;
   };
 
-  class SdlInputManager : public InputManager
+  class SdlInputManager final : public InputManager
   {
   public:
     void Update() override;
@@ -34,7 +34,7 @@ namespace Coil
     float _widthScale = 1, _heightScale = 1;
     int _lastCursorX = 0, _lastCursorY = 0;
 
-    class SdlController : public InputController
+    class SdlController final : public InputController
     {
     public:
       SdlController(SDL_GameController* controller);
@@ -58,7 +58,7 @@ namespace Coil
     std::unordered_map<InputControllerId, std::unique_ptr<SdlController>> _controllers;
   };
 
-  class SdlWindow : public Window
+  class SdlWindow final : public Window
   {
   public:
     SdlWindow(SDL_Window* window);
@@ -88,7 +88,7 @@ namespace Coil
     bool _fullScreen = false;
   };
 
-  class SdlWindowSystem : public WindowSystem
+  class SdlWindowSystem final : public WindowSystem
   {
   public:
     SdlWindow& CreateWindow(Book& book, std::string const& title, int width, int height) override;

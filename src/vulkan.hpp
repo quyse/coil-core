@@ -14,7 +14,7 @@ namespace Coil
   class VulkanPipeline;
   class VulkanImage;
 
-  class VulkanPool : public GraphicsPool
+  class VulkanPool final : public GraphicsPool
   {
   public:
     VulkanPool(VulkanDevice& device, VkDeviceSize chunkSize);
@@ -41,7 +41,7 @@ namespace Coil
     friend class VulkanContext;
   };
 
-  class VulkanContext : public GraphicsContext
+  class VulkanContext final : public GraphicsContext
   {
   public:
     VulkanContext(VulkanDevice& device, VulkanPool& pool, Book& book, VkCommandBuffer commandBuffer);
@@ -123,7 +123,7 @@ namespace Coil
     friend class VulkanFrame;
   };
 
-  class VulkanFrame : public GraphicsFrame
+  class VulkanFrame final : public GraphicsFrame
   {
   public:
     VulkanFrame(Book& book, VulkanDevice& device, VulkanPresenter& presenter, VulkanPool& pool, VkCommandBuffer commandBuffer);
@@ -151,7 +151,7 @@ namespace Coil
     friend class VulkanPresenter;
   };
 
-  class VulkanPresenter : public GraphicsPresenter
+  class VulkanPresenter final : public GraphicsPresenter
   {
   public:
     VulkanPresenter(
@@ -193,7 +193,7 @@ namespace Coil
     friend class VulkanFrame;
   };
 
-  class VulkanPass : public GraphicsPass
+  class VulkanPass final : public GraphicsPass
   {
   public:
     VulkanPass(VkRenderPass renderPass, std::vector<VkClearValue>&& clearValues, uint32_t subPassesCount);
@@ -208,7 +208,7 @@ namespace Coil
     friend class VulkanFrame;
   };
 
-  class VulkanVertexBuffer : public GraphicsVertexBuffer
+  class VulkanVertexBuffer final : public GraphicsVertexBuffer
   {
   public:
     VulkanVertexBuffer(VkBuffer buffer);
@@ -219,7 +219,7 @@ namespace Coil
     friend class VulkanContext;
   };
 
-  class VulkanIndexBuffer : public GraphicsIndexBuffer
+  class VulkanIndexBuffer final : public GraphicsIndexBuffer
   {
   public:
     VulkanIndexBuffer(VkBuffer buffer, bool is32Bit);
@@ -231,7 +231,7 @@ namespace Coil
     friend class VulkanContext;
   };
 
-  class VulkanImage : public GraphicsImage
+  class VulkanImage final : public GraphicsImage
   {
   public:
     VulkanImage(VkImage image, VkImageView imageView);
@@ -244,7 +244,7 @@ namespace Coil
     friend class VulkanFrame;
   };
 
-  class VulkanShader : public GraphicsShader
+  class VulkanShader final : public GraphicsShader
   {
   public:
     VulkanShader(VkShaderModule shaderModule, VkShaderStageFlags stagesMask, std::vector<SpirvDescriptorSetLayout>&& descriptorSetLayouts);
@@ -257,7 +257,7 @@ namespace Coil
     friend class VulkanDevice;
   };
 
-  class VulkanPipelineLayout : public GraphicsPipelineLayout
+  class VulkanPipelineLayout final : public GraphicsPipelineLayout
   {
   public:
     VulkanPipelineLayout(VkPipelineLayout pipelineLayout, std::vector<VkDescriptorSetLayout>&& descriptorSetLayouts);
@@ -270,7 +270,7 @@ namespace Coil
     friend class VulkanContext;
   };
 
-  class VulkanPipeline : public GraphicsPipeline
+  class VulkanPipeline final : public GraphicsPipeline
   {
   public:
     VulkanPipeline(VkPipeline pipeline, VulkanPipelineLayout& pipelineLayout);
@@ -283,7 +283,7 @@ namespace Coil
     friend class VulkanContext;
   };
 
-  class VulkanFramebuffer : public GraphicsFramebuffer
+  class VulkanFramebuffer final : public GraphicsFramebuffer
   {
   public:
     VulkanFramebuffer(VkFramebuffer framebuffer, ivec2 const& size);
@@ -295,7 +295,7 @@ namespace Coil
     friend class VulkanFrame;
   };
 
-  class VulkanDevice : public GraphicsDevice
+  class VulkanDevice final : public GraphicsDevice
   {
   public:
     VulkanDevice(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device, uint32_t graphicsQueueFamilyIndex, Book& book);
@@ -331,7 +331,7 @@ namespace Coil
     friend class VulkanPool;
   };
 
-  class VulkanSystem : public GraphicsSystem
+  class VulkanSystem final : public GraphicsSystem
   {
   public:
     VulkanSystem(VkInstance instance);

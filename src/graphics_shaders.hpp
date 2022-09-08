@@ -31,7 +31,7 @@ namespace Coil
     ShaderDataType() = default;
   };
 
-  struct ShaderDataScalarType : public ShaderDataType
+  struct ShaderDataScalarType final : public ShaderDataType
   {
     enum class Type : uint8_t
     {
@@ -58,7 +58,7 @@ namespace Coil
     }
   };
 
-  struct ShaderDataVectorType : public ShaderDataType
+  struct ShaderDataVectorType final : public ShaderDataType
   {
     ShaderDataVectorType(ShaderDataScalarType const& baseType, uint32_t n, uint32_t size)
     : baseType(baseType), n(n), size(size) {}
@@ -77,7 +77,7 @@ namespace Coil
     }
   };
 
-  struct ShaderDataMatrixType : public ShaderDataType
+  struct ShaderDataMatrixType final : public ShaderDataType
   {
     ShaderDataMatrixType(ShaderDataScalarType const& baseType, uint32_t n, uint32_t m, uint32_t rowStride, uint32_t size)
     : baseType(baseType), n(n), m(m), rowStride(rowStride), size(size) {}
@@ -96,7 +96,7 @@ namespace Coil
     }
   };
 
-  struct ShaderDataArrayType : public ShaderDataType
+  struct ShaderDataArrayType final : public ShaderDataType
   {
     ShaderDataArrayType(ShaderDataType const& baseType, uint32_t n)
     : baseType(baseType), n(n) {}
@@ -115,7 +115,7 @@ namespace Coil
     }
   };
 
-  struct ShaderDataStructType : public ShaderDataType
+  struct ShaderDataStructType final : public ShaderDataType
   {
     using Member = std::pair<uint32_t, ShaderDataType const&>;
 
@@ -535,7 +535,7 @@ namespace Coil
     virtual ShaderStatementType GetStatementType() const = 0;
   };
 
-  struct ShaderStatementSequenceNode : public ShaderStatementNode
+  struct ShaderStatementSequenceNode final : public ShaderStatementNode
   {
     ShaderStatementSequenceNode(std::shared_ptr<ShaderStatementNode> a, std::shared_ptr<ShaderStatementNode> b)
     : a(std::move(a)), b(std::move(b)) {}
@@ -639,7 +639,7 @@ namespace Coil
     }
   };
 
-  struct ShaderStatementWriteNode : public ShaderStatementNode
+  struct ShaderStatementWriteNode final : public ShaderStatementNode
   {
     ShaderStatementWriteNode(std::shared_ptr<ShaderVariableNode> variableNode, std::shared_ptr<ShaderExpressionNode> expressionNode)
     : variableNode(variableNode), expressionNode(expressionNode) {}
@@ -660,7 +660,7 @@ namespace Coil
     InstanceIndex,
   };
 
-  struct ShaderVariableAttributeNode : public ShaderVariableNode
+  struct ShaderVariableAttributeNode final : public ShaderVariableNode
   {
     ShaderVariableAttributeNode(ShaderDataType const& dataType, uint32_t location)
     : dataType(dataType), location(location) {}
@@ -690,7 +690,7 @@ namespace Coil
     FragCoord,
   };
 
-  struct ShaderVariableInterpolantNode : public ShaderVariableNode
+  struct ShaderVariableInterpolantNode final : public ShaderVariableNode
   {
     ShaderVariableInterpolantNode(ShaderDataType const& dataType, uint32_t location)
     : dataType(dataType), location(location) {}
@@ -718,7 +718,7 @@ namespace Coil
     FragDepth,
   };
 
-  struct ShaderVariableFragmentNode : public ShaderVariableNode
+  struct ShaderVariableFragmentNode final : public ShaderVariableNode
   {
     ShaderVariableFragmentNode(ShaderDataType const& dataType, uint32_t location)
     : dataType(dataType), location(location) {}

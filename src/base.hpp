@@ -84,7 +84,7 @@ namespace Coil
   };
 
   template <typename T>
-  struct alignas(Book::_MaxAlignment) Book::TemplObjectHeader : public Book::ObjectHeader
+  struct alignas(Book::_MaxAlignment) Book::TemplObjectHeader final : public Book::ObjectHeader
   {
     TemplObjectHeader(ObjectHeader* prev)
     : ObjectHeader(prev) {}
@@ -95,7 +95,7 @@ namespace Coil
   };
   // specialization for chunks
   template <>
-  struct Book::TemplObjectHeader<Book::_Chunk> : public Book::ObjectHeader
+  struct Book::TemplObjectHeader<Book::_Chunk> final : public Book::ObjectHeader
   {
     TemplObjectHeader(ObjectHeader* prev)
     : ObjectHeader(prev) {}
