@@ -25,8 +25,14 @@ namespace Coil
 
   private:
     GraphicsContext* _pContext = nullptr;
+    uint32_t _maxBufferSize = 0;
     uint32_t _indicesCount;
-    std::unordered_map<uint32_t, std::vector<uint8_t>> _instanceData;
+    struct InstanceData
+    {
+      uint32_t stride;
+      std::vector<uint8_t> data;
+    };
+    std::unordered_map<uint32_t, InstanceData> _instanceData;
     uint32_t _instancesCount;
   };
 

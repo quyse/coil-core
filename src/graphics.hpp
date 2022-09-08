@@ -310,6 +310,7 @@ namespace Coil
   class GraphicsContext
   {
   public:
+    virtual uint32_t GetMaxBufferSize() const = 0;
     virtual void BindVertexBuffer(uint32_t slot, GraphicsVertexBuffer& vertexBuffer) = 0;
     virtual void BindDynamicVertexBuffer(uint32_t slot, Buffer const& buffer) = 0;
     virtual void BindIndexBuffer(GraphicsIndexBuffer* pIndexBuffer) = 0;

@@ -46,6 +46,7 @@ namespace Coil
   public:
     VulkanContext(VulkanDevice& device, VulkanPool& pool, Book& book, VkCommandBuffer commandBuffer);
 
+    uint32_t GetMaxBufferSize() const override;
     void BindVertexBuffer(uint32_t slot, GraphicsVertexBuffer& vertexBuffer) override;
     void BindDynamicVertexBuffer(uint32_t slot, Buffer const& buffer) override;
     void BindIndexBuffer(GraphicsIndexBuffer* pIndexBuffer) override;
@@ -115,6 +116,9 @@ namespace Coil
       VkDeviceSize nextBufferOffset = 0;
     };
     std::unordered_map<VkBufferUsageFlagBits, BufferCache> _bufferCaches;
+
+    // max buffer size is fixed for now
+    static constexpr uint32_t _maxBufferSize = 0x100000;
 
     friend class VulkanFrame;
   };

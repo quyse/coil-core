@@ -1187,6 +1187,11 @@ namespace Coil
   VulkanContext::VulkanContext(VulkanDevice& device, VulkanPool& pool, Book& book, VkCommandBuffer commandBuffer)
   : _device(device), _pool(pool), _book(book), _commandBuffer(commandBuffer) {}
 
+  uint32_t VulkanContext::GetMaxBufferSize() const
+  {
+    return _maxBufferSize;
+  }
+
   void VulkanContext::BindVertexBuffer(uint32_t slot, GraphicsVertexBuffer& graphicsVertexBuffer)
   {
     VulkanVertexBuffer& vertexBuffer = static_cast<VulkanVertexBuffer&>(graphicsVertexBuffer);
@@ -1307,14 +1312,12 @@ namespace Coil
   {
     BufferCache& cache = _bufferCaches[usage];
 
-    static uint32_t bufferSize = 0x10000;
-
     // if size is too big
-    if(size > bufferSize)
+    if(size > _maxBufferSize)
       throw Exception("too big Vulkan buffer to allocate");
 
     // if there's existing buffer, but not enough space
-    if(cache.nextBuffer < cache.buffers.size() && cache.nextBufferOffset + size > bufferSize)
+    if(cache.nextBuffer < cache.buffers.size() && cache.nextBufferOffset + size > _maxBufferSize)
     {
       // use next buffer
       ++cache.nextBuffer;
@@ -1332,7 +1335,7 @@ namespace Coil
           .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
           .pNext = nullptr,
           .flags = 0,
-          .size = bufferSize,
+          .size = _maxBufferSize,
           .usage = usage,
           .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
           .queueFamilyIndexCount = 0,

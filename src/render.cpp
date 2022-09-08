@@ -10,6 +10,7 @@ namespace Coil
   void RenderContext::Begin(GraphicsContext& context)
   {
     _pContext = &context;
+    _maxBufferSize = _pContext->GetMaxBufferSize();
     Reset();
   }
 
@@ -17,7 +18,7 @@ namespace Coil
   {
     _indicesCount = 0;
     for(auto& i : _instanceData)
-      i.second.clear();
+      i.second.data.clear();
     _instancesCount = 0;
   }
 
@@ -44,7 +45,7 @@ namespace Coil
   void RenderContext::SetInstanceData(uint32_t slot, Buffer const& buffer)
   {
     auto& slotData = _instanceData[slot];
-    slotData.insert(slotData.end(), (uint8_t*)buffer.data, (uint8_t*)buffer.data + buffer.size);
+    slotData.data.insert(slotData.data.end(), (uint8_t*)buffer.data, (uint8_t*)buffer.data + buffer.size);
   }
 
   void RenderContext::EndInstance()
@@ -56,14 +57,39 @@ namespace Coil
   {
     if(!_instancesCount) return;
 
-    for(auto& i : _instanceData)
+    if(!_instanceData.empty())
     {
-      if(i.second.size())
+      // calculate number of instances per step
+      uint32_t instancesPerStep = std::numeric_limits<uint32_t>::max();
+      for(auto& i : _instanceData)
       {
-        _pContext->BindDynamicVertexBuffer(i.first, i.second);
+        if(i.second.data.size())
+        {
+          i.second.stride = i.second.data.size() / _instancesCount;
+          instancesPerStep = std::min(instancesPerStep, _maxBufferSize / i.second.stride);
+        }
+      }
+
+      // perform steps
+      for(uint32_t k = 0; k < _instancesCount; k += instancesPerStep)
+      {
+        uint32_t instancesToRender = std::min(_instancesCount - k, instancesPerStep);
+        for(auto& i : _instanceData)
+        {
+          if(i.second.data.size())
+          {
+            _pContext->BindDynamicVertexBuffer(i.first,
+              Buffer(
+                (uint8_t const*)i.second.data.data() + k * i.second.stride,
+                instancesToRender * i.second.stride
+              )
+            );
+          }
+        }
+        _pContext->Draw(_indicesCount, instancesToRender);
       }
     }
-    _pContext->Draw(_indicesCount, _instancesCount);
+
     Reset();
   }
 }
