@@ -7,19 +7,19 @@ namespace Coil
   template <typename Vertex>
   concept IsVertexWithPosition = requires(Vertex v)
   {
-    { v.position } -> std::same_as<xvec<typename Vertex::PositionComponent, 3, 0>&>;
+    VectorTraits<decltype(v.position)>::N == 3;
   };
 
   template <typename Vertex>
   concept IsVertexWithNormal = requires(Vertex v)
   {
-    { v.normal } -> std::same_as<xvec<typename Vertex::NormalComponent, 3, 0>&>;
+    VectorTraits<decltype(v.normal)>::N == 3;
   };
 
   template <typename Vertex>
   concept IsVertexWithTexcoord = requires(Vertex v)
   {
-    { v.texcoord } -> std::same_as<xvec<typename Vertex::TexcoordComponent, 2, 0>&>;
+    VectorTraits<decltype(v.texcoord)>::N == 2;
   };
 
   template <typename T = float>
