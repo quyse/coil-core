@@ -43,7 +43,7 @@ namespace Coil
       InitObject<_Chunk>(_lastChunk);
     }
     void* data = _lastChunk + _lastChunkAllocated;
-    _lastChunkAllocated += size;
+    _lastChunkAllocated += (size + _MaxAlignment - 1) & ~(_MaxAlignment - 1);
     return data;
   }
 

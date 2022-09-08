@@ -40,6 +40,7 @@ namespace Coil
     T& Allocate(Args&&... args)
     {
       static_assert(sizeof(TemplObjectHeader<T>) + sizeof(T) <= _MaxObjectSize, "too big object to allocate in a book");
+      static_assert(alignof(T) <= _MaxAlignment, "unsupported object alignment to allocate in a book");
       return InitObject<T, Args...>(
         _AllocateFromPool(sizeof(TemplObjectHeader<T>) + sizeof(T)),
         std::forward<Args>(args)...
@@ -79,10 +80,11 @@ namespace Coil
 
     static constexpr size_t _ChunkSize = 0x1000 - 128; // try to (over)estimate heap's overhead
     static constexpr size_t _MaxObjectSize = _ChunkSize - sizeof(ObjectHeader);
+    static constexpr size_t _MaxAlignment = 16;
   };
 
   template <typename T>
-  struct Book::TemplObjectHeader : public Book::ObjectHeader
+  struct alignas(Book::_MaxAlignment) Book::TemplObjectHeader : public Book::ObjectHeader
   {
     TemplObjectHeader(ObjectHeader* prev)
     : ObjectHeader(prev) {}
