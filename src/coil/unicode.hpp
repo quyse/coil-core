@@ -9,7 +9,7 @@ namespace Coil::Unicode
   template <typename From, typename To, std::input_iterator FromIterator>
   class Iterator;
 
-  // converting UTF8 to Unicode code points
+  // converting UTF-8 to Unicode code points
   template <std::input_iterator FromIterator>
   class Iterator<char, char32_t, FromIterator>
   {
@@ -58,7 +58,90 @@ namespace Coil::Unicode
     FromIterator _it;
   };
 
-  // converting Unicode code points to UTF16
+  // converting Unicode code points to UTF-8
+  template <std::input_iterator FromIterator>
+  class Iterator<char32_t, char, FromIterator>
+  {
+  public:
+    Iterator(FromIterator it)
+    : _it(it) {}
+
+    char operator*() const
+    {
+      Update();
+      char32_t c = *_it;
+      switch(_size)
+      {
+      case 1: return c & 0x7F;
+      case 2:
+        switch(_octet)
+        {
+        case 0: return (c & 0x1F) | 0xC0;
+        case 1: return ((c >> 5) & 0x3F) | 0x80;
+        }
+      case 3:
+        switch(_octet)
+        {
+        case 0: return (c & 0x0F) | 0xE0;
+        case 1: return ((c >> 4) & 0x3F) | 0x80;
+        case 2: return ((c >> 10) & 0x3F) | 0x80;
+        }
+      case 4:
+        switch(_octet)
+        {
+        case 0: return (c & 0x07) | 0xF0;
+        case 1: return ((c >> 3) & 0x3F) | 0x80;
+        case 2: return ((c >> 9) & 0x3F) | 0x80;
+        case 3: return ((c >> 15) & 0x3F) | 0x80;
+        }
+      }
+      return 0; // impossible
+    }
+
+    Iterator& operator++()
+    {
+      Update();
+      ++_octet;
+      if(_octet >= _size)
+      {
+        ++_it;
+        _size = 0;
+      }
+      return *this;
+    }
+
+    Iterator operator++(int)
+    {
+      Iterator i = *this;
+      ++(*this);
+      return i;
+    }
+
+    using difference_type = ptrdiff_t;
+    using value_type = char;
+    using pointer = value_type*;
+    using reference = value_type&;
+    using iterator_category = std::forward_iterator_tag;
+    using iterator_concept = std::forward_iterator_tag;
+
+  private:
+    void Update() const
+    {
+      if(_size) return;
+      _octet = 0;
+      char32_t c = *_it;
+      if(c < 0x80) _size = 1;
+      else if(c < 0x800) _size = 2;
+      else if(c < 0x10000) _size = 3;
+      else _size = 4;
+    }
+
+    FromIterator _it;
+    mutable uint8_t _size = 0;
+    mutable uint8_t _octet = 0;
+  };
+
+  // converting Unicode code points to UTF-16
   template <std::input_iterator FromIterator>
   class Iterator<char32_t, char16_t, FromIterator>
   {

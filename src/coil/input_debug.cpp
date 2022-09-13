@@ -1,4 +1,5 @@
 #include "input_debug.hpp"
+#include "unicode.hpp"
 
 namespace Coil
 {
@@ -16,7 +17,12 @@ namespace Coil
         stream << "KEYUP " << event.keyboard.key;
         break;
       case InputEvent::Keyboard::typeCharacter:
-        stream << "KEYPRESS " << event.keyboard.character;
+        {
+          char32_t s[] = { event.keyboard.character, 0 };
+          stream << "KEYPRESS ";
+          for(Unicode::Iterator<char32_t, char, char32_t const*> i(s); *i; ++i)
+            stream << *i;
+        }
         break;
       }
       break;
