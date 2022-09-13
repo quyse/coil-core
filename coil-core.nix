@@ -8,7 +8,7 @@
 , spirv-headers
 , nlohmann_json
 }: let
-  sources = lib.pipe ./src [
+  sources = lib.pipe ./src/coil [
     builtins.readDir
     (lib.filterAttrs (file: type: lib.hasSuffix ".cpp" file && type == "regular"))
     lib.attrNames
@@ -25,7 +25,7 @@
   '';
 in stdenv.mkDerivation {
   name = "coil-core";
-  src = ./src;
+  src = ./src/coil;
   nativeBuildInputs = [
     ninja
     clang
