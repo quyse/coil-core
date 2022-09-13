@@ -171,6 +171,25 @@ namespace Coil
     return r;
   }
 
+  // vector-scalar multiplication
+  template <typename T, size_t n>
+  constexpr xvec<T, n> operator*(xvec<T, n> const& a, T b)
+  {
+    xvec<T, n> r;
+    for(size_t i = 0; i < n; ++i)
+      r(i) = a(i) * b;
+    return r;
+  }
+  // scalar-vector multiplication
+  template <typename T, size_t n>
+  constexpr xvec<T, n> operator*(T a, xvec<T, n> const& b)
+  {
+    xvec<T, n> r;
+    for(size_t i = 0; i < n; ++i)
+      r(i) = a * b(i);
+    return r;
+  }
+
   // matrix addition
   template <typename T, size_t n, size_t m>
   constexpr xmat<T, n, m> operator+(xmat<T, n, m> const& a, xmat<T, n, m> const& b)
@@ -437,11 +456,15 @@ namespace Coil
 
   // unaligned
 
+  template <typename T, size_t n>
+  using xvec_ua = xvec<T, n, 0>;
   using vec1_ua = float;
-  using vec2_ua = xvec<float, 2, 0>;
-  using vec3_ua = xvec<float, 3, 0>;
-  using vec4_ua = xvec<float, 4, 0>;
-  using quat_ua = xquat<float, 0>;
+  using vec2_ua = xvec_ua<float, 2>;
+  using vec3_ua = xvec_ua<float, 3>;
+  using vec4_ua = xvec_ua<float, 4>;
+  template <typename T>
+  using xquat_ua = xquat<T, 0>;
+  using quat_ua = xquat_ua<float>;
 
   // some alignment/size tests
   static_assert(sizeof(xvec<float, 1>) == 4 && alignof(xvec<float, 1>) == 4);
