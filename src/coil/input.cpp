@@ -181,7 +181,7 @@ namespace Coil
     }
   }
 
-  InputFrame const& InputManager::GetCurrentFrame() const
+  InputFrame& InputManager::GetCurrentFrame() const
   {
     return *_currentFrame;
   }

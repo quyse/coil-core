@@ -23,8 +23,6 @@ namespace Coil
   class SdlInputManager final : public InputManager
   {
   public:
-    void Update() override;
-
     void ProcessEvent(SDL_Event const& event);
     void SetVirtualScale(float widthScale, float heightScale);
 
@@ -69,6 +67,7 @@ namespace Coil
     void SetFullScreen(bool fullScreen) override;
     ivec2 GetDrawableSize() const override;
     float GetDPIScale() const override;
+    SdlInputManager& GetInputManager() override;
     void Run(std::function<void()> const& loop) override;
     void PlaceCursor(int x, int y) override;
 
@@ -79,9 +78,11 @@ namespace Coil
     void _UpdateCursorVisible() override;
 
   private:
+    void UpdateInputManager();
+
     SDL_Window* _window = nullptr;
     uint32_t _windowId = 0;
-    SdlInputManager* _inputManager = nullptr;
+    SdlInputManager _inputManager;
     int _virtualWidth = 0, _virtualHeight = 0;
     int _clientWidth = 0, _clientHeight = 0;
     float _dpiScale = 0;

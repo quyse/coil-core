@@ -42,10 +42,6 @@ namespace Coil
     }
   }
 
-  void SdlInputManager::Update()
-  {
-  }
-
   void SdlInputManager::ProcessEvent(SDL_Event const& sdlEvent)
   {
     switch(sdlEvent.type)
@@ -475,6 +471,7 @@ namespace Coil
     SDL_GetWindowSize(_window, &_virtualWidth, &_virtualHeight);
     SDL_GL_GetDrawableSize(_window, &_clientWidth, &_clientHeight);
     _dpiScale = float(_clientWidth) / float(_virtualWidth);
+    UpdateInputManager();
   }
 
   SdlWindow::~SdlWindow()
@@ -518,6 +515,11 @@ namespace Coil
     return _dpiScale;
   }
 
+  SdlInputManager& SdlWindow::GetInputManager()
+  {
+    return _inputManager;
+  }
+
   void SdlWindow::Run(std::function<void()> const& loop)
   {
     _running = true;
@@ -527,10 +529,7 @@ namespace Coil
       SDL_Event event;
       while((_loopOnlyVisible && !_visible ? SDL_WaitEvent : SDL_PollEvent)(&event))
       {
-        if(_inputManager)
-        {
-          _inputManager->ProcessEvent(event);
-        }
+        _inputManager.ProcessEvent(event);
 
         switch(event.type)
         {
@@ -541,10 +540,7 @@ namespace Coil
             SDL_GetWindowSize(_window, &_virtualWidth, &_virtualHeight);
             SDL_GL_GetDrawableSize(_window, &_clientWidth, &_clientHeight);
             _dpiScale = float(_clientWidth) / float(_virtualWidth);
-            if(_inputManager)
-            {
-              _inputManager->SetVirtualScale((float)_clientWidth / (float)_virtualWidth, (float)_clientHeight / (float)_virtualHeight);
-            }
+            UpdateInputManager();
             if(_presenter)
             {
               _presenter->Resize(GetDrawableSize());
@@ -558,10 +554,7 @@ namespace Coil
             _visible = true;
             break;
           case SDL_WINDOWEVENT_FOCUS_LOST:
-            if(_inputManager)
-            {
-              _inputManager->ReleaseButtonsOnUpdate();
-            }
+            _inputManager.ReleaseButtonsOnUpdate();
             break;
           }
           break;
@@ -571,10 +564,7 @@ namespace Coil
         }
       }
 
-      if(_inputManager)
-      {
-        _inputManager->Update();
-      }
+      _inputManager.Update();
 
       if(_visible || !_loopOnlyVisible)
       {
@@ -601,6 +591,11 @@ namespace Coil
   void SdlWindow::_UpdateCursorVisible()
   {
     SDL_ShowCursor(_cursorVisible ? SDL_ENABLE : SDL_DISABLE);
+  }
+
+  void SdlWindow::UpdateInputManager()
+  {
+    _inputManager.SetVirtualScale((float)_clientWidth / (float)_virtualWidth, (float)_clientHeight / (float)_virtualHeight);
   }
 
   SdlWindow& SdlWindowSystem::CreateWindow(Book& book, std::string const& title, int width, int height)

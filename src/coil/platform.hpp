@@ -23,6 +23,8 @@ namespace Coil
     virtual ivec2 GetDrawableSize() const = 0;
     // Get DPI scale. 1 means 96 dpi, 1.5 means 144 dpi, etc.
     virtual float GetDPIScale() const = 0;
+    // Get input manager.
+    virtual InputManager& GetInputManager() = 0;
 
     // Run window loop.
     virtual void Run(std::function<void()> const& loop) = 0;

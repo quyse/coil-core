@@ -346,7 +346,7 @@ namespace Coil
     // Go to the next frame.
     virtual void Update();
     // Get current input frame.
-    InputFrame const& GetCurrentFrame() const;
+    InputFrame& GetCurrentFrame() const;
 
     // Send up events for all keys on next Update.
     void ReleaseButtonsOnUpdate();
