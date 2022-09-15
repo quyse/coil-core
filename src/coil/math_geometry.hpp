@@ -5,7 +5,7 @@
 namespace Coil
 {
   template <typename T>
-  xmat<T, 4, 4> AffineTranslation(xvec<T, 3> const& t)
+  constexpr xmat<T, 4, 4> AffineTranslation(xvec<T, 3> const& t)
   {
     return
     {
@@ -17,7 +17,7 @@ namespace Coil
   }
 
   template <typename T>
-  xmat<T, 4, 4> AffineScaling(xvec<T, 3> const& s)
+  constexpr xmat<T, 4, 4> AffineScaling(xvec<T, 3> const& s)
   {
     return
     {
@@ -31,7 +31,7 @@ namespace Coil
   // View matrix for looking at a target.
   // Assumes upper-left screen origin, and positive Z towards target.
   template <typename T>
-  xmat<T, 4, 4> AffineViewLookAt(xvec<T, 3> const& eye, xvec<T, 3> const& target, xvec<T, 3> const& up)
+  constexpr xmat<T, 4, 4> AffineViewLookAt(xvec<T, 3> const& eye, xvec<T, 3> const& target, xvec<T, 3> const& up)
   {
     xvec<T, 3> z = normalize(target - eye);
     xvec<T, 3> x = normalize(cross(z, up));
@@ -49,7 +49,7 @@ namespace Coil
   // width, height - view-space size of screen
   // z0, z1 - view-space Z mapped to 0 and 1 respectively
   template <typename T>
-  xmat<T, 4, 4> ProjectionOrtho(T w, T h, T z0, T z1)
+  constexpr xmat<T, 4, 4> ProjectionOrtho(T w, T h, T z0, T z1)
   {
     return
     {
@@ -63,7 +63,7 @@ namespace Coil
   // Perspective projection matrix.
   // Assumes view-space positive Z towards target.
   template <typename T>
-  xmat<T, 4, 4> ProjectionPerspectiveFov(T fovY, T aspect, T z0, T z1)
+  constexpr xmat<T, 4, 4> ProjectionPerspectiveFov(T fovY, T aspect, T z0, T z1)
   {
     T ys = 1 / tan(fovY / 2);
     T xs = ys / aspect;
@@ -78,7 +78,7 @@ namespace Coil
 
   // Quaternion representing rotation around axis.
   template <typename T>
-  xquat<T> QuatAxisRotation(xvec<T, 3> const& axis, T angle)
+  constexpr xquat<T> QuatAxisRotation(xvec<T, 3> const& axis, T angle)
   {
     T halfAngle = angle / 2;
     T sinHalfAngle = sin(halfAngle);
@@ -94,7 +94,7 @@ namespace Coil
 
   // Convert quaternion to matrix.
   template <typename T>
-  xmat<T, 4, 4> AffineFromQuat(xquat<T> const& q)
+  constexpr xmat<T, 4, 4> AffineFromQuat(xquat<T> const& q)
   {
     T ww  = q.w() * q.w();
     T xx  = q.x() * q.x();

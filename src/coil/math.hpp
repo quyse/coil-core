@@ -111,13 +111,64 @@ namespace Coil
   };
 
   template <typename T, size_t n>
-  constexpr xmat<T, n, n> mat_identity()
+  consteval xmat<T, n, n> mat_identity()
   {
     xmat<T, n, n> t;
     for(size_t i = 0; i < n; ++i)
       for(size_t j = 0; j < n; ++j)
         t(i, j) = i == j;
     return t;
+  }
+
+  template <typename T, size_t n>
+  constexpr xmat<T, n, n> mat_inverse(xmat<T, n, n> a)
+  {
+    // using gaussian elimination method
+
+    xmat<T, n, n> r = mat_identity<T, n>();
+
+    for(size_t i = 0; i < n; ++i)
+    {
+      // find row with abs-maximum element
+      {
+        T maxAbs = -1;
+        size_t u;
+        for(size_t k = i; k < n; ++k)
+        {
+          T c = abs(a(k, i));
+          if(c > maxAbs)
+          {
+            u = k;
+            maxAbs = c;
+          }
+        }
+        if(u > i)
+        {
+          std::swap(a.t[i], a.t[u]);
+          std::swap(r.t[i], r.t[u]);
+        }
+      }
+      // make one on diagonal
+      {
+        T f = 1 / a(i, i);
+        for(size_t j = i; j < n; ++j)
+          a(i, j) *= f;
+        for(size_t j = 0; j < n; ++j)
+          r(i, j) *= f;
+      }
+      // make zeros on the column
+      for(size_t k = 0; k < n; ++k)
+      {
+        if(k == i) continue;
+        T f = -a(k, i);
+        for(size_t j = i; j < n; ++j)
+          a(k, j) += a(i, j) * f;
+        for(size_t j = 0; j < n; ++j)
+          r(k, j) += r(i, j) * f;
+      }
+    }
+
+    return r;
   }
 
   template <typename T, size_t alignment = 4 * sizeof(T)>
