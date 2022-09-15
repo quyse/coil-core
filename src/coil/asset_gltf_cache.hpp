@@ -6,10 +6,10 @@
 
 namespace Coil
 {
-  class GLTFImporter
+  class GLTFCache
   {
   protected:
-    GLTFImporter(GLTF const& gltf)
+    GLTFCache(GLTF const& gltf)
     : _gltf(gltf) {}
 
     template <typename Output, typename OutputField>
@@ -129,24 +129,29 @@ namespace Coil
   };
 
   template <typename Vertex>
-  class GLTFMeshImporter : public GLTFImporter
+  class GLTFMeshCache : public GLTFCache
   {
   public:
-    static AssetMesh<Vertex> Import(GLTF const& gltf, GLTF::MeshIndex meshIndex)
+    GLTFMeshCache(GLTF const& gltf)
+    : GLTFCache(gltf), _meshes(_gltf.meshes.size()) {}
+
+    AssetMesh<Vertex> const& operator[](GLTF::MeshIndex meshIndex)
     {
-      GLTFMeshImporter importer(gltf);
-      importer.DoImport(meshIndex);
-      return importer._geometry;
+      auto& mesh = _meshes[meshIndex];
+      if(!mesh.has_value())
+      {
+        Import(meshIndex);
+      }
+      return mesh.value();
     }
 
   protected:
-    GLTFMeshImporter(GLTF const& gltf)
-    : GLTFImporter(gltf) {}
-
-    void DoImport(GLTF::MeshIndex meshIndex)
+    void Import(GLTF::MeshIndex meshIndex)
     {
       try
       {
+        AssetMesh<Vertex> geometry;
+
         auto const& mesh = GetMesh(meshIndex);
 
         // supporting only one primitive currently
@@ -168,21 +173,21 @@ namespace Coil
           {
             if(attributeName == "POSITION")
             {
-              CopyAccessorData<Vertex, vec3_ua>(_geometry.vertices, offsetof(Vertex, position), i.second);
+              CopyAccessorData<Vertex, vec3_ua>(geometry.vertices, offsetof(Vertex, position), i.second);
             }
           }
           if constexpr(IsVertexWithNormal<Vertex>)
           {
             if(attributeName == "NORMAL")
             {
-              CopyAccessorData<Vertex, vec3_ua>(_geometry.vertices, offsetof(Vertex, normal), i.second);
+              CopyAccessorData<Vertex, vec3_ua>(geometry.vertices, offsetof(Vertex, normal), i.second);
             }
           }
           if constexpr(IsVertexWithTexcoord<Vertex>)
           {
             if(attributeName == "TEXCOORD_0")
             {
-              CopyAccessorData<Vertex, vec2_ua>(_geometry.vertices, offsetof(Vertex, texcoord), i.second);
+              CopyAccessorData<Vertex, vec2_ua>(geometry.vertices, offsetof(Vertex, texcoord), i.second);
             }
           }
         }
@@ -190,8 +195,10 @@ namespace Coil
         // import indices
         if(meshPrimitive.indices.has_value())
         {
-          CopyAccessorData<uint32_t, uint32_t>(_geometry.indices, 0, meshPrimitive.indices.value());
+          CopyAccessorData<uint32_t, uint32_t>(geometry.indices, 0, meshPrimitive.indices.value());
         }
+
+        _meshes[meshIndex] = std::move(geometry);
       }
       catch(Exception& exception)
       {
@@ -199,6 +206,6 @@ namespace Coil
       }
     }
 
-    AssetMesh<Vertex> _geometry;
+    std::vector<std::optional<AssetMesh<Vertex>>> _meshes;
   };
 }

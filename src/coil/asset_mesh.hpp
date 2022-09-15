@@ -22,44 +22,6 @@ namespace Coil
     VectorTraits<decltype(v.texcoord)>::N == 2;
   };
 
-  template <typename T = float>
-  struct VertexP
-  {
-    using PositionComponent = T;
-
-    xvec<T, 3, 0> position;
-  };
-
-  template <typename T = float>
-  struct VertexPQ
-  {
-    using PositionComponent = T;
-    using RotationComponent = T;
-
-    xvec<T, 3, 0> position;
-    xquat<T, 0> rotation;
-  };
-
-  // position+normal+texcoord vertex struct
-  template <typename T = float>
-  struct VertexPNT
-  {
-    using PositionComponent = T;
-    using NormalComponent = T;
-    using TexcoordComponent = T;
-
-    xvec<T, 3, 0> position;
-    xvec<T, 3, 0> normal;
-    xvec<T, 2, 0> texcoord;
-
-    friend auto operator<=>(VertexPNT const&, VertexPNT const&) = default;
-  };
-
-  static_assert(IsVertexWithPosition<VertexPNT<>>);
-  static_assert(IsVertexWithNormal<VertexPNT<>>);
-  static_assert(IsVertexWithTexcoord<VertexPNT<>>);
-  static_assert(sizeof(VertexPNT<>) == 32 && alignof(VertexPNT<>) == 4);
-
   // untyped mesh container
   struct AssetMeshBuffer
   {
@@ -80,7 +42,7 @@ namespace Coil
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
 
-    AssetMeshBuffer ToBuffer()
+    AssetMeshBuffer ToBuffer() const
     {
       AssetMeshBuffer buffer;
       buffer.verticesCount = (uint32_t)vertices.size();

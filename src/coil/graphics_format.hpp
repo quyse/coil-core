@@ -64,7 +64,7 @@ namespace Coil
     VertexFormatScalarTraits<T>::normFormat;
   };
 
-  // vector of normalized values
+  // vector of normalized values (always unaligned)
   template <typename T, size_t n>
   struct norm_xvec : public xvec<T, n, 0>
   {
