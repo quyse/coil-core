@@ -26,11 +26,11 @@ namespace Coil
     void Tick(S time)
     {
       // slow down exponentialy
-      _speed = _speed * exp(time * _slowCoef);
+      _speed = _speed * std::exp(time * _slowCoef);
       // limit
       if constexpr(std::is_same_v<T, S>)
       {
-        if(abs(_speed) > _maxSpeed)
+        if(std::abs(_speed) > _maxSpeed)
         {
           _speed = _speed * (_maxSpeed / abs(_speed));
         }

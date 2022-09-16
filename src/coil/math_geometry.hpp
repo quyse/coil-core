@@ -65,7 +65,7 @@ namespace Coil
   template <typename T>
   constexpr xmat<T, 4, 4> ProjectionPerspectiveFov(T fovY, T aspect, T z0, T z1)
   {
-    T ys = 1 / tan(fovY / 2);
+    T ys = 1 / std::tan(fovY / 2);
     T xs = ys / aspect;
     return
     {
@@ -81,8 +81,8 @@ namespace Coil
   constexpr xquat<T> QuatAxisRotation(xvec<T, 3> const& axis, T angle)
   {
     T halfAngle = angle / 2;
-    T sinHalfAngle = sin(halfAngle);
-    T cosHalfAngle = cos(halfAngle);
+    T sinHalfAngle = std::sin(halfAngle);
+    T cosHalfAngle = std::cos(halfAngle);
     return
     {
       axis.x() * sinHalfAngle,

@@ -132,10 +132,10 @@ namespace Coil
       // find row with abs-maximum element
       {
         T maxAbs = -1;
-        size_t u;
+        size_t u = 0;
         for(size_t k = i; k < n; ++k)
         {
-          T c = abs(a(k, i));
+          T c = std::abs(a(k, i));
           if(c > maxAbs)
           {
             u = k;
@@ -337,7 +337,7 @@ namespace Coil
   template <typename T, size_t n>
   constexpr T length(xvec<T, n> const& a)
   {
-    return sqrt(length2(a));
+    return std::sqrt(length2(a));
   }
 
   template <typename T, size_t n>
