@@ -163,12 +163,6 @@ namespace Coil
   class RenderCache
   {
   public:
-    void Begin(GraphicsContext& context)
-    {
-      Reset();
-      _context.Begin(context);
-    }
-
     void Reset()
     {
       _instances.clear();
@@ -182,8 +176,10 @@ namespace Coil
       _instances.push_back(std::tuple<Knobs...>(std::forward<Knobs>(knobs)...));
     }
 
-    void Flush()
+    void Flush(GraphicsContext& context)
     {
+      _context.Begin(context);
+
       // sort instances
       std::sort(_instanceIndices.begin(), _instanceIndices.end(), [&](size_t a, size_t b)
       {
