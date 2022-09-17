@@ -158,10 +158,10 @@ namespace Coil
         if(mesh.primitives.size() != 1)
           throw Exception("only exactly one mesh primitive supported");
 
-        GLTF::MeshPrimitive const& meshPrimitive = mesh.primitives[0];
+        GLTF::Mesh::MeshPrimitive const& meshPrimitive = mesh.primitives[0];
 
         // supporting only triangles
-        if(meshPrimitive.mode != GLTF::MeshPrimitive::Mode::Triangles)
+        if(meshPrimitive.mode != GLTF::Mesh::MeshPrimitive::Mode::Triangles)
           throw Exception("only triangles supported");
 
         // import vertex attributes
