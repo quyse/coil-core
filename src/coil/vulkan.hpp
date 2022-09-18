@@ -163,7 +163,7 @@ namespace Coil
       std::function<GraphicsRecreatePresentPerImageFunc>&& recreatePresentPerImage
       );
 
-    void Init();
+    void Init(std::optional<ivec2> const& size);
     void Clear();
 
     void Resize(ivec2 const& size) override;

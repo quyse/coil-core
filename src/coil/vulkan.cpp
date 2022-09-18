@@ -251,7 +251,7 @@ namespace Coil
     // create presenter
     VulkanPresenter& presenter = book.Allocate<VulkanPresenter>(*this, book, surface, pool, std::move(recreatePresent), std::move(recreatePresentPerImage));
 
-    presenter.Init();
+    presenter.Init({});
 
     window.SetPresenter(&presenter);
 
@@ -1485,7 +1485,7 @@ namespace Coil
     }
   }
 
-  void VulkanPresenter::Init()
+  void VulkanPresenter::Init(std::optional<ivec2> const& size)
   {
     // get surface capabilities
     VkSurfaceCapabilitiesKHR surfaceCapabilities;
@@ -1516,7 +1516,22 @@ namespace Coil
 
     _surfaceFormat = pSurfaceFormat->format;
 
-    VkExtent2D extent = surfaceCapabilities.currentExtent;
+    VkExtent2D extent =
+      // use size passed by window if it's available
+      size.has_value() ? VkExtent2D
+      {
+        .width = (uint32_t)size.value().x(),
+        .height = (uint32_t)size.value().y(),
+      } :
+      // on Wayland, initially special values are passed as extent in capabilities
+      // replace them with some default size, they will be overriden with next resize call
+      surfaceCapabilities.currentExtent.width == 0xFFFFFFFF || surfaceCapabilities.currentExtent.height == 0xFFFFFFFF ? VkExtent2D
+      {
+        .width = 1024,
+        .height = 768,
+      } :
+      // otherwise, use extent from capabilities
+      surfaceCapabilities.currentExtent;
 
     // create swapchain
     {
@@ -1532,7 +1547,7 @@ namespace Coil
           ),
         .imageFormat = pSurfaceFormat->format,
         .imageColorSpace = pSurfaceFormat->colorSpace,
-        .imageExtent = surfaceCapabilities.currentExtent,
+        .imageExtent = extent,
         .imageArrayLayers = 1,
         .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
@@ -1609,7 +1624,7 @@ namespace Coil
   void VulkanPresenter::Resize(ivec2 const& size)
   {
     Clear();
-    Init();
+    Init(size);
   }
 
   VulkanPool::VulkanPool(VulkanDevice& device, VkDeviceSize chunkSize)
@@ -1727,7 +1742,7 @@ namespace Coil
     {
       _recreateNeeded = false;
       Clear();
-      Init();
+      Init({});
     }
 
     // choose frame
