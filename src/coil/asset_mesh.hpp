@@ -49,7 +49,7 @@ namespace Coil
       buffer.vertexStride = sizeof(Vertex);
       buffer.vertices.resize(buffer.verticesCount * buffer.vertexStride);
       buffer.indicesCount = (uint32_t)indices.size();
-      buffer.indexStride = buffer.indicesCount <= 0xFFFF ? sizeof(uint16_t) : sizeof(uint32_t);
+      buffer.indexStride = buffer.verticesCount <= 0xFFFF ? sizeof(uint16_t) : sizeof(uint32_t);
       buffer.indices.resize(buffer.indicesCount * buffer.indexStride);
 
       std::copy_n(vertices.data(), buffer.verticesCount, (Vertex*)buffer.vertices.data());
