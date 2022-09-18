@@ -2,6 +2,7 @@
 
 #include "math.hpp"
 #include "graphics_format.hpp"
+#include "util.hpp"
 #include <array>
 #include <memory>
 #include <type_traits>
@@ -979,7 +980,7 @@ namespace Coil
   template <template <template <typename> typename> typename... Structs>
   auto GetGraphicsVertexStructLayout()
   {
-    static std::tuple<
+    static Tuple<
       Structs<
         ShaderDataVertexStructLayoutHelper<
           shaderDataVertexStructLayoutInitializer<Structs...>
@@ -989,7 +990,7 @@ namespace Coil
 
     return GraphicsVertexStructLayout([]<uint32_t... I>(std::integer_sequence<uint32_t, I...> seq) -> GraphicsVertexLayout const&
     {
-      static std::tuple<
+      static Tuple<
         typename ShaderDataVertexStructLayoutHelper<
           shaderDataVertexStructLayoutInitializer<Structs...>
         >::template SlotInitializer<Structs, I>...
