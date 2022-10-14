@@ -7,6 +7,7 @@
 , vulkan-headers
 , spirv-headers
 , nlohmann_json
+, libpng
 }: let
   sources = lib.pipe ./src/coil [
     builtins.readDir
@@ -35,6 +36,7 @@ in stdenv.mkDerivation {
     vulkan-headers
     spirv-headers
     nlohmann_json
+    libpng
   ];
   configurePhase = ''
     ln -s ${buildfile} build.ninja
