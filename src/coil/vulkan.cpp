@@ -188,7 +188,9 @@ namespace Coil
       AllocateVulkanObject(book, device);
     }
 
-    return book.Allocate<VulkanDevice>(_instance, physicalDevice, device, graphicsQueueFamilyIndex, book);
+    VulkanDevice& vulkanDevice = book.Allocate<VulkanDevice>(book.Allocate<Book>(), _instance, physicalDevice, device, graphicsQueueFamilyIndex);
+    book.Allocate<VulkanDeviceIdle>(device);
+    return vulkanDevice;
   }
 
   void VulkanSystem::RegisterInstanceExtensionsHandler(InstanceExtensionsHandler&& handler)
@@ -204,8 +206,8 @@ namespace Coil
   std::vector<VulkanSystem::InstanceExtensionsHandler> VulkanSystem::_instanceExtensionsHandlers;
   std::vector<VulkanSystem::DeviceSurfaceHandler> VulkanSystem::_deviceSurfaceHandlers;
 
-  VulkanDevice::VulkanDevice(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device, uint32_t graphicsQueueFamilyIndex, Book& book)
-  : _instance(instance), _physicalDevice(physicalDevice), _device(device), _graphicsQueueFamilyIndex(graphicsQueueFamilyIndex)
+  VulkanDevice::VulkanDevice(Book& book, VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device, uint32_t graphicsQueueFamilyIndex)
+  : _book(book), _instance(instance), _physicalDevice(physicalDevice), _device(device), _graphicsQueueFamilyIndex(graphicsQueueFamilyIndex)
   {
     vkGetDeviceQueue(_device, _graphicsQueueFamilyIndex, 0, &_graphicsQueue);
 
@@ -227,6 +229,11 @@ namespace Coil
 
     // get memory properties
     vkGetPhysicalDeviceMemoryProperties(_physicalDevice, &_memoryProperties);
+  }
+
+  Book& VulkanDevice::GetBook()
+  {
+    return _book;
   }
 
   VulkanPool& VulkanDevice::CreatePool(Book& book, size_t chunkSize)
@@ -869,6 +876,9 @@ namespace Coil
           case SpirvDescriptorType::UniformBuffer:
             descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
             break;
+          case SpirvDescriptorType::SampledImage:
+            descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            break;
           default:
             throw Exception("unsupported Vulkan descriptor type from SPIR-V module");
           }
@@ -1142,6 +1152,163 @@ namespace Coil
     return book.Allocate<VulkanFramebuffer>(framebuffer, size);
   }
 
+  VulkanImage& VulkanDevice::CreateTexture(Book& book, GraphicsPool& graphicsPool, GraphicsImageFormat const& format, GraphicsSampler* pGraphicsSampler)
+  {
+    VulkanPool& pool = static_cast<VulkanPool&>(graphicsPool);
+    VulkanSampler* pSampler = static_cast<VulkanSampler*>(pGraphicsSampler);
+
+    VkImage image;
+    {
+      VkImageCreateInfo info =
+      {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+        .imageType = format.depth ? VK_IMAGE_TYPE_3D : format.height ? VK_IMAGE_TYPE_2D : VK_IMAGE_TYPE_1D,
+        .format = VulkanSystem::GetPixelFormat(format.format),
+        .extent =
+        {
+          .width = (uint32_t)format.width,
+          .height = (uint32_t)(format.height > 0 ? format.height : 1),
+          .depth = (uint32_t)(format.depth > 0 ? format.depth : 1),
+        },
+        .mipLevels = (uint32_t)format.mips,
+        .arrayLayers = (uint32_t)(format.count ? format.count : 1),
+        .samples = VK_SAMPLE_COUNT_1_BIT,
+        .tiling = VK_IMAGE_TILING_OPTIMAL,
+        .usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .queueFamilyIndexCount = 0,
+        .pQueueFamilyIndices = nullptr,
+        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+      };
+      CheckSuccess(vkCreateImage(_device, &info, nullptr, &image), "creating Vulkan texture image failed");
+      AllocateVulkanObject(book, _device, image);
+    }
+
+    // get memory requirements
+    VkMemoryRequirements memoryRequirements;
+    vkGetImageMemoryRequirements(_device, image, &memoryRequirements);
+    // allocate memory
+    std::pair<VkDeviceMemory, VkDeviceSize> memory = AllocateMemory(pool, memoryRequirements, 0);
+    // bind memory
+    CheckSuccess(vkBindImageMemory(_device, image, memory.first, memory.second), "binding Vulkan memory to texture image failed");
+
+    // create image view
+    VkImageView imageView;
+    {
+      VkImageViewType imageViewType;
+      if(format.count)
+      {
+        if(format.depth) throw Exception("3D texture array is not supported");
+        imageViewType = format.height ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_1D_ARRAY;
+      }
+      else
+      {
+        imageViewType = format.depth ? VK_IMAGE_VIEW_TYPE_3D : format.height ? VK_IMAGE_VIEW_TYPE_2D : VK_IMAGE_VIEW_TYPE_1D;
+      }
+      VkImageViewCreateInfo info =
+      {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+        .image = image,
+        .viewType = imageViewType,
+        .format = VulkanSystem::GetPixelFormat(format.format),
+        .components = {},
+        .subresourceRange =
+        {
+          .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+          .baseMipLevel = 0,
+          .levelCount = (uint32_t)format.mips,
+          .baseArrayLayer = 0,
+          .layerCount = (uint32_t)(format.count ? format.count : 1),
+        },
+      };
+      CheckSuccess(vkCreateImageView(_device, &info, nullptr, &imageView), "creating Vulkan texture image view failed");
+      AllocateVulkanObject(book, _device, imageView);
+    }
+
+    return book.Allocate<VulkanImage>(image, imageView, pSampler ? pSampler->_sampler : nullptr);
+  }
+
+  VulkanSampler& VulkanDevice::CreateSampler(Book& book, GraphicsSamplerConfig const& config)
+  {
+    struct Helper
+    {
+      static VkFilter GetFilter(GraphicsSamplerConfig::Filter filter)
+      {
+        switch(filter)
+        {
+        case GraphicsSamplerConfig::Filter::Nearest:
+          return VK_FILTER_NEAREST;
+        case GraphicsSamplerConfig::Filter::Linear:
+          return VK_FILTER_LINEAR;
+        default:
+          throw Exception("unknown Vulkan sampler filter");
+        }
+      }
+
+      static VkSamplerMipmapMode GetMipmapMode(GraphicsSamplerConfig::Filter filter)
+      {
+        switch(filter)
+        {
+        case GraphicsSamplerConfig::Filter::Nearest:
+          return VK_SAMPLER_MIPMAP_MODE_NEAREST;
+        case GraphicsSamplerConfig::Filter::Linear:
+          return VK_SAMPLER_MIPMAP_MODE_LINEAR;
+        default:
+          throw Exception("unknown Vulkan sampler mipmap mode");
+        }
+      }
+
+      static VkSamplerAddressMode GetAddressMode(GraphicsSamplerConfig::Wrap wrap)
+      {
+        switch(wrap)
+        {
+        case GraphicsSamplerConfig::Wrap::Repeat:
+          return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        case GraphicsSamplerConfig::Wrap::RepeatMirror:
+          return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+        case GraphicsSamplerConfig::Wrap::Clamp:
+          return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        case GraphicsSamplerConfig::Wrap::Border:
+          return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+        default:
+          throw Exception("unknown Vulkan sampler address mode");
+        }
+      }
+    };
+
+    VkSamplerCreateInfo info =
+    {
+      .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
+      .magFilter = Helper::GetFilter(config.magFilter),
+      .minFilter = Helper::GetFilter(config.minFilter),
+      .mipmapMode = Helper::GetMipmapMode(config.mipFilter),
+      .addressModeU = Helper::GetAddressMode(config.wrapU),
+      .addressModeV = Helper::GetAddressMode(config.wrapV),
+      .addressModeW = Helper::GetAddressMode(config.wrapW),
+      .mipLodBias = 0,
+      .anisotropyEnable = VK_FALSE,
+      .maxAnisotropy = 0,
+      .compareEnable = VK_FALSE,
+      .compareOp = VK_COMPARE_OP_NEVER,
+      .minLod = 0,
+      .maxLod = VK_LOD_CLAMP_NONE,
+      .borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK,
+      .unnormalizedCoordinates = VK_FALSE,
+    };
+
+    VkSampler sampler;
+    CheckSuccess(vkCreateSampler(_device, &info, nullptr, &sampler), "creating Vulkan sampler failed");
+    AllocateVulkanObject(book, _device, sampler);
+
+    return book.Allocate<VulkanSampler>(sampler);
+  }
+
   std::pair<VkDeviceMemory, VkDeviceSize> VulkanDevice::AllocateMemory(VulkanPool& pool, VkMemoryRequirements const& memoryRequirements, VkMemoryPropertyFlags requireFlags)
   {
     // find suitable memory type
@@ -1251,6 +1418,25 @@ namespace Coil
     descriptorSet.descriptorSet = nullptr;
   }
 
+  void VulkanContext::BindImage(GraphicsSlotSetId slotSet, GraphicsSlotId slot, GraphicsImage& graphicsImage)
+  {
+    VulkanImage& image = static_cast<VulkanImage&>(graphicsImage);
+
+    if(_descriptorSets.size() <= slotSet)
+      _descriptorSets.resize(slotSet + 1);
+    auto& descriptorSet = _descriptorSets[slotSet];
+    descriptorSet.bindings[slot] = BindingImage
+    {
+      .info =
+      {
+        .sampler = image._sampler,
+        .imageView = image._imageView,
+        .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+      },
+    };
+    descriptorSet.descriptorSet = nullptr;
+  }
+
   void VulkanContext::BindPipeline(GraphicsPipeline& graphicsPipeline)
   {
     VulkanPipeline& pipeline = static_cast<VulkanPipeline&>(graphicsPipeline);
@@ -1268,6 +1454,129 @@ namespace Coil
     else
     {
       vkCmdDraw(_commandBuffer, indicesCount, instancesCount, 0, 0);
+    }
+  }
+
+  void VulkanContext::SetTextureData(GraphicsImage& graphicsImage, GraphicsImageFormat const& format, Buffer const& buffer)
+  {
+    VulkanImage& image = static_cast<VulkanImage&>(graphicsImage);
+
+    auto metrics = format.GetMetrics();
+
+    std::vector<VkBufferImageCopy> regions;
+    int32_t count = format.count ? format.count : 1;
+
+    uint32_t textureSize = metrics.imageSize * count;
+    if(textureSize > buffer.size)
+      throw Exception("texture data buffer is too small");
+
+    for(int32_t i = 0; i < count; ++i)
+    {
+      for(size_t j = 0; j < metrics.mips.size(); ++j)
+      {
+        auto const& mip = metrics.mips[j];
+        regions.push_back(
+        {
+          .bufferOffset = i * metrics.imageSize + mip.offset,
+          .bufferRowLength = (uint32_t)mip.width,
+          .bufferImageHeight = (uint32_t)mip.height,
+          .imageSubresource =
+          {
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .mipLevel = (uint32_t)j,
+            .baseArrayLayer = (uint32_t)i,
+            .layerCount = 1,
+          },
+          .imageOffset =
+          {
+            .x = 0,
+            .y = 0,
+            .z = 0,
+          },
+          .imageExtent =
+          {
+            .width = (uint32_t)mip.width,
+            .height = (uint32_t)mip.height,
+            .depth = (uint32_t)mip.depth,
+          },
+        });
+      }
+    }
+
+    auto buf = AllocateBuffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT, textureSize);
+    // upload data to buffer
+    {
+      void* data;
+      CheckSuccess(vkMapMemory(_device._device, buf.buffer.memory, buf.buffer.memoryOffset + buf.bufferOffset, buffer.size, 0, &data), "mapping Vulkan texture staging buffer memory failed");
+      memcpy(data, buffer.data, textureSize);
+      vkUnmapMemory(_device._device, buf.buffer.memory);
+    }
+
+    // transition image to transfer dst layout
+    {
+      VkImageMemoryBarrier imageMemoryBarrier =
+      {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+        .pNext = nullptr,
+        .srcAccessMask = 0,
+        .dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+        .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+        .newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .image = image._image,
+        .subresourceRange =
+        {
+          .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+          .baseMipLevel = 0,
+          .levelCount = (uint32_t)metrics.mips.size(),
+          .baseArrayLayer = 0,
+          .layerCount = (uint32_t)count,
+        },
+      };
+      vkCmdPipelineBarrier(_commandBuffer,
+        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, // srcStageMask
+        VK_PIPELINE_STAGE_TRANSFER_BIT, // dstStageMask
+        0, // flags
+        0, nullptr, // memory barriers
+        0, nullptr, // buffer memory barriers
+        1, &imageMemoryBarrier // image memory barriers
+      );
+    }
+
+    // copy to image
+    vkCmdCopyBufferToImage(_commandBuffer, buf.buffer.buffer, image._image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, regions.size(), regions.data());
+
+    // transition to shader read only layout
+    {
+      VkImageMemoryBarrier imageMemoryBarrier =
+      {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+        .pNext = nullptr,
+        .srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+        .dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
+        .oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .image = image._image,
+        .subresourceRange =
+        {
+          .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+          .baseMipLevel = 0,
+          .levelCount = (uint32_t)metrics.mips.size(),
+          .baseArrayLayer = 0,
+          .layerCount = (uint32_t)count,
+        },
+      };
+      vkCmdPipelineBarrier(_commandBuffer,
+        VK_PIPELINE_STAGE_TRANSFER_BIT, // srcStageMask
+        VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, // dstStageMask
+        0, // flags
+        0, nullptr, // memory barriers
+        0, nullptr, // buffer memory barriers
+        1, &imageMemoryBarrier // image memory barriers
+      );
     }
   }
 
@@ -1406,6 +1715,22 @@ namespace Coil
               .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
               .pImageInfo = nullptr,
               .pBufferInfo = &binding.info,
+              .pTexelBufferView = nullptr,
+            });
+          }
+          if constexpr(std::is_same_v<T, BindingImage>)
+          {
+            _bufWriteDescriptorSets.push_back(
+            {
+              .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+              .pNext = nullptr,
+              .dstSet = descriptorSet.descriptorSet,
+              .dstBinding = bindingIt.first,
+              .dstArrayElement = 0,
+              .descriptorCount = 1,
+              .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+              .pImageInfo = &binding.info,
+              .pBufferInfo = nullptr,
               .pTexelBufferView = nullptr,
             });
           }
@@ -1717,6 +2042,10 @@ namespace Coil
           .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
           .descriptorCount = 4096,
         },
+        {
+          .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+          .descriptorCount = 4096,
+        },
       };
       VkDescriptorPoolCreateInfo info =
       {
@@ -1796,6 +2125,11 @@ namespace Coil
   uint32_t VulkanFrame::GetImageIndex() const
   {
     return _imageIndex;
+  }
+
+  VulkanContext& VulkanFrame::GetContext()
+  {
+    return _context;
   }
 
   void VulkanFrame::Pass(GraphicsPass& graphicsPass, GraphicsFramebuffer& graphicsFramebuffer, std::function<void(GraphicsSubPassId, GraphicsContext&)> const& func)
@@ -1962,8 +2296,11 @@ namespace Coil
   VulkanIndexBuffer::VulkanIndexBuffer(VkBuffer buffer, bool is32Bit)
   : _buffer(buffer), _is32Bit(is32Bit) {}
 
-  VulkanImage::VulkanImage(VkImage image, VkImageView imageView)
-  : _image(image), _imageView(imageView) {}
+  VulkanImage::VulkanImage(VkImage image, VkImageView imageView, VkSampler sampler)
+  : _image(image), _imageView(imageView), _sampler(sampler) {}
+
+  VulkanSampler::VulkanSampler(VkSampler sampler)
+  : _sampler(sampler) {}
 
   VulkanShader::VulkanShader(VkShaderModule shaderModule, VkShaderStageFlags stagesMask, std::vector<SpirvDescriptorSetLayout>&& descriptorSetLayouts)
   : _shaderModule(shaderModule), _stagesMask(stagesMask), _descriptorSetLayouts(std::move(descriptorSetLayouts)) {}

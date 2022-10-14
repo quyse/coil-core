@@ -552,7 +552,7 @@ namespace Coil
         {
           ShaderUniformNode* uniformNode = static_cast<ShaderUniformNode*>(node);
           ResultId typeResultId = TraverseType(uniformNode->dataType);
-          ResultId ptrTypeResultId = TraversePointerType(uniformNode->dataType, spv::StorageClass::Uniform);
+          ResultId ptrTypeResultId = TraversePointerType(typeResultId, spv::StorageClass::Uniform);
           ShaderUniformBufferNode* uniformBufferNode = uniformNode->uniformBufferNode.get();
           ResultId uniformBufferResultId = TraverseUniformBuffer(uniformBufferNode);
           ResultId indexResultId = TraverseConst(uniformNode->index);
@@ -572,6 +572,75 @@ namespace Coil
           });
 
           _bindings[uniformBufferNode->slotSet][uniformBufferNode->slot].stageFlags |= (uint32_t)function.stage;
+        }
+        break;
+      case ShaderExpressionType::Sample:
+        {
+          ShaderSampleNode* sampleNode = static_cast<ShaderSampleNode*>(node);
+          ShaderSampledImageNode* sampledImageNode = sampleNode->sampledImageNode.get();
+          ResultId sampledImageVariableResultId = TraverseSampledImage(sampledImageNode);
+          ShaderDataType const& sampleDataType = sampledImageNode->GetDataType();
+          ResultId typeResultId = TraverseType(sampleDataType);
+          ResultId sampledImageTypeResultId = TraverseSampledImageType(sampleDataType, sampledImageNode->GetDimensionality());
+          ShaderDataScalarType const& sampleComponentDataType = ShaderDataTypeGetScalarType(sampleDataType);
+          ResultId sampleTypeResultId = TraverseType(ShaderDataVectorType(sampleComponentDataType, 4, sampleComponentDataType.GetSize() * 4));
+          ResultId coordsResultId = TraverseExpression(function, sampleNode->coordsNode.get());
+          ResultId sampledImageResultId;
+          // resolve variable
+          EmitOp(function.code, spv::Op::OpLoad, [&]()
+          {
+            Emit(function.code, sampledImageTypeResultId);
+            sampledImageResultId = EmitResultId(function.code);
+            Emit(function.code, sampledImageVariableResultId);
+          });
+          // sample image
+          ResultId sampleResultId;
+          EmitOp(function.code, spv::Op::OpImageSampleImplicitLod, [&]()
+          {
+            Emit(function.code, sampleTypeResultId);
+            sampleResultId = EmitResultId(function.code);
+            Emit(function.code, sampledImageResultId);
+            Emit(function.code, coordsResultId);
+            Emit(function.code, 0);
+          });
+          // sample is always 4-component; reduce size if required
+          switch(sampleDataType.GetKind())
+          {
+          case ShaderDataKind::Scalar:
+            EmitOp(function.code, spv::Op::OpCompositeExtract, [&]()
+            {
+              Emit(function.code, typeResultId);
+              resultId = EmitResultId(function.code);
+              Emit(function.code, sampleResultId);
+              Emit(function.code, 0);
+            });
+            break;
+          case ShaderDataKind::Vector:
+            {
+              ShaderDataVectorType const& sampleVectorDataType = static_cast<ShaderDataVectorType const&>(sampleDataType);
+              if(sampleVectorDataType.n == 4)
+              {
+                resultId = sampleResultId;
+              }
+              else
+              {
+                EmitOp(function.code, spv::Op::OpVectorShuffle, [&]()
+                {
+                  Emit(function.code, typeResultId);
+                  resultId = EmitResultId(function.code);
+                  Emit(function.code, sampleResultId);
+                  Emit(function.code, sampleResultId);
+                  for(uint32_t i = 0; i < sampleVectorDataType.n; ++i)
+                    Emit(function.code, i);
+                });
+              }
+            }
+            break;
+          default:
+            throw Exception("unsupported SPIR-V shader sample type");
+          }
+
+          _bindings[sampledImageNode->slotSet][sampledImageNode->slot].stageFlags |= (uint32_t)function.stage;
         }
         break;
       default:
@@ -712,7 +781,7 @@ namespace Coil
       it = function.variablesResultIds.insert({ { node, storageClass }, 0 }).first;
 
       ShaderDataType const& dataType = node->GetDataType();
-      ResultId typeResultId = TraversePointerType(dataType, storageClass);
+      ResultId typeResultId = TraversePointerType(TraverseType(dataType), storageClass);
       ResultId resultId;
 
       EmitOp(_codeDecls, spv::Op::OpVariable, [&]()
@@ -921,13 +990,11 @@ namespace Coil
       });
       return resultId;
     }
-    ResultId TraversePointerType(ShaderDataType const& dataType, spv::StorageClass storageClass)
+    ResultId TraversePointerType(ResultId typeResultId, spv::StorageClass storageClass)
     {
-      auto it = _pointerTypeResultIds.find({ &dataType, storageClass });
+      auto it = _pointerTypeResultIds.find({ typeResultId, storageClass });
       if(it != _pointerTypeResultIds.end()) return it->second;
-      it = _pointerTypeResultIds.insert({ { &dataType, storageClass }, 0 }).first;
-
-      ResultId typeResultId = TraverseType(dataType);
+      it = _pointerTypeResultIds.insert({ { typeResultId, storageClass }, 0 }).first;
 
       ResultId resultId;
 
@@ -1054,7 +1121,7 @@ namespace Coil
       auto it = _uniformBufferResultIds.find(node);
       if(it != _uniformBufferResultIds.end()) return it->second;
 
-      ResultId typeResultId = TraversePointerType(node->dataType, spv::StorageClass::Uniform);
+      ResultId typeResultId = TraversePointerType(TraverseType(node->dataType), spv::StorageClass::Uniform);
 
       ResultId resultId;
       EmitOp(_codeDecls, spv::Op::OpVariable, [&]()
@@ -1087,6 +1154,100 @@ namespace Coil
         binding.descriptorType = SpirvDescriptorType::UniformBuffer;
         binding.descriptorCount = std::max<uint32_t>(binding.descriptorCount, 1);
       }
+
+      return resultId;
+    }
+
+    ResultId TraverseSampledImage(ShaderSampledImageNode* node)
+    {
+      auto it = _sampledImageResultIds.find(node);
+      if(it != _sampledImageResultIds.end()) return it->second;
+
+      ResultId typeResultId = TraversePointerType(TraverseSampledImageType(node->GetDataType(), node->GetDimensionality()), spv::StorageClass::UniformConstant);
+
+      ResultId resultId;
+      EmitOp(_codeDecls, spv::Op::OpVariable, [&]()
+      {
+        Emit(_codeDecls, typeResultId);
+        resultId = EmitResultId(_codeDecls);
+        Emit(_codeDecls, spv::StorageClass::UniformConstant);
+      });
+
+      EmitOp(_codeAnnotations, spv::Op::OpDecorate, [&]()
+      {
+        Emit(_codeAnnotations, resultId);
+        Emit(_codeAnnotations, spv::Decoration::DescriptorSet);
+        Emit(_codeAnnotations, node->slotSet);
+      });
+      EmitOp(_codeAnnotations, spv::Op::OpDecorate, [&]()
+      {
+        Emit(_codeAnnotations, resultId);
+        Emit(_codeAnnotations, spv::Decoration::Binding);
+        Emit(_codeAnnotations, node->slot);
+      });
+
+      _sampledImageResultIds.insert({ node, resultId });
+
+      SpirvDescriptorSetLayoutBinding& binding = _bindings[node->slotSet][node->slot];
+      if(binding.descriptorType != SpirvDescriptorType::SampledImage)
+      {
+        if(binding.descriptorType != SpirvDescriptorType::Unused)
+          throw Exception("conflicting SPIR-V descriptor for sampled image");
+        binding.descriptorType = SpirvDescriptorType::SampledImage;
+        binding.descriptorCount = std::max<uint32_t>(binding.descriptorCount, 1);
+      }
+
+      return resultId;
+    }
+
+    ResultId TraverseSampledImageType(ShaderDataType const& dataType, size_t dimensionality)
+    {
+      ResultId imageTypeResultId = TraverseImageType(dataType, dimensionality);
+
+      auto it = _sampledImageTypeResultIds.find(imageTypeResultId);
+      if(it != _sampledImageTypeResultIds.end()) return it->second;
+
+      ResultId resultId;
+      EmitOp(_codeDecls, spv::Op::OpTypeSampledImage, [&]()
+      {
+        resultId = EmitResultId(_codeDecls);
+        Emit(_codeDecls, imageTypeResultId);
+      });
+
+      _sampledImageTypeResultIds.insert({ imageTypeResultId, resultId });
+
+      return resultId;
+    }
+
+    ResultId TraverseImageType(ShaderDataType const& dataType, size_t dimensionality)
+    {
+      ResultId sampledTypeResultId = TraverseType(ShaderDataTypeGetScalarType(dataType));
+
+      auto it = _imageTypeResultIds.find({ sampledTypeResultId, dimensionality });
+      if(it != _imageTypeResultIds.end()) return it->second;
+
+      ResultId resultId;
+      EmitOp(_codeDecls, spv::Op::OpTypeImage, [&]()
+      {
+        resultId = EmitResultId(_codeDecls);
+        Emit(_codeDecls, sampledTypeResultId);
+        spv::Dim dim;
+        switch(dimensionality)
+        {
+        case 1: dim = spv::Dim::Dim1D; break;
+        case 2: dim = spv::Dim::Dim2D; break;
+        case 3: dim = spv::Dim::Dim3D; break;
+        default: throw Exception("unsupported image dimensionality");
+        }
+        Emit(_codeDecls, dim);
+        Emit(_codeDecls, 0); // depth
+        Emit(_codeDecls, 0); // arrayed
+        Emit(_codeDecls, 0); // MS
+        Emit(_codeDecls, 1); // sampled
+        Emit(_codeDecls, spv::ImageFormat::Unknown);
+      });
+
+      _imageTypeResultIds.insert({ { sampledTypeResultId, dimensionality }, resultId });
 
       return resultId;
     }
@@ -1149,13 +1310,6 @@ namespace Coil
       {
         return *a < *b;
       }
-
-      bool operator()(std::pair<ShaderDataType const*, spv::StorageClass> const& a, std::pair<ShaderDataType const*, spv::StorageClass> const& b) const
-      {
-        if(*a.first < *b.first) return true;
-        if(*b.first < *a.first) return false;
-        return a.second < b.second;
-      }
     };
 
     SpirvCode _codeAnnotations; // annotations
@@ -1163,12 +1317,16 @@ namespace Coil
     SpirvCode _codeModule; // module code
     std::map<std::string, Function> _functions; // entry points
     std::map<ShaderDataType const*, ResultId, ShaderDataTypePtrComparator> _typeResultIds;
-    std::map<std::pair<ShaderDataType const*, spv::StorageClass>, ResultId, ShaderDataTypePtrComparator> _pointerTypeResultIds;
+    std::map<std::pair<ResultId, spv::StorageClass>, ResultId> _pointerTypeResultIds;
     std::map<float, ResultId> _floatConstResultIds;
     std::map<uint32_t, ResultId> _uintConstResultIds;
     std::map<int32_t, ResultId> _intConstResultIds;
     std::map<bool, ResultId> _boolConstResultIds; // yeah, stupid
     std::map<ShaderUniformBufferNode*, ResultId> _uniformBufferResultIds;
+    std::map<ShaderSampledImageNode*, ResultId> _sampledImageResultIds;
+    std::map<ResultId, ResultId> _sampledImageTypeResultIds;
+    std::map<std::pair<ResultId, size_t>, ResultId> _imageTypeResultIds;
+
     std::set<spv::Capability> _capabilities =
     {
       spv::Capability::Shader, // enables Matrix as well

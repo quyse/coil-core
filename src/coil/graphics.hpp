@@ -111,6 +111,42 @@ namespace Coil
     std::vector<SubPass> subPasses;
   };
 
+  struct GraphicsImageMetrics
+  {
+    uint32_t pixelSize;
+    struct Mip
+    {
+      int32_t width;
+      int32_t height;
+      int32_t depth;
+      uint32_t size;
+      uint32_t offset;
+    };
+    std::vector<Mip> mips;
+    uint32_t imageSize;
+  };
+
+  struct GraphicsImageFormat
+  {
+    PixelFormat format;
+    // acceptable sizes:
+    // width height depth
+    // W     0      0      1D texture
+    // W     1      0      2D texture Wx1
+    // W     H      0      2D texture WxH
+    // W     H      1      3D texture WxHx1
+    // W     H      D      3D texture WxHxD
+    int32_t width;
+    int32_t height;
+    int32_t depth;
+    // must be >= 1
+    int32_t mips;
+    // zero means non-array
+    int32_t count;
+
+    GraphicsImageMetrics GetMetrics() const;
+  };
+
   class GraphicsDevice;
   class GraphicsContext;
   class GraphicsPass;
@@ -126,6 +162,7 @@ namespace Coil
   {
   public:
     virtual uint32_t GetImageIndex() const = 0;
+    virtual GraphicsContext& GetContext() = 0;
     virtual void Pass(GraphicsPass& pass, GraphicsFramebuffer& framebuffer, std::function<void(GraphicsSubPassId, GraphicsContext&)> const& func) = 0;
     virtual void EndFrame() = 0;
   };
@@ -159,9 +196,36 @@ namespace Coil
   {
   };
 
+  struct GraphicsSamplerConfig
+  {
+    enum class Filter
+    {
+      Nearest,
+      Linear,
+    };
+    enum class Wrap
+    {
+      Repeat,
+      RepeatMirror,
+      Clamp,
+      Border,
+    };
+
+    Filter magFilter = Filter::Nearest;
+    Filter minFilter = Filter::Nearest;
+    Filter mipFilter = Filter::Nearest;
+
+    Wrap wrapU = Wrap::Repeat;
+    Wrap wrapV = Wrap::Repeat;
+    Wrap wrapW = Wrap::Repeat;
+  };
+
+  class GraphicsSampler
+  {
+  };
+
   class GraphicsShader
   {
-  public:
   };
 
   struct GraphicsShaderRoots
@@ -277,8 +341,9 @@ namespace Coil
   class GraphicsDevice
   {
   public:
+    virtual Book& GetBook() = 0;
     virtual GraphicsPool& CreatePool(Book& book, size_t chunkSize) = 0;
-    virtual GraphicsPresenter& CreateWindowPresenter(Book& book, GraphicsPool& graphicsPool, Window& window, std::function<GraphicsRecreatePresentFunc>&& recreatePresent, std::function<GraphicsRecreatePresentPerImageFunc>&& recreatePresentPerImage) = 0;
+    virtual GraphicsPresenter& CreateWindowPresenter(Book& book, GraphicsPool& pool, Window& window, std::function<GraphicsRecreatePresentFunc>&& recreatePresent, std::function<GraphicsRecreatePresentPerImageFunc>&& recreatePresentPerImage) = 0;
     virtual GraphicsVertexBuffer& CreateVertexBuffer(Book& book, GraphicsPool& pool, Buffer const& buffer) = 0;
     virtual GraphicsIndexBuffer& CreateIndexBuffer(Book& book, GraphicsPool& pool, Buffer const& buffer, bool is32Bit) = 0;
     virtual GraphicsImage& CreateDepthStencilImage(Book& book, GraphicsPool& pool, ivec2 const& size) = 0;
@@ -287,6 +352,8 @@ namespace Coil
     virtual GraphicsPipelineLayout& CreatePipelineLayout(Book& book, std::span<GraphicsShader*> const& shaders) = 0;
     virtual GraphicsPipeline& CreatePipeline(Book& book, GraphicsPipelineConfig const& config, GraphicsPipelineLayout& graphicsPipelineLayout, GraphicsPass& pass, GraphicsSubPassId subPassId, GraphicsShader& shader) = 0;
     virtual GraphicsFramebuffer& CreateFramebuffer(Book& book, GraphicsPass& pass, std::span<GraphicsImage*> const& pImages, ivec2 const& size) = 0;
+    virtual GraphicsImage& CreateTexture(Book& book, GraphicsPool& pool, GraphicsImageFormat const& format, GraphicsSampler* pSampler = nullptr) = 0;
+    virtual GraphicsSampler& CreateSampler(Book& book, GraphicsSamplerConfig const& config) = 0;
   };
 
   class GraphicsMesh
@@ -315,8 +382,10 @@ namespace Coil
     virtual void BindDynamicVertexBuffer(uint32_t slot, Buffer const& buffer) = 0;
     virtual void BindIndexBuffer(GraphicsIndexBuffer* pIndexBuffer) = 0;
     virtual void BindUniformBuffer(GraphicsSlotSetId slotSet, GraphicsSlotId slot, Buffer const& buffer) = 0;
+    virtual void BindImage(GraphicsSlotSetId slotSet, GraphicsSlotId slot, GraphicsImage& image) = 0;
     virtual void BindPipeline(GraphicsPipeline& pipeline) = 0;
     virtual void Draw(uint32_t indicesCount, uint32_t instancesCount = 1) = 0;
+    virtual void SetTextureData(GraphicsImage& image, GraphicsImageFormat const& format, Buffer const& buffer) = 0;
 
     void BindMesh(GraphicsMesh const& mesh);
   };

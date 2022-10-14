@@ -15,6 +15,7 @@ namespace Coil
   void DestroyVulkanObject(VkDevice device, VkPipeline pipeline)                       { vkDestroyPipeline(device, pipeline, nullptr); }
   void DestroyVulkanObject(VkDevice device, VkPipelineLayout pipelineLayout)           { vkDestroyPipelineLayout(device, pipelineLayout, nullptr); }
   void DestroyVulkanObject(VkDevice device, VkRenderPass renderPass)                   { vkDestroyRenderPass(device, renderPass, nullptr); }
+  void DestroyVulkanObject(VkDevice device, VkSampler sampler)                         { vkDestroySampler(device, sampler, nullptr); }
   void DestroyVulkanObject(VkDevice device, VkSemaphore semaphore)                     { vkDestroySemaphore(device, semaphore, nullptr); }
   void DestroyVulkanObject(VkDevice device, VkShaderModule shaderModule)               { vkDestroyShaderModule(device, shaderModule, nullptr); }
   void DestroyVulkanObject(VkDevice device, VkSwapchainKHR swapchain)                  { vkDestroySwapchainKHR(device, swapchain, nullptr); }

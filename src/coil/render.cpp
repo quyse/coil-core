@@ -42,6 +42,12 @@ namespace Coil
     _pContext->BindUniformBuffer(slotSetId, slotId, buffer);
   }
 
+  void RenderContext::SetImage(GraphicsSlotSetId slotSetId, GraphicsSlotId slotId, GraphicsImage& image)
+  {
+    Flush();
+    _pContext->BindImage(slotSetId, slotId, image);
+  }
+
   void RenderContext::SetInstanceData(uint32_t slot, Buffer const& buffer)
   {
     auto& slotData = _instanceData[slot];

@@ -18,6 +18,7 @@ namespace Coil
     void SetPipeline(GraphicsPipeline& pipeline);
     void SetMesh(GraphicsMesh& mesh);
     void SetUniformBuffer(GraphicsSlotSetId slotSetId, GraphicsSlotId slotId, Buffer const& buffer);
+    void SetImage(GraphicsSlotSetId slotSetId, GraphicsSlotId slotId, GraphicsImage& image);
     void SetInstanceData(uint32_t slot, Buffer const& buffer);
     void EndInstance();
 
@@ -87,6 +88,29 @@ namespace Coil
 
   private:
     Struct const& _data;
+  };
+
+  // Image knob.
+  template <GraphicsSlotSetId slotSetId, GraphicsSlotId slotId>
+  class RenderImageKnob
+  {
+  public:
+    RenderImageKnob(GraphicsImage& image)
+    : _image(image) {}
+
+    using Key = GraphicsImage*;
+    Key GetKey() const
+    {
+      return &_image;
+    }
+
+    void Apply(RenderContext& context) const
+    {
+      context.SetImage(slotSetId, slotId, _image);
+    }
+
+  private:
+    GraphicsImage& _image;
   };
 
   class RenderMeshKnob

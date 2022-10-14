@@ -13,6 +13,7 @@ namespace Coil
   class VulkanFrame;
   class VulkanPipeline;
   class VulkanImage;
+  class VulkanSampler;
 
   class VulkanPool final : public GraphicsPool
   {
@@ -51,8 +52,10 @@ namespace Coil
     void BindDynamicVertexBuffer(uint32_t slot, Buffer const& buffer) override;
     void BindIndexBuffer(GraphicsIndexBuffer* pIndexBuffer) override;
     void BindUniformBuffer(GraphicsSlotSetId slotSet, GraphicsSlotId slot, Buffer const& buffer) override;
+    void BindImage(GraphicsSlotSetId slotSet, GraphicsSlotId slot, GraphicsImage& image) override;
     void BindPipeline(GraphicsPipeline& pipeline) override;
     void Draw(uint32_t indicesCount, uint32_t instancesCount) override;
+    void SetTextureData(GraphicsImage& image, GraphicsImageFormat const& format, Buffer const& buffer) override;
 
   private:
     struct CachedBuffer
@@ -84,7 +87,11 @@ namespace Coil
     {
       VkDescriptorBufferInfo info;
     };
-    using Binding = std::variant<BindingUniformBuffer>;
+    struct BindingImage
+    {
+      VkDescriptorImageInfo info;
+    };
+    using Binding = std::variant<BindingUniformBuffer, BindingImage>;
     struct DescriptorSet
     {
       std::map<GraphicsSlotId, Binding> bindings;
@@ -129,6 +136,7 @@ namespace Coil
     VulkanFrame(Book& book, VulkanDevice& device, VulkanPresenter& presenter, VulkanPool& pool, VkCommandBuffer commandBuffer);
 
     uint32_t GetImageIndex() const override;
+    VulkanContext& GetContext() override;
     void Pass(GraphicsPass& pass, GraphicsFramebuffer& framebuffer, std::function<void(GraphicsSubPassId, GraphicsContext&)> const& func) override;
     void EndFrame() override;
 
@@ -234,14 +242,27 @@ namespace Coil
   class VulkanImage final : public GraphicsImage
   {
   public:
-    VulkanImage(VkImage image, VkImageView imageView);
+    VulkanImage(VkImage image, VkImageView imageView, VkSampler _sampler = nullptr);
 
   private:
     VkImage _image;
     VkImageView _imageView;
+    VkSampler _sampler;
 
     friend class VulkanDevice;
+    friend class VulkanContext;
     friend class VulkanFrame;
+  };
+
+  class VulkanSampler final : public GraphicsSampler
+  {
+  public:
+    VulkanSampler(VkSampler sampler);
+
+  private:
+    VkSampler _sampler;
+
+    friend class VulkanDevice;
   };
 
   class VulkanShader final : public GraphicsShader
@@ -298,24 +319,28 @@ namespace Coil
   class VulkanDevice final : public GraphicsDevice
   {
   public:
-    VulkanDevice(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device, uint32_t graphicsQueueFamilyIndex, Book& book);
+    VulkanDevice(Book& book, VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device, uint32_t graphicsQueueFamilyIndex);
 
+    Book& GetBook() override;
     VulkanPool& CreatePool(Book& book, size_t chunkSize) override;
-    VulkanPresenter& CreateWindowPresenter(Book& book, GraphicsPool& graphicsPool, Window& window, std::function<GraphicsRecreatePresentFunc>&& recreatePresent, std::function<GraphicsRecreatePresentPerImageFunc>&& recreatePresentPerImage) override;
+    VulkanPresenter& CreateWindowPresenter(Book& book, GraphicsPool& pool, Window& window, std::function<GraphicsRecreatePresentFunc>&& recreatePresent, std::function<GraphicsRecreatePresentPerImageFunc>&& recreatePresentPerImage) override;
     VulkanVertexBuffer& CreateVertexBuffer(Book& book, GraphicsPool& pool, Buffer const& buffer) override;
     VulkanIndexBuffer& CreateIndexBuffer(Book& book, GraphicsPool& pool, Buffer const& buffer, bool is32Bit) override;
     VulkanImage& CreateDepthStencilImage(Book& book, GraphicsPool& pool, ivec2 const& size) override;
     VulkanPass& CreatePass(Book& book, GraphicsPassConfig const& config) override;
     VulkanShader& CreateShader(Book& book, GraphicsShaderRoots const& roots) override;
     VulkanPipelineLayout& CreatePipelineLayout(Book& book, std::span<GraphicsShader*> const& shaders) override;
-    VulkanPipeline& CreatePipeline(Book& book, GraphicsPipelineConfig const& config, GraphicsPipelineLayout& graphicsPipelineLayout, GraphicsPass& pass, GraphicsSubPassId subPassId, GraphicsShader& shader) override;
+    VulkanPipeline& CreatePipeline(Book& book, GraphicsPipelineConfig const& config, GraphicsPipelineLayout& pipelineLayout, GraphicsPass& pass, GraphicsSubPassId subPassId, GraphicsShader& shader) override;
     VulkanFramebuffer& CreateFramebuffer(Book& book, GraphicsPass& pass, std::span<GraphicsImage*> const& pImages, ivec2 const& size) override;
+    VulkanImage& CreateTexture(Book& book, GraphicsPool& pool, GraphicsImageFormat const& format, GraphicsSampler* pSampler = nullptr) override;
+    VulkanSampler& CreateSampler(Book& book, GraphicsSamplerConfig const& config) override;
 
   private:
     std::pair<VkDeviceMemory, VkDeviceSize> AllocateMemory(VulkanPool& pool, VkMemoryRequirements const& memoryRequirements, VkMemoryPropertyFlags requireFlags);
     VkFence CreateFence(Book& book, bool signaled = false);
     VkSemaphore CreateSemaphore(Book& book);
 
+    Book& _book;
     VkInstance _instance;
     VkPhysicalDevice _physicalDevice;
     VkDevice _device;

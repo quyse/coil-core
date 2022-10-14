@@ -10,6 +10,7 @@ namespace Coil
   {
     Unused,
     UniformBuffer,
+    SampledImage,
   };
 
   enum class SpirvStageFlag

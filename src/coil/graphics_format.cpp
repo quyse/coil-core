@@ -181,6 +181,22 @@ namespace Coil
     }
   }
 
+  size_t PixelFormat::GetPixelSize(Size size)
+  {
+    switch(size)
+    {
+    case Size::_8bit: return 1;
+    case Size::_16bit: return 2;
+    case Size::_24bit: return 3;
+    case Size::_32bit: return 4;
+    case Size::_64bit: return 8;
+    case Size::_96bit: return 12;
+    case Size::_128bit: return 16;
+    default: return 0;
+    }
+  }
+
+
   PixelFormat const PixelFormats::uintRGBA32(
     PixelFormat::Components::RGBA,
     PixelFormat::Format::Uint,

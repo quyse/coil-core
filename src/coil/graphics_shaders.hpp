@@ -239,6 +239,8 @@ namespace Coil
     UniformBuffer,
     // variables have value type and can be written to
     Variable,
+    // sampled image
+    SampledImage,
   };
 
   enum class ShaderExpressionType
@@ -249,6 +251,8 @@ namespace Coil
     Read,
     // reads uniform buffer member
     Uniform,
+    // samples sampled image
+    Sample,
   };
 
   enum class ShaderOperationType
@@ -593,6 +597,73 @@ namespace Coil
 
     virtual ShaderVariableType GetVariableType() const = 0;
     virtual ShaderDataType const& GetDataType() const = 0;
+  };
+
+  struct ShaderSampledImageNode : public ShaderNode
+  {
+    ShaderSampledImageNode(uint32_t slotSet, uint32_t slot)
+    : slotSet(slotSet), slot(slot) {}
+
+    uint32_t slotSet;
+    uint32_t slot;
+
+    ShaderNodeType GetNodeType() const
+    {
+      return ShaderNodeType::SampledImage;
+    }
+
+    virtual ShaderDataType const& GetDataType() const = 0;
+    virtual size_t GetDimensionality() const = 0;
+  };
+
+  template <typename T, size_t n>
+  struct ShaderSampledImageNodeImpl : public ShaderSampledImageNode
+  {
+    ShaderSampledImageNodeImpl(uint32_t slotSet, uint32_t slot)
+    : ShaderSampledImageNode(slotSet, slot) {}
+
+    ShaderDataType const& GetDataType() const override
+    {
+      return ShaderDataTypeOf<T>();
+    }
+
+    size_t GetDimensionality() const override
+    {
+      return n;
+    }
+  };
+
+  struct ShaderSampleNode : public ShaderExpressionNode
+  {
+    ShaderSampleNode(std::shared_ptr<ShaderSampledImageNode> sampledImageNode, std::shared_ptr<ShaderExpressionNode> coordsNode)
+    : sampledImageNode(sampledImageNode), coordsNode(coordsNode) {}
+
+    std::shared_ptr<ShaderSampledImageNode> sampledImageNode;
+    std::shared_ptr<ShaderExpressionNode> coordsNode;
+
+    ShaderExpressionType GetExpressionType() const override
+    {
+      return ShaderExpressionType::Sample;
+    }
+
+    ShaderDataType const& GetDataType() const override
+    {
+      return sampledImageNode->GetDataType();
+    }
+  };
+
+  template <typename T, size_t n>
+  struct ShaderSampledImage
+  {
+    ShaderSampledImage(uint32_t slotSet, uint32_t slot)
+    : node(std::make_shared<ShaderSampledImageNodeImpl<T, n>>(slotSet, slot)) {}
+
+    std::shared_ptr<ShaderSampledImageNodeImpl<T, n>> node;
+
+    ShaderExpression<T> Sample(ShaderExpression<xvec<float, n>> const& coords) const
+    {
+      return std::make_shared<ShaderSampleNode>(node, coords.node);
+    }
   };
 
   struct ShaderReadNode : public ShaderExpressionNode
