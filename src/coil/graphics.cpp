@@ -100,7 +100,7 @@ namespace Coil
       mip.width = std::max(width >> i, 1);
       mip.height = std::max(height >> i, 1);
       mip.depth = std::max(depth >> i, 1);
-      mip.size = mip.width * mip.height * mip.depth;
+      mip.size = mip.width * mip.height * mip.depth * metrics.pixelSize;
       mip.offset = mipOffset;
 
       mipOffset += mip.size;
