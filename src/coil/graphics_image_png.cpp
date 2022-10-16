@@ -81,6 +81,17 @@ namespace Coil
     png_byte bitDepth = png_get_bit_depth(pngPtr, infoPtr);
     png_byte colorType = png_get_color_type(pngPtr, infoPtr);
 
+    // set format
+    format =
+    {
+      .format = PixelFormats::uintRGB24S,
+      .width = (int32_t)width,
+      .height = (int32_t)height,
+      .depth = 0,
+      .mips = 1,
+      .count = 0,
+    };
+
     // set transformation options
     // convert palette images to RGB
     if(colorType == PNG_COLOR_TYPE_PALETTE)
@@ -94,36 +105,31 @@ namespace Coil
     // convert 16 bit depth to 8 bit
     if(bitDepth == 16)
       png_set_scale_16(pngPtr);
-    // add alpha even if it's missing
-    if (colorType == PNG_COLOR_TYPE_RGB || colorType == PNG_COLOR_TYPE_GRAY)
-      png_set_add_alpha(pngPtr, 255, PNG_FILLER_AFTER);
-    // set sRGB alpha mode
-    png_set_alpha_mode(pngPtr, PNG_ALPHA_PNG, PNG_DEFAULT_sRGB);
+    // if there's alpha
+    switch(colorType)
+    {
+    case PNG_COLOR_TYPE_GRAY_ALPHA:
+    case PNG_COLOR_TYPE_RGB_ALPHA:
+      // set format
+      format.format = PixelFormats::uintRGBA32S;
+      // set sRGB alpha mode
+      png_set_alpha_mode(pngPtr, PNG_ALPHA_PNG, PNG_DEFAULT_sRGB);
+      break;
+    }
 
     // update info to account for conversions
     png_read_update_info(pngPtr, infoPtr);
-    // get row pitch
-    png_size_t pitch = png_get_rowbytes(pngPtr, infoPtr);
 
-    // allocate memory
-    data.resize(width * height * 4);
-    // set format
-    format =
-    {
-      .format = PixelFormats::uintRGBA32S,
-      .width = (int32_t)width,
-      .height = (int32_t)height,
-      .depth = 0,
-      .mips = 1,
-      .count = 0,
-    };
     GraphicsImageMetrics metrics = format.GetMetrics();
+    // allocate memory
+    data.resize(format.width * format.height * metrics.pixelSize);
     // get image data
     {
       std::vector<png_bytep> imageRows(height);
-      png_bytep imageFileData = (png_bytep)data.data() + metrics.mips[0].offset;
+      // get row pitch
+      size_t pitch = format.width * metrics.pixelSize;
       for(png_uint_32 i = 0; i < height; ++i)
-        imageRows[i] = imageFileData + i * pitch;
+        imageRows[i] = (png_bytep)data.data() + i * pitch;
       png_read_image(pngPtr, imageRows.data());
     }
     // free struct

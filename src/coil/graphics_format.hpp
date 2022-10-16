@@ -120,6 +120,7 @@ namespace Coil
       _16bit,
       _24bit,
       _32bit,
+      _48bit,
       _64bit,
       _96bit,
       _128bit

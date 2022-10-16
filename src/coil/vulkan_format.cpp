@@ -342,6 +342,12 @@ namespace Coil
         case F(Untyped):
           break;
         case F(Uint):
+          switch(format.size)
+          {
+          case S(24bit): return R(R8G8B8_UNORM);
+          case S(48bit): return R(R16G16B16_UNORM);
+          default: break;
+          }
           break;
         case F(Float):
           switch(format.size)
