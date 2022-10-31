@@ -55,7 +55,7 @@ namespace Coil
     void BindImage(GraphicsSlotSetId slotSet, GraphicsSlotId slot, GraphicsImage& image) override;
     void BindPipeline(GraphicsPipeline& pipeline) override;
     void Draw(uint32_t indicesCount, uint32_t instancesCount) override;
-    void SetTextureData(GraphicsImage& image, GraphicsImageFormat const& format, Buffer const& buffer) override;
+    void SetTextureData(GraphicsImage& image, GraphicsRawImage const& rawImage) override;
 
   private:
     struct CachedBuffer

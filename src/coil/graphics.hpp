@@ -147,6 +147,12 @@ namespace Coil
     GraphicsImageMetrics GetMetrics() const;
   };
 
+  struct GraphicsRawImage
+  {
+    GraphicsImageFormat format;
+    Buffer buffer;
+  };
+
   class GraphicsDevice;
   class GraphicsContext;
   class GraphicsPass;
@@ -385,7 +391,7 @@ namespace Coil
     virtual void BindImage(GraphicsSlotSetId slotSet, GraphicsSlotId slot, GraphicsImage& image) = 0;
     virtual void BindPipeline(GraphicsPipeline& pipeline) = 0;
     virtual void Draw(uint32_t indicesCount, uint32_t instancesCount = 1) = 0;
-    virtual void SetTextureData(GraphicsImage& image, GraphicsImageFormat const& format, Buffer const& buffer) = 0;
+    virtual void SetTextureData(GraphicsImage& image, GraphicsRawImage const& rawImage) = 0;
 
     void BindMesh(GraphicsMesh const& mesh);
   };

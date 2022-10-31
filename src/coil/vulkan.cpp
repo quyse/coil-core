@@ -1457,17 +1457,17 @@ namespace Coil
     }
   }
 
-  void VulkanContext::SetTextureData(GraphicsImage& graphicsImage, GraphicsImageFormat const& format, Buffer const& buffer)
+  void VulkanContext::SetTextureData(GraphicsImage& graphicsImage, GraphicsRawImage const& rawImage)
   {
     VulkanImage& image = static_cast<VulkanImage&>(graphicsImage);
 
-    auto metrics = format.GetMetrics();
+    auto metrics = rawImage.format.GetMetrics();
 
     std::vector<VkBufferImageCopy> regions;
-    int32_t count = format.count ? format.count : 1;
+    int32_t count = rawImage.format.count ? rawImage.format.count : 1;
 
     uint32_t textureSize = metrics.imageSize * count;
-    if(textureSize > buffer.size)
+    if(textureSize > rawImage.buffer.size)
       throw Exception("texture data buffer is too small");
 
     for(int32_t i = 0; i < count; ++i)
@@ -1507,8 +1507,8 @@ namespace Coil
     // upload data to buffer
     {
       void* data;
-      CheckSuccess(vkMapMemory(_device._device, buf.buffer.memory, buf.buffer.memoryOffset + buf.bufferOffset, buffer.size, 0, &data), "mapping Vulkan texture staging buffer memory failed");
-      memcpy(data, buffer.data, textureSize);
+      CheckSuccess(vkMapMemory(_device._device, buf.buffer.memory, buf.buffer.memoryOffset + buf.bufferOffset, rawImage.buffer.size, 0, &data), "mapping Vulkan texture staging buffer memory failed");
+      memcpy(data, rawImage.buffer.data, textureSize);
       vkUnmapMemory(_device._device, buf.buffer.memory);
     }
 
