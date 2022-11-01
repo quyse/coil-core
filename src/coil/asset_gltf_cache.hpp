@@ -200,9 +200,9 @@ namespace Coil
 
         _meshes[meshIndex] = std::move(geometry);
       }
-      catch(Exception& exception)
+      catch(Exception const& exception)
       {
-        throw Exception() << "getting glTF mesh " << meshIndex << " failed" << std::move(exception);
+        throw Exception() << "getting glTF mesh " << meshIndex << " failed" << exception;
       }
     }
 

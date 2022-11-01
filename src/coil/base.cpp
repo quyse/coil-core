@@ -74,7 +74,7 @@ namespace Coil
     return _message.str();
   }
 
-  Exception&& operator<<(Exception&& e, Exception&& inner)
+  Exception&& operator<<(Exception&& e, Exception const& inner)
   {
     e._message << '\n' << inner._message.str();
     return std::move(e);

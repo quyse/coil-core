@@ -170,7 +170,7 @@ namespace Coil
 
     std::string GetMessage() const;
 
-    friend Exception&& operator<<(Exception&& e, Exception&& inner);
+    friend Exception&& operator<<(Exception&& e, Exception const& inner);
 
     template <typename T>
     friend Exception&& operator<<(Exception&& e, T&& value)
