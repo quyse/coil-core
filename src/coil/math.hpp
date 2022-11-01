@@ -418,31 +418,39 @@ namespace Coil
 
   // convenience synonyms
 
+  template <size_t n>
+  using vec = xvec<float, n>;
   using vec1 = float;
-  using vec2 = xvec<float, 2>;
-  using vec3 = xvec<float, 3>;
-  using vec4 = xvec<float, 4>;
+  using vec2 = vec<2>;
+  using vec3 = vec<3>;
+  using vec4 = vec<4>;
+  template <size_t n, size_t m>
+  using mat = xmat<float, n, m>;
   using mat1x1 = float;
-  using mat1x2 = xmat<float, 1, 2>;
-  using mat1x3 = xmat<float, 1, 3>;
-  using mat1x4 = xmat<float, 1, 4>;
-  using mat2x1 = xmat<float, 2, 1>;
-  using mat2x2 = xmat<float, 2, 2>;
-  using mat2x3 = xmat<float, 2, 3>;
-  using mat2x4 = xmat<float, 2, 4>;
-  using mat3x1 = xmat<float, 3, 1>;
-  using mat3x2 = xmat<float, 3, 2>;
-  using mat3x3 = xmat<float, 3, 3>;
-  using mat3x4 = xmat<float, 3, 4>;
-  using mat4x1 = xmat<float, 4, 1>;
-  using mat4x2 = xmat<float, 4, 2>;
-  using mat4x3 = xmat<float, 4, 3>;
-  using mat4x4 = xmat<float, 4, 4>;
+  using mat1x2 = mat<1, 2>;
+  using mat1x3 = mat<1, 3>;
+  using mat1x4 = mat<1, 4>;
+  using mat2x1 = mat<2, 1>;
+  using mat2x2 = mat<2, 2>;
+  using mat2x3 = mat<2, 3>;
+  using mat2x4 = mat<2, 4>;
+  using mat3x1 = mat<3, 1>;
+  using mat3x2 = mat<3, 2>;
+  using mat3x3 = mat<3, 3>;
+  using mat3x4 = mat<3, 4>;
+  using mat4x1 = mat<4, 1>;
+  using mat4x2 = mat<4, 2>;
+  using mat4x3 = mat<4, 3>;
+  using mat4x4 = mat<4, 4>;
 
+  template <size_t n>
+  using uvec = xvec<uint32_t, n>;
   using uvec1 = uint32_t;
   using uvec2 = xvec<uint32_t, 2>;
   using uvec3 = xvec<uint32_t, 3>;
   using uvec4 = xvec<uint32_t, 4>;
+  template <size_t n, size_t m>
+  using umat = xmat<uint32_t, n, m>;
   using umat1x1 = uint32_t;
   using umat1x2 = xmat<uint32_t, 1, 2>;
   using umat1x3 = xmat<uint32_t, 1, 3>;
@@ -460,10 +468,14 @@ namespace Coil
   using umat4x3 = xmat<uint32_t, 4, 3>;
   using umat4x4 = xmat<uint32_t, 4, 4>;
 
+  template <size_t n>
+  using ivec = xvec<int32_t, n>;
   using ivec1 = int32_t;
   using ivec2 = xvec<int32_t, 2>;
   using ivec3 = xvec<int32_t, 3>;
   using ivec4 = xvec<int32_t, 4>;
+  template <size_t n, size_t m>
+  using imat = xmat<int32_t, n, m>;
   using imat1x1 = int32_t;
   using imat1x2 = xmat<int32_t, 1, 2>;
   using imat1x3 = xmat<int32_t, 1, 3>;
@@ -481,10 +493,14 @@ namespace Coil
   using imat4x3 = xmat<int32_t, 4, 3>;
   using imat4x4 = xmat<int32_t, 4, 4>;
 
+  template <size_t n>
+  using bvec = xvec<bool, n>;
   using bvec1 = bool;
   using bvec2 = xvec<bool, 2>;
   using bvec3 = xvec<bool, 3>;
   using bvec4 = xvec<bool, 4>;
+  template <size_t n, size_t m>
+  using bmat = xmat<bool, n, m>;
   using bmat1x1 = bool;
   using bmat1x2 = xmat<bool, 1, 2>;
   using bmat1x3 = xmat<bool, 1, 3>;
