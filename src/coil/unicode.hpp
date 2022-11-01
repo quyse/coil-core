@@ -206,12 +206,7 @@ namespace Coil::Unicode
   void Convert(FromIterator s, Container& r)
   {
     Iterator<From, To, FromIterator> i(s);
-    std::back_insert_iterator j(r);
-    for(;;)
-    {
-      To c = *i++;
-      *j++ = c;
-      if(!c) break;
-    }
+    To c;
+    for(std::back_insert_iterator j(r); c = *i, *j++ = c, c; ++i);
   }
 }
