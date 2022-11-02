@@ -1,13 +1,16 @@
 { stdenv
 , lib
-, ninja
 , clang
+, cmake
+, pkg-config
 , writeText
 , SDL2
 , vulkan-headers
 , spirv-headers
 , nlohmann_json
 , libpng
+, freetype
+, harfbuzz
 }: let
   sources = lib.pipe ./src/coil [
     builtins.readDir
@@ -28,8 +31,9 @@ in stdenv.mkDerivation {
   name = "coil-core";
   src = ./src/coil;
   nativeBuildInputs = [
-    ninja
     clang
+    cmake
+    pkg-config
   ];
   buildInputs = [
     SDL2
@@ -37,10 +41,13 @@ in stdenv.mkDerivation {
     spirv-headers
     nlohmann_json
     libpng
+    freetype
+    harfbuzz
   ];
-  configurePhase = ''
-    ln -s ${buildfile} build.ninja
-  '';
+  cmakeFlags = [
+    "-DCMAKE_CXX_COMPILER=clang++"
+    "-DCMAKE_C_COMPILER=clang"
+  ];
   installPhase = ''
     mkdir $out
     mv *.a $out/
