@@ -119,62 +119,69 @@ namespace Coil
     Unicode::Convert<char, char16_t>(name.c_str(), s);
     HANDLE hFile = ::CreateFileW(s.data(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, NULL);
     if(hFile == INVALID_HANDLE_VALUE)
-      throw Exception("opening file failed");
+      throw Exception("opening file failed: ") << name;
     return hFile;
 #elif defined(___COIL_PLATFORM_POSIX)
     int fd = ::open(name.c_str(), O_RDONLY, 0);
     if(fd < 0)
-      throw Exception("opening file failed");
+      throw Exception("opening file failed: ") << name;
     return fd;
 #endif
   }
 
   Buffer File::Map(Book& book, std::string const& name)
   {
+    try
+    {
 #if defined(___COIL_PLATFORM_WINDOWS)
-    // open file
-    std::vector<wchar_t> s;
-    Unicode::Convert<char, char16_t>(name.c_str(), s);
-    HANDLE hFile = ::CreateFileW(s.data(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, NULL);
-    if(hFile == INVALID_HANDLE_VALUE)
-      throw Exception("opening file failed");
-    File file = hFile;
+      // open file
+      std::vector<wchar_t> s;
+      Unicode::Convert<char, char16_t>(name.c_str(), s);
+      HANDLE hFile = ::CreateFileW(s.data(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, NULL);
+      if(hFile == INVALID_HANDLE_VALUE)
+        throw Exception("opening file failed");
+      File file = hFile;
 
-    // create mapping
-    uint64_t size = file.GetSize();
-    if((size_t)size != size)
-      throw Exception("too big file mapping");
-    HANDLE hMapping = ::CreateFileMappingW(hFile, NULL, PAGE_READONLY, 0, 0, 0);
-    if(!hMapping)
-      throw Exception("creating file mapping failed");
+      // create mapping
+      uint64_t size = file.GetSize();
+      if((size_t)size != size)
+        throw Exception("too big file mapping");
+      HANDLE hMapping = ::CreateFileMappingW(hFile, NULL, PAGE_READONLY, 0, 0, 0);
+      if(!hMapping)
+        throw Exception("creating file mapping failed");
 
-    // map file
-    void* pMapping = ::MapViewOfFile(hMapping, FILE_MAP_READ, 0, 0, 0);
-    ::CloseHandle(hMapping);
-    if(!pMapping)
-      throw Exception("mapping file failed");
+      // map file
+      void* pMapping = ::MapViewOfFile(hMapping, FILE_MAP_READ, 0, 0, 0);
+      ::CloseHandle(hMapping);
+      if(!pMapping)
+        throw Exception("mapping view failed");
 
-    book.Allocate<FileMapping>(pMapping, size);
+      book.Allocate<FileMapping>(pMapping, size);
 
-    return Buffer(pMapping, size);
+      return Buffer(pMapping, size);
 #elif defined(___COIL_PLATFORM_POSIX)
-    int fd = ::open(name.c_str(), O_RDONLY, 0);
-    if(fd < 0)
-      throw Exception("opening file failed");
-    File file = fd;
+      int fd = ::open(name.c_str(), O_RDONLY, 0);
+      if(fd < 0)
+        throw Exception("opening file failed");
+      File file = fd;
 
-    uint64_t size = file.GetSize();
-    if((size_t)size != size)
-      throw Exception("too big file mapping");
+      uint64_t size = file.GetSize();
+      if((size_t)size != size)
+        throw Exception("too big file mapping");
 
-    void* pMapping = ::mmap(nullptr, size, PROT_READ, MAP_PRIVATE, fd, 0);
-    if(pMapping == MAP_FAILED)
-      throw Exception("mapping file failed");
+      void* pMapping = ::mmap(nullptr, size, PROT_READ, MAP_PRIVATE, fd, 0);
+      if(pMapping == MAP_FAILED)
+        throw Exception("mmap failed");
 
-    book.Allocate<FileMapping>(pMapping, size);
+      book.Allocate<FileMapping>(pMapping, size);
 
-    return Buffer(pMapping, size);
+      return Buffer(pMapping, size);
 #endif
+    }
+    catch(Exception const& exception)
+    {
+      throw Exception("mapping file failed: ") << name << exception;
+    }
   }
 
   std::string GetFilePathName(std::string const& path)
