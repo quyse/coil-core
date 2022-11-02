@@ -21,3 +21,9 @@ add_library(coil-core STATIC
 target_include_directories(coil-core PRIVATE
   ${HARFBUZZ_INCLUDE_DIRS}
 )
+
+install(TARGETS
+  coil-core
+  EXPORT coil-core
+)
+install(EXPORT coil-core DESTINATION lib)
