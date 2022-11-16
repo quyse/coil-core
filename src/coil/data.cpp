@@ -22,65 +22,19 @@ namespace Coil
 
   void StreamWriter::WriteNumber(uint64_t value)
   {
-    // MSB of first byte determine total length, from 0 - 1 byte, to 11111111 - 9 bytes
-    // the rest of the bits of the first byte, and the rest of the bytes
-    // contain the number, in big-endian
-    uint8_t length;
+    // each byte contains 7 value bits, starting from least significant
+    // most significant bit in each byte is 1, except the last byte
     uint8_t bytes[9];
-    if(value < 0x80)
+    uint8_t i = 0;
+    do
     {
-      length = 0;
-      bytes[0] = 0x00;
+      bytes[i] = value & 0x7F;
+      value >>= 7;
+      if(value) bytes[i] |= 0x80;
+      ++i;
     }
-    else if(value < 0x4000)
-    {
-      length = 1;
-      bytes[0] = 0x80;
-    }
-    else if(value < 0x200000)
-    {
-      length = 2;
-      bytes[0] = 0xC0;
-    }
-    else if(value < 0x10000000)
-    {
-      length = 3;
-      bytes[0] = 0xE0;
-    }
-    else if(value < 0x800000000ULL)
-    {
-      length = 4;
-      bytes[0] = 0xF0;
-    }
-    else if(value < 0x40000000000ULL)
-    {
-      length = 5;
-      bytes[0] = 0xF8;
-    }
-    else if(value < 0x2000000000000ULL)
-    {
-      length = 6;
-      bytes[0] = 0xFC;
-    }
-    else if(value < 0x1000000000000ULL)
-    {
-      length = 7;
-      bytes[0] = 0xFE;
-    }
-    else
-    {
-      length = 8;
-      bytes[0] = 0xFF;
-    }
-
-    // prepare first byte
-    bytes[0] |= (uint8_t)(value >> (length * 8));
-    // prepare additional bytes
-    for(uint8_t i = 0; i < length; ++i)
-      bytes[1 + i] = (uint8_t)(value >> ((length - 1 - i) * 8));
-
-    // write
-    Write(bytes, length + 1);
+    while(value);
+    Write(bytes, i);
   }
 
   void StreamWriter::WriteString(std::string const& value)
@@ -119,59 +73,16 @@ namespace Coil
 
   uint64_t StreamReader::ReadNumber()
   {
-    uint8_t first = Read<uint8_t>();
-    uint8_t length;
-    if(!(first & 0x80)) return first;
-    else if(!(first & 0x40))
+    uint64_t value = 0;
+    uint8_t i = 0;
+    uint64_t byte;
+    do
     {
-      length = 1;
-      first &= ~0x80;
+      byte = Read<uint8_t>();
+      value |= (byte & 0x7F) << i;
+      i += 7;
     }
-    else if(!(first & 0x20))
-    {
-      length = 2;
-      first &= ~0xC0;
-    }
-    else if(!(first & 0x10))
-    {
-      length = 3;
-      first &= ~0xE0;
-    }
-    else if(!(first & 0x08))
-    {
-      length = 4;
-      first &= ~0xF0;
-    }
-    else if(!(first & 0x04))
-    {
-      length = 5;
-      first &= ~0xF8;
-    }
-    else if(!(first & 0x02))
-    {
-      length = 6;
-      first &= ~0xFC;
-    }
-    else if(!(first & 0x01))
-    {
-      length = 7;
-      first &= ~0xFE;
-    }
-    else
-    {
-      length = 8;
-      first &= ~0xFF;
-    }
-
-    // read additional bytes
-    uint8_t bytes[8];
-    Read(bytes, length);
-
-    // calculate value
-    uint64_t value = ((uint64_t)first) << (length * 8);
-    for(uint8_t i = 0; i < length; ++i)
-      value |= ((uint64_t)bytes[i]) << ((length - 1 - i) * 8);
-
+    while(byte & 0x80);
     return value;
   }
 
