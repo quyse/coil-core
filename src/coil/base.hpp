@@ -184,13 +184,6 @@ namespace Coil
   };
 
 
-  // Output stream.
-  class OutputStream
-  {
-  public:
-    virtual void Write(Buffer const& buffer) = 0;
-  };
-
   // Input stream.
   class InputStream
   {
@@ -198,6 +191,28 @@ namespace Coil
     // Read some data, up to size of the buffer.
     // Always fills the buffer fully, unless there's not enough data.
     virtual size_t Read(Buffer const& buffer) = 0;
+  };
+
+  // Output stream.
+  class OutputStream
+  {
+  public:
+    virtual void Write(Buffer const& buffer) = 0;
+    virtual void End() {};
+
+    void WriteAllFrom(InputStream& inputStream);
+  };
+
+  // Input stream reading from buffer.
+  class BufferInputStream : public InputStream
+  {
+  public:
+    BufferInputStream(Buffer const& buffer);
+
+    size_t Read(Buffer const& buffer) override;
+
+  private:
+    Buffer _buffer;
   };
 
   // Output stream writing into buffer.
@@ -212,15 +227,14 @@ namespace Coil
     Buffer _buffer;
   };
 
-  // Input stream reading from buffer.
-  class BufferInputStream : public InputStream
+  class MemoryStream : public OutputStream
   {
   public:
-    BufferInputStream(Buffer const& buffer);
+    void Write(Buffer const& buffer) override;
 
-    size_t Read(Buffer const& buffer) override;
+    Buffer ToBuffer() const;
 
   private:
-    Buffer _buffer;
+    std::vector<uint8_t> _data;
   };
 }

@@ -8,6 +8,7 @@
 , vulkan-headers
 , spirv-headers
 , nlohmann_json
+, zstd
 , libpng
 , freetype
 , harfbuzz
@@ -26,6 +27,7 @@ stdenv.mkDerivation {
     vulkan-headers
     spirv-headers
     nlohmann_json
+    zstd
     libpng
     freetype
     harfbuzz

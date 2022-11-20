@@ -80,16 +80,16 @@ namespace Coil
     return std::move(e);
   }
 
-  BufferOutputStream::BufferOutputStream(Buffer const& buffer)
-  : _buffer(buffer) {}
-
-  void BufferOutputStream::Write(Buffer const& buffer)
+  void OutputStream::WriteAllFrom(InputStream& inputStream)
   {
-    if(_buffer.size < buffer.size)
-      throw Exception("BufferOutputStream: end of dest buffer");
-    memcpy(_buffer.data, buffer.data, buffer.size);
-    _buffer.data = (uint8_t*)_buffer.data + buffer.size;
-    _buffer.size -= buffer.size;
+    uint8_t bufferData[0x1000];
+    Buffer buffer(bufferData, sizeof(bufferData));
+    for(;;)
+    {
+      size_t size = inputStream.Read(buffer);
+      if(!size) break;
+      Write(Buffer(buffer.data, size));
+    }
   }
 
   BufferInputStream::BufferInputStream(Buffer const& buffer)
@@ -102,5 +102,29 @@ namespace Coil
     _buffer.data = (uint8_t*)_buffer.data + size;
     _buffer.size -= size;
     return size;
+  }
+
+  BufferOutputStream::BufferOutputStream(Buffer const& buffer)
+  : _buffer(buffer) {}
+
+  void BufferOutputStream::Write(Buffer const& buffer)
+  {
+    if(_buffer.size < buffer.size)
+      throw Exception("BufferOutputStream: end of dest buffer");
+    memcpy(_buffer.data, buffer.data, buffer.size);
+    _buffer.data = (uint8_t*)_buffer.data + buffer.size;
+    _buffer.size -= buffer.size;
+  }
+
+  void MemoryStream::Write(Buffer const& buffer)
+  {
+    size_t initialSize = _data.size();
+    _data.resize(initialSize + buffer.size);
+    memcpy(_data.data() + initialSize, buffer.data, buffer.size);
+  }
+
+  Buffer MemoryStream::ToBuffer() const
+  {
+    return _data;
   }
 }
