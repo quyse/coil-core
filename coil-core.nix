@@ -9,6 +9,7 @@
 , spirv-headers
 , nlohmann_json
 , zstd
+, sqlite
 , libpng
 , freetype
 , harfbuzz
@@ -28,6 +29,7 @@ stdenv.mkDerivation {
     spirv-headers
     nlohmann_json
     zstd
+    sqlite
     libpng
     freetype
     harfbuzz

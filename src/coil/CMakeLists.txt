@@ -12,6 +12,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(PkgConfig REQUIRED)
 
 pkg_search_module(ZSTD REQUIRED libzstd)
+find_package(SQLite3 REQUIRED)
 pkg_search_module(HARFBUZZ REQUIRED harfbuzz)
 
 FILE(GLOB Sources *.cpp)
@@ -21,6 +22,7 @@ add_library(coil-core STATIC
 )
 target_include_directories(coil-core PRIVATE
   ${ZSTD_INCLUDE_DIRS}
+  ${SQLite3_INCLUDE_DIRS}
   ${HARFBUZZ_INCLUDE_DIRS}
 )
 
