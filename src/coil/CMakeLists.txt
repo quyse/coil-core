@@ -331,3 +331,16 @@ install(TARGETS
   PUBLIC_HEADER DESTINATION include/coil
 )
 install(EXPORT coil_core DESTINATION lib)
+
+enable_testing()
+
+add_executable(test_compress_zstd
+  test_compress_zstd.cpp
+)
+target_link_libraries(test_compress_zstd
+  coil_core_compress_zstd
+  coil_core_entrypoint
+  coil_core_fs
+)
+target_link_options(test_compress_zstd PRIVATE -municode)
+add_test(NAME test_compress_zstd COMMAND test_compress_zstd)
