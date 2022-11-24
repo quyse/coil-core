@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.19)
 
 project(coil_core VERSION 3.0)
 
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
@@ -9,17 +12,11 @@ set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZAITON ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-find_package(PkgConfig REQUIRED)
+include_directories(INTERFACE
+  $<INSTALL_INTERFACE:include>
+)
 
-pkg_search_module(nlohmann_json REQUIRED IMPORTED_TARGET nlohmann_json)
-pkg_search_module(Vulkan REQUIRED IMPORTED_TARGET vulkan)
-pkg_search_module(SPIRV-Headers REQUIRED IMPORTED_TARGET SPIRV-Headers)
-pkg_search_module(Zstd REQUIRED IMPORTED_TARGET libzstd)
-find_package(SDL2 REQUIRED)
-find_package(PNG REQUIRED)
-find_package(SQLite3 REQUIRED)
-find_package(Freetype REQUIRED)
-pkg_search_module(Harfbuzz REQUIRED IMPORTED_TARGET harfbuzz)
+include(deps.cmake)
 
 add_library(coil_core_base STATIC
   base.cpp
@@ -36,6 +33,11 @@ set_property(TARGET coil_core_unicode PROPERTY PUBLIC_HEADER
 add_library(coil_core_windows INTERFACE)
 set_property(TARGET coil_core_windows PROPERTY PUBLIC_HEADER
   windows.hpp
+)
+
+add_library(coil_core_util INTERFACE)
+set_property(TARGET coil_core_util PROPERTY PUBLIC_HEADER
+  util.hpp
 )
 
 add_library(coil_core_entrypoint STATIC
@@ -94,7 +96,7 @@ set_property(TARGET coil_core_json PROPERTY PUBLIC_HEADER
 target_link_libraries(coil_core_json
   INTERFACE
     coil_core_math
-    nlohmann_json
+    PkgConfig::nlohmann_json
 )
 
 add_library(coil_core_time STATIC
@@ -150,6 +152,7 @@ set_property(TARGET coil_core_graphics PROPERTY PUBLIC_HEADER
 target_link_libraries(coil_core_graphics
   PUBLIC
     coil_core_platform
+    coil_core_util
 )
 
 add_library(coil_core_graphics_image STATIC
@@ -229,8 +232,27 @@ target_link_libraries(coil_core_sdl_vulkan
     SDL2::SDL2
 )
 
+add_library(coil_core_render_math INTERFACE)
+set_property(TARGET coil_core_render_math PROPERTY PUBLIC_HEADER
+  render_math.hpp
+)
+target_link_libraries(coil_core_render_math
+  INTERFACE
+    coil_core_graphics
+    coil_core_math
+)
+
+add_library(coil_core_logic INTERFACE)
+set_property(TARGET coil_core_logic PROPERTY PUBLIC_HEADER
+  logic_math.hpp
+)
+target_link_libraries(coil_core_logic
+  INTERFACE
+    coil_core_math
+)
+
 add_library(coil_core_graphics_image_png STATIC
-  graphics_image.cpp
+  graphics_image_png.cpp
 )
 set_property(TARGET coil_core_graphics_image_png PROPERTY PUBLIC_HEADER
   graphics_image_png.hpp
@@ -253,11 +275,21 @@ target_link_libraries(coil_core_compress_zstd
     PkgConfig::Zstd
 )
 
+add_library(coil_core_asset_mesh INTERFACE)
+set_property(TARGET coil_core_asset_mesh PROPERTY PUBLIC_HEADER
+  asset_mesh.hpp
+)
+target_link_libraries(coil_core_asset_mesh
+  INTERFACE
+    coil_core_math
+)
+
 add_library(coil_core_asset_gltf STATIC
   asset_gltf.cpp
 )
 set_property(TARGET coil_core_asset_gltf PROPERTY PUBLIC_HEADER
   asset_gltf.hpp
+  asset_gltf_cache.hpp
 )
 target_link_libraries(coil_core_asset_gltf
   PUBLIC
@@ -301,8 +333,9 @@ target_link_libraries(coil_core_fthb
     PkgConfig::Harfbuzz
 )
 
-install(TARGETS
+set(coil_core_libraries
   coil_core_asset_gltf
+  coil_core_asset_mesh
   coil_core_base
   coil_core_compress_zstd
   coil_core_data
@@ -315,22 +348,50 @@ install(TARGETS
   coil_core_graphics_image_png
   coil_core_input
   coil_core_json
+  coil_core_logic
   coil_core_math
   coil_core_platform
   coil_core_render
+  coil_core_render_math
   coil_core_sdl
   coil_core_sdl_vulkan
   coil_core_spirv
   coil_core_sqlite
   coil_core_time
   coil_core_unicode
+  coil_core_util
   coil_core_vulkan
   coil_core_windows
-  EXPORT coil_core
+)
+
+# interface
+foreach(library ${coil_core_libraries})
+  target_include_directories(${library}
+    INTERFACE
+      $<INSTALL_INTERFACE:include>
+  )
+endforeach()
+
+# installation
+install(TARGETS ${coil_core_libraries}
+  EXPORT coil_coreTargets
   ARCHIVE DESTINATION lib
   PUBLIC_HEADER DESTINATION include/coil
 )
-install(EXPORT coil_core DESTINATION lib)
+install(EXPORT coil_coreTargets
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/coil_core"
+)
+
+# package config
+configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/coil_coreConfig.cmake"
+  INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/coil_core"
+)
+install(FILES
+  "${CMAKE_CURRENT_BINARY_DIR}/coil_coreConfig.cmake"
+  deps.cmake
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/coil_core"
+)
 
 enable_testing()
 
