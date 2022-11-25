@@ -12,10 +12,6 @@ set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZAITON ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-include_directories(INTERFACE
-  $<INSTALL_INTERFACE:include>
-)
-
 include(deps.cmake)
 
 add_library(coil_core_base STATIC
