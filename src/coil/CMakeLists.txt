@@ -428,3 +428,12 @@ target_link_libraries(test_compress_zstd
   coil_core_fs
 )
 add_test(NAME test_compress_zstd COMMAND test_compress_zstd)
+
+add_executable(test_sqlite
+  test_sqlite.cpp
+)
+target_link_libraries(test_sqlite
+  coil_core_entrypoint_console
+  coil_core_sqlite
+)
+add_test(NAME test_sqlite COMMAND test_sqlite)
