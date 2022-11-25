@@ -40,17 +40,43 @@ set_property(TARGET coil_core_util PROPERTY PUBLIC_HEADER
   util.hpp
 )
 
-add_library(coil_core_entrypoint STATIC
-  entrypoint.cpp
-)
+add_library(coil_core_entrypoint INTERFACE)
 set_property(TARGET coil_core_entrypoint PROPERTY PUBLIC_HEADER
   entrypoint.hpp
 )
 target_link_libraries(coil_core_entrypoint
-  PUBLIC
+  INTERFACE
     coil_core_base
+)
+target_link_options(coil_core_entrypoint
+  INTERFACE
+    $<$<BOOL:${WIN32}>:-municode>
+)
+
+add_library(coil_core_entrypoint_console STATIC
+  entrypoint_console.cpp
+)
+target_link_libraries(coil_core_entrypoint_console
   PRIVATE
+    coil_core_entrypoint
     coil_core_windows
+)
+target_link_options(coil_core_entrypoint_console
+  INTERFACE
+    $<$<BOOL:${WIN32}>:-mconsole>
+)
+
+add_library(coil_core_entrypoint_graphical STATIC
+  entrypoint_graphical.cpp
+)
+target_link_libraries(coil_core_entrypoint_graphical
+  PRIVATE
+    coil_core_entrypoint
+    coil_core_windows
+)
+target_link_options(coil_core_entrypoint_graphical
+  INTERFACE
+    $<$<BOOL:${WIN32}>:-mwindows>
 )
 
 add_library(coil_core_data STATIC
@@ -340,6 +366,8 @@ set(coil_core_libraries
   coil_core_compress_zstd
   coil_core_data
   coil_core_entrypoint
+  coil_core_entrypoint_console
+  coil_core_entrypoint_graphical
   coil_core_fonts
   coil_core_fs
   coil_core_fthb
@@ -400,8 +428,7 @@ add_executable(test_compress_zstd
 )
 target_link_libraries(test_compress_zstd
   coil_core_compress_zstd
-  coil_core_entrypoint
+  coil_core_entrypoint_console
   coil_core_fs
 )
-target_link_options(test_compress_zstd PRIVATE -municode)
 add_test(NAME test_compress_zstd COMMAND test_compress_zstd)
