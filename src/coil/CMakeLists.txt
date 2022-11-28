@@ -420,6 +420,16 @@ install(FILES
 
 enable_testing()
 
+add_executable(test_json
+  test_json.cpp
+)
+target_link_libraries(test_json
+  coil_core_entrypoint_console
+  coil_core_json
+  coil_core_unicode
+)
+add_test(NAME test_json COMMAND test_json)
+
 add_executable(test_compress_zstd
   test_compress_zstd.cpp
 )

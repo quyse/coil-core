@@ -51,31 +51,61 @@ namespace Coil
     }
   };
 
-  template <typename T, size_t n>
-  struct JsonParser<xvec<T, n>> : public JsonParserBase<xvec<T, n>>
+  // encoder for various types to json
+  // struct so we can use partial specialization
+  template <typename T>
+  struct JsonEncoder
   {
-    static xvec<T, n> Parse(json const& j)
+    static json Encode(T const& v)
+    {
+      return v;
+    }
+  };
+
+  template <typename T, size_t n, size_t alignment>
+  struct JsonParser<xvec<T, n, alignment>> : public JsonParserBase<xvec<T, n, alignment>>
+  {
+    static xvec<T, n, alignment> Parse(json const& j)
     {
       if(!j.is_array() || j.size() != n)
-        throw Exception() << "parsing " << typeid(xvec<T, n>).name() << ", expected JSON array of " << n << " " << typeid(T).name() << " but got: " << j;
-      xvec<T, n> r;
+        throw Exception() << "parsing " << typeid(xvec<T, n, alignment>).name() << ", expected JSON array of " << n << " " << typeid(T).name() << " but got: " << j;
+      xvec<T, n, alignment> r;
       for(size_t i = 0; i < n; ++i)
         r(i) = JsonParser<T>::Parse(j.at(i));
       return r;
     }
   };
-
-  template <typename T>
-  struct JsonParser<xquat<T>> : public JsonParserBase<xquat<T>>
+  template <typename T, size_t n, size_t alignment>
+  struct JsonEncoder<xvec<T, n, alignment>>
   {
-    static xquat<T> Parse(json const& j)
+    static json Encode(xvec<T, n, alignment> const& v)
+    {
+      json t[n];
+      for(size_t i = 0; i < n; ++i)
+        t[i] = JsonEncoder<T>::Encode(v.t[i]);
+      return t;
+    }
+  };
+
+  template <typename T, size_t alignment>
+  struct JsonParser<xquat<T, alignment>> : public JsonParserBase<xquat<T, alignment>>
+  {
+    static xquat<T, alignment> Parse(json const& j)
     {
       if(!j.is_array() || j.size() != 4)
-        throw Exception() << "parsing " << typeid(xquat<T>).name() << ", expected JSON array of 4 " << typeid(T).name() << " but got: " << j;
-      xquat<T> r;
+        throw Exception() << "parsing " << typeid(xquat<T, alignment>).name() << ", expected JSON array of 4 " << typeid(T).name() << " but got: " << j;
+      xquat<T, alignment> r;
       for(size_t i = 0; i < 4; ++i)
         r(i) = JsonParser<T>::Parse(j.at(i));
       return r;
+    }
+  };
+  template <typename T, size_t alignment>
+  struct JsonEncoder<xquat<T, alignment>>
+  {
+    static json Encode(xquat<T, alignment> const& v)
+    {
+      return Encode<xvec<T, 4, alignment>>(v);
     }
   };
 
@@ -86,6 +116,14 @@ namespace Coil
     {
       if(j.is_null()) return {};
       return JsonParser<T>::Parse(j);
+    }
+  };
+  template <typename T>
+  struct JsonEncoder<std::optional<T>>
+  {
+    static json Encode(std::optional<T> const& v)
+    {
+      return v.has_value() ? JsonEncoder<T>::Encode(v.value()) : nullptr;
     }
   };
 
@@ -101,6 +139,17 @@ namespace Coil
       for(size_t i = 0; i < j.size(); ++i)
         r.push_back(JsonParser<T>::Parse(j.at(i)));
       return r;
+    }
+  };
+  template <typename T>
+  struct JsonEncoder<std::vector<T>>
+  {
+    static json Encode(std::vector<T> const& v)
+    {
+      std::vector<json> j(v.size());
+      for(size_t i = 0; i < v.size(); ++i)
+        j[i] = JsonEncoder<T>::Encode(v[i]);
+      return std::move(j);
     }
   };
 }
