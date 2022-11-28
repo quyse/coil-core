@@ -19,6 +19,7 @@ add_library(coil_core_base STATIC
 )
 set_property(TARGET coil_core_base PROPERTY PUBLIC_HEADER
   base.hpp
+  base_debug.hpp
 )
 
 add_library(coil_core_unicode INTERFACE)
