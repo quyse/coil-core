@@ -16,12 +16,12 @@ namespace Coil
     ~File();
 
     File(File const&) = delete;
-    File(File&&);
+    File(File&&) = delete;
 
-    size_t Read(uint64_t offset, Buffer& buffer);
+    size_t Read(uint64_t offset, Buffer const& buffer);
     uint64_t GetSize() const;
 
-    static File Open(std::string const& name);
+    static File& Open(Book& book, std::string const& name);
     static Buffer Map(Book& book, std::string const& name);
 
   private:
@@ -34,11 +34,15 @@ namespace Coil
   };
 
   // Input stream which reads part of a file.
-  class FileInputStream
+  class FileInputStream : public InputStream
   {
   public:
-    FileInputStream(File& file, uint64_t offset, uint64_t size)
-    : _file(file), _offset(offset), _size(size) {}
+    FileInputStream(File& file, uint64_t offset = 0);
+    FileInputStream(File& file, uint64_t offset, uint64_t size);
+
+    size_t Read(Buffer const& buffer) override;
+
+    static FileInputStream& Open(Book& book, std::string const& name);
 
   private:
     File& _file;

@@ -57,16 +57,7 @@ namespace Coil
 #endif
   }
 
-  File::File(File&& file)
-  {
-#if defined(___COIL_PLATFORM_WINDOWS)
-    std::swap(_hFile, file._hFile);
-#elif defined(___COIL_PLATFORM_POSIX)
-    std::swap(_fd, file._fd);
-#endif
-  }
-
-  size_t File::Read(uint64_t offset, Buffer& buffer)
+  size_t File::Read(uint64_t offset, Buffer const& buffer)
   {
 #if defined(___COIL_PLATFORM_WINDOWS)
     if(!::SetFilePointerEx(_hFile, { .QuadPart = (LONGLONG)offset }, NULL, FILE_BEGIN))
@@ -112,7 +103,7 @@ namespace Coil
 #endif
   }
 
-  File File::Open(std::string const& name)
+  File& File::Open(Book& book, std::string const& name)
   {
 #if defined(___COIL_PLATFORM_WINDOWS)
     std::vector<wchar_t> s;
@@ -120,12 +111,12 @@ namespace Coil
     HANDLE hFile = ::CreateFileW(s.data(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, NULL);
     if(hFile == INVALID_HANDLE_VALUE)
       throw Exception("opening file failed: ") << name;
-    return hFile;
+    return book.Allocate<File>(hFile);
 #elif defined(___COIL_PLATFORM_POSIX)
     int fd = ::open(name.c_str(), O_RDONLY, 0);
     if(fd < 0)
       throw Exception("opening file failed: ") << name;
-    return fd;
+    return book.Allocate<File>(fd);
 #endif
   }
 
@@ -182,6 +173,23 @@ namespace Coil
     {
       throw Exception("mapping file failed: ") << name << exception;
     }
+  }
+
+  FileInputStream::FileInputStream(File& file, uint64_t offset)
+  : _file(file), _offset(offset), _size(file.GetSize()) {}
+  FileInputStream::FileInputStream(File& file, uint64_t offset, uint64_t size)
+  : _file(file), _offset(offset), _size(size) {}
+
+  size_t FileInputStream::Read(Buffer const& buffer)
+  {
+    size_t read = _file.Read(_offset, buffer);
+    _offset += read;
+    return read;
+  }
+
+  FileInputStream& FileInputStream::Open(Book& book, std::string const& name)
+  {
+    return book.Allocate<FileInputStream>(File::Open(book, name));
   }
 
   std::string GetFilePathName(std::string const& path)
