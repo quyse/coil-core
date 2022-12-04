@@ -5,8 +5,15 @@
 
 namespace Coil
 {
-  template <typename T, size_t n, size_t alignment = (n <= 1 ? 1 : n <= 2 ? 2 : 4) * sizeof(T)>
-  struct alignas(alignment) xvec
+  enum class MathOption : size_t
+  {
+    // requires additional alignment and space, but may be faster
+    Aligned = 1,
+  };
+  using MathOptions = size_t;
+
+  template <typename T, size_t n, MathOptions o = (MathOptions)MathOption::Aligned>
+  struct alignas(((o & (MathOptions)MathOption::Aligned)) ? (n <= 1 ? 1 : n <= 2 ? 2 : 4) * sizeof(T) : 0) xvec
   {
     T t[n];
 
@@ -19,15 +26,15 @@ namespace Coil
     constexpr xvec(xvec const&) = default;
     constexpr xvec& operator=(xvec const&) = default;
 
-    // tolerate another alignment when copying
-    template <size_t alignment2>
-    constexpr xvec(xvec<T, n, alignment2> const& value)
+    // tolerate another options when copying
+    template <MathOptions o2>
+    constexpr xvec(xvec<T, n, o2> const& value)
     {
       for(size_t i = 0; i < n; ++i)
         t[i] = value.t[i];
     }
-    template <size_t alignment2>
-    constexpr xvec& operator=(xvec<T, n, alignment2> const& value)
+    template <MathOptions o2>
+    constexpr xvec& operator=(xvec<T, n, o2> const& value)
     {
       for(size_t i = 0; i < n; ++i)
         t[i] = value.t[i];
@@ -171,8 +178,8 @@ namespace Coil
     return r;
   }
 
-  template <typename T, size_t alignment = 4 * sizeof(T)>
-  struct xquat : public xvec<T, 4, alignment>
+  template <typename T, MathOptions o = (MathOptions)MathOption::Aligned>
+  struct xquat : public xvec<T, 4, o>
   {
     consteval xquat()
     {
@@ -180,19 +187,19 @@ namespace Coil
     }
 
     constexpr xquat(T x, T y, T z, T w)
-    : xvec<T, 4, alignment>(x, y, z, w) {}
+    : xvec<T, 4, o>(x, y, z, w) {}
 
     constexpr xquat(xquat const&) = default;
     constexpr xquat& operator=(xquat const&) = default;
 
-    // tolerate another alignment when copying
-    template <size_t alignment2>
-    constexpr xquat(xquat<T, alignment2> const& value)
-    : xvec<T, 4, alignment>(value) {}
-    template <size_t alignment2>
-    constexpr xquat& operator=(xquat<T, alignment2> const& value)
+    // tolerate another options when copying
+    template <MathOptions o2>
+    constexpr xquat(xquat<T, o2> const& value)
+    : xvec<T, 4, o>(value) {}
+    template <MathOptions o2>
+    constexpr xquat& operator=(xquat<T, o2> const& value)
     {
-      static_cast<xvec<T, 4, alignment>&>(*this) = value;
+      static_cast<xvec<T, 4, o>&>(*this) = value;
       return *this;
     }
 
@@ -374,8 +381,8 @@ namespace Coil
   };
   template <typename T>
   struct VectorTraits;
-  template <typename T, size_t n, size_t alignment>
-  struct VectorTraits<xvec<T, n, alignment>>
+  template <typename T, size_t n, MathOptions o>
+  struct VectorTraits<xvec<T, n, o>>
   {
     // scalar type
     using Scalar = T;
@@ -384,8 +391,8 @@ namespace Coil
     // reduced type
     using PossiblyScalar = typename PossiblyScalarVectorTraits<T, n>::PossiblyScalarType;
   };
-  template <typename T, size_t alignment>
-  struct VectorTraits<xquat<T, alignment>> : public VectorTraits<xvec<T, 4, alignment>> {};
+  template <typename T, MathOptions o>
+  struct VectorTraits<xquat<T, o>> : public VectorTraits<xvec<T, 4, o>> {};
   // define for selected scalars as well
   template <typename T>
   requires
