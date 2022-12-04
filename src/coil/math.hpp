@@ -77,10 +77,10 @@ namespace Coil
     friend auto operator<=>(xvec const&, xvec const&) = default;
   };
 
-  template <typename T, size_t n, size_t m>
+  template <typename T, size_t n, size_t m, MathOptions o = (MathOptions)MathOption::Aligned>
   struct xmat
   {
-    struct alignas((m <= 1 ? 1 : m <= 2 ? 2 : 4) * sizeof(T)) Row
+    struct alignas(((o & (MathOptions)MathOption::Aligned)) ? (m <= 1 ? 1 : m <= 2 ? 2 : 4) * sizeof(T) : 0) Row
     {
       T t[m];
     };
@@ -92,6 +92,26 @@ namespace Coil
       for(size_t i = 0; i < n; ++i)
         for(size_t j = 0; j < m; ++j)
           t[i].t[j] = {};
+    }
+
+    constexpr xmat(xmat const&) = default;
+    constexpr xmat& operator=(xmat const&) = default;
+
+    // tolerate another options when copying
+    template <MathOptions o2>
+    constexpr xmat(xmat<T, n, m, o2> const& value)
+    {
+      for(size_t i = 0; i < n; ++i)
+        for(size_t j = 0; j < m; ++j)
+          t[i].t[j] = value.t[i].t[j];
+    }
+    template <MathOptions o2>
+    constexpr xmat& operator=(xmat<T, n, m, o2> const& value)
+    {
+      for(size_t i = 0; i < n; ++i)
+        for(size_t j = 0; j < m; ++j)
+          t[i].t[j] = value.t[i].t[j];
+      return *this;
     }
 
     constexpr xmat(std::initializer_list<T> const& list)
