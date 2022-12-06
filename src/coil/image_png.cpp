@@ -1,4 +1,4 @@
-#include "graphics_image_png.hpp"
+#include "image_png.hpp"
 #include <sstream>
 #include <cstring>
 #include <png.h>

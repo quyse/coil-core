@@ -1,7 +1,7 @@
 #pragma once
 
 #include "graphics.hpp"
-#include "graphics_image.hpp"
+#include "image.hpp"
 #include <vector>
 
 namespace Coil

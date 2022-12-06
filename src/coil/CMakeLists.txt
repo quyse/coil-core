@@ -178,13 +178,13 @@ target_link_libraries(coil_core_graphics
     coil_core_util
 )
 
-add_library(coil_core_graphics_image STATIC
-  graphics_image.cpp
+add_library(coil_core_image STATIC
+  image.cpp
 )
-set_property(TARGET coil_core_graphics_image PROPERTY PUBLIC_HEADER
-  graphics_image.hpp
+set_property(TARGET coil_core_image PROPERTY PUBLIC_HEADER
+  image.hpp
 )
-target_link_libraries(coil_core_graphics_image
+target_link_libraries(coil_core_image
   PUBLIC
     coil_core_math
 )
@@ -274,13 +274,13 @@ target_link_libraries(coil_core_logic
     coil_core_math
 )
 
-add_library(coil_core_graphics_image_png STATIC
-  graphics_image_png.cpp
+add_library(coil_core_image_png STATIC
+  image_png.cpp
 )
-set_property(TARGET coil_core_graphics_image_png PROPERTY PUBLIC_HEADER
-  graphics_image_png.hpp
+set_property(TARGET coil_core_image_png PROPERTY PUBLIC_HEADER
+  image_png.hpp
 )
-target_link_libraries(coil_core_graphics_image_png
+target_link_libraries(coil_core_image_png
   PUBLIC
     coil_core_graphics
     PNG::PNG
@@ -340,7 +340,7 @@ set_property(TARGET coil_core_fonts PROPERTY PUBLIC_HEADER
 target_link_libraries(coil_core_fonts
   INTERFACE
     coil_core_graphics
-    coil_core_graphics_image
+    coil_core_image
 )
 
 add_library(coil_core_fthb STATIC
@@ -369,8 +369,8 @@ set(coil_core_libraries
   coil_core_fs
   coil_core_fthb
   coil_core_graphics
-  coil_core_graphics_image
-  coil_core_graphics_image_png
+  coil_core_image
+  coil_core_image_png
   coil_core_input
   coil_core_json
   coil_core_logic

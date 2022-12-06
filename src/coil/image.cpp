@@ -1,4 +1,4 @@
-#include "graphics_image.hpp"
+#include "image.hpp"
 
 namespace Coil
 {

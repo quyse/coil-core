@@ -4,6 +4,7 @@
 
 namespace Coil
 {
+  // view of typed uncompressed image of given dimensionality
   template <typename T, size_t n>
   struct RawImageSlice
   {
@@ -86,6 +87,7 @@ namespace Coil
   template <typename T>
   using RawImageSlice2D = RawImageSlice<T, 2>;
 
+  // typed uncompressed image of given dimensionality
   template <typename T, size_t n>
   class RawImage : public RawImageSlice<T, n>
   {
