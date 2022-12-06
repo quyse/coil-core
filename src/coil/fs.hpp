@@ -5,6 +5,21 @@
 
 namespace Coil
 {
+  enum class FileAccessMode
+  {
+    ReadOnly,
+    WriteOnly,
+    ReadWrite,
+  };
+
+  enum class FileOpenMode
+  {
+    MustExist,
+    ExistOrCreate,
+    ExistAndTruncateOrCreate,
+    MustCreate,
+  };
+
   class File
   {
   public:
@@ -19,16 +34,29 @@ namespace Coil
     File(File&&) = delete;
 
     size_t Read(uint64_t offset, Buffer const& buffer);
+    void Write(uint64_t offset, Buffer const& buffer);
     uint64_t GetSize() const;
 
-    static File& Open(Book& book, std::string const& name);
-    static Buffer Map(Book& book, std::string const& name);
+    static File& Open(Book& book, std::string const& name, FileAccessMode accessMode, FileOpenMode openMode);
+    static File& OpenRead(Book& book, std::string const& name);
+    static File& OpenWrite(Book& book, std::string const& name);
+
+    static Buffer Map(Book& book, std::string const& name, FileAccessMode accessMode, FileOpenMode openMode);
+    static Buffer MapRead(Book& book, std::string const& name);
+    static Buffer MapWrite(Book& book, std::string const& name);
+
+    static void Write(std::string const& name, Buffer const& buffer);
 
   private:
+    void Seek(uint64_t offset);
 #if defined(___COIL_PLATFORM_WINDOWS)
     // not using Windows HANDLE to not include windows.h
+    static void* DoOpen(std::string const& name, FileAccessMode accessMode, FileOpenMode openMode);
+
     void* _hFile = nullptr;
 #elif defined(___COIL_PLATFORM_POSIX)
+    static int DoOpen(std::string const& name, FileAccessMode accessMode, FileOpenMode openMode);
+
     int _fd = -1;
 #endif
   };
