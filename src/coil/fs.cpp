@@ -59,10 +59,14 @@ namespace Coil
 
   size_t File::Read(uint64_t offset, Buffer const& buffer)
   {
-    Seek(offset);
 #if defined(___COIL_PLATFORM_WINDOWS)
+    OVERLAPPED overlapped =
+    {
+      .Offset = (DWORD)(offset & 0xFFFFFFFF),
+      .OffsetHigh = (DWORD)(offset >> 32),
+    };
     DWORD bytesRead;
-    if(!::ReadFile(_hFile, buffer.data, buffer.size, &bytesRead, NULL))
+    if(!::ReadFile(_hFile, buffer.data, buffer.size, &bytesRead, &overlapped) && GetLastError() != ERROR_HANDLE_EOF)
       throw Exception("reading file failed");
     return bytesRead;
 #elif defined(___COIL_PLATFORM_POSIX)
@@ -71,8 +75,7 @@ namespace Coil
     size_t totalReadSize = 0;
     while(size > 0)
     {
-      size_t readSize = std::min<size_t>(size, std::numeric_limits<ssize_t>::max());
-      readSize = ::read(_fd, data, readSize);
+      size_t const readSize = ::pread(_fd, data, std::min<size_t>(size, std::numeric_limits<ssize_t>::max()), offset);
       if(readSize < 0)
         throw Exception("reading file failed");
       if(readSize == 0)
@@ -80,6 +83,7 @@ namespace Coil
       totalReadSize += readSize;
       size -= readSize;
       data += readSize;
+      offset += readSize;
     }
     return totalReadSize;
 #endif
@@ -87,22 +91,26 @@ namespace Coil
 
   void File::Write(uint64_t offset, Buffer const& buffer)
   {
-    Seek(offset);
 #if defined(___COIL_PLATFORM_WINDOWS)
+    OVERLAPPED overlapped =
+    {
+      .Offset = (DWORD)(offset & 0xFFFFFFFF),
+      .OffsetHigh = (DWORD)(offset >> 32),
+    };
     DWORD bytesWritten;
-    if(!::WriteFile(_hFile, buffer.data, buffer.size, &bytesWritten, NULL) || bytesWritten != buffer.size)
+    if(!::WriteFile(_hFile, buffer.data, buffer.size, &bytesWritten, &overlapped) || bytesWritten != buffer.size)
       throw Exception("writing file failed");
 #elif defined(___COIL_PLATFORM_POSIX)
     uint8_t const* data = (uint8_t const*)buffer.data;
     size_t size = buffer.size;
     while(size > 0)
     {
-      size_t writtenSize = std::min<size_t>(size, std::numeric_limits<ssize_t>::max());
-      writtenSize = ::write(_fd, data, writtenSize);
+      size_t const writtenSize = ::pwrite(_fd, data, std::min<size_t>(size, std::numeric_limits<ssize_t>::max()), offset);
       if(writtenSize <= 0)
         throw Exception("writing file failed");
       size -= writtenSize;
       data += writtenSize;
+      offset += writtenSize;
     }
 #endif
   }
