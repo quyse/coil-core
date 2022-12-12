@@ -34,14 +34,6 @@ namespace Coil
     SDL_QuitSubSystem(_flags);
   }
 
-  void Sdl::Init(Book& book, uint32_t flags)
-  {
-    if(flags)
-    {
-      book.Allocate<Sdl>(flags);
-    }
-  }
-
   void SdlInputManager::ProcessEvent(SDL_Event const& sdlEvent)
   {
     switch(sdlEvent.type)

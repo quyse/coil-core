@@ -14,8 +14,6 @@ namespace Coil
     Sdl(uint32_t flags);
     ~Sdl();
 
-    static void Init(Book& book, uint32_t flags);
-
   private:
     uint32_t _flags;
   };
