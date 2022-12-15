@@ -2,7 +2,7 @@
 
 namespace Coil
 {
-  PixelFormat::PixelFormat(Components components, Format format, Size size, bool srgb)
+  constexpr PixelFormat::PixelFormat(Components components, Format format, Size size, bool srgb)
   : type(Type::Uncompressed), components(components), format(format), size(size), srgb(srgb)
   {
     switch(components)
@@ -20,7 +20,7 @@ namespace Coil
     }
   }
 
-  PixelFormat::PixelFormat(Compression compression, bool srgb)
+  constexpr PixelFormat::PixelFormat(Compression compression, bool srgb)
   : type(Type::Compressed), compression(compression), srgb(srgb)
   {
     switch(compression)
@@ -197,15 +197,10 @@ namespace Coil
   }
 
 
-  PixelFormat const PixelFormats::uintRGBA32(
-    PixelFormat::Components::RGBA,
+  PixelFormat const PixelFormats::uintR8(
+    PixelFormat::Components::R,
     PixelFormat::Format::Uint,
-    PixelFormat::Size::_32bit);
-  PixelFormat const PixelFormats::uintRGBA32S(
-    PixelFormat::Components::RGBA,
-    PixelFormat::Format::Uint,
-    PixelFormat::Size::_32bit,
-    true);
+    PixelFormat::Size::_8bit);
   PixelFormat const PixelFormats::uintRGB24(
     PixelFormat::Components::RGB,
     PixelFormat::Format::Uint,
@@ -214,6 +209,15 @@ namespace Coil
     PixelFormat::Components::RGB,
     PixelFormat::Format::Uint,
     PixelFormat::Size::_24bit,
+    true);
+  PixelFormat const PixelFormats::uintRGBA32(
+    PixelFormat::Components::RGBA,
+    PixelFormat::Format::Uint,
+    PixelFormat::Size::_32bit);
+  PixelFormat const PixelFormats::uintRGBA32S(
+    PixelFormat::Components::RGBA,
+    PixelFormat::Format::Uint,
+    PixelFormat::Size::_32bit,
     true);
   PixelFormat const PixelFormats::floatR16(
     PixelFormat::Components::R,

@@ -164,11 +164,11 @@ namespace Coil
     bool srgb = false;
 
     // Unknown format constructor.
-    PixelFormat() = default;
+    consteval PixelFormat() = default;
     // Uncompressed format constructor.
-    PixelFormat(Components components, Format format, Size size, bool srgb = false);
+    constexpr PixelFormat(Components components, Format format, Size size, bool srgb = false);
     // Compressed format constructor.
-    PixelFormat(Compression compression, bool srgb = false);
+    constexpr PixelFormat(Compression compression, bool srgb = false);
 
     // Set pixel components, preserving correct size.
     void SetComponents(Components newComponents);
@@ -180,10 +180,11 @@ namespace Coil
 
   struct PixelFormats
   {
-    static PixelFormat const uintRGBA32;
-    static PixelFormat const uintRGBA32S;
+    static PixelFormat const uintR8;
     static PixelFormat const uintRGB24;
     static PixelFormat const uintRGB24S;
+    static PixelFormat const uintRGBA32;
+    static PixelFormat const uintRGBA32S;
     static PixelFormat const floatR16;
     static PixelFormat const floatR32;
     static PixelFormat const floatRGB32;
