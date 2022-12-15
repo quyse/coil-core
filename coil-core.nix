@@ -1,6 +1,5 @@
 { stdenv
 , lib
-, clang
 , cmake
 , pkg-config
 , writeText
@@ -19,7 +18,6 @@ stdenv.mkDerivation {
   name = "coil-core";
   src = ./src/coil;
   nativeBuildInputs = [
-    clang
     cmake
     pkg-config
   ];
@@ -33,10 +31,6 @@ stdenv.mkDerivation {
     libpng
     freetype
     harfbuzz
-  ];
-  cmakeFlags = [
-    "-DCMAKE_CXX_COMPILER=clang++"
-    "-DCMAKE_C_COMPILER=clang"
   ];
   doCheck = true;
 }
