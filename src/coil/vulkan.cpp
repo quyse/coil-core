@@ -1039,6 +1039,19 @@ namespace Coil
       .lineWidth = 1,
     };
 
+    VkPipelineMultisampleStateCreateInfo multisampleState =
+    {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
+      .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
+      .sampleShadingEnable = VK_FALSE,
+      .minSampleShading = 0,
+      .pSampleMask = nullptr,
+      .alphaToCoverageEnable = VK_FALSE,
+      .alphaToOneEnable = VK_FALSE,
+    };
+
     VkPipelineDepthStencilStateCreateInfo depthStencilState =
     {
       .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
@@ -1108,7 +1121,7 @@ namespace Coil
       .pTessellationState = nullptr,
       .pViewportState = &viewportStateInfo,
       .pRasterizationState = &rasterizationState,
-      .pMultisampleState = nullptr,
+      .pMultisampleState = &multisampleState,
       .pDepthStencilState = &depthStencilState,
       .pColorBlendState = &colorBlendStateInfo,
       .pDynamicState = nullptr,
