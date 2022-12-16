@@ -39,7 +39,7 @@ namespace Coil
     bool IsVisible() const;
 
     // Set position of hardware mouse cursor (relative to window).
-    virtual void PlaceCursor(int x, int y) = 0;
+    virtual void PlaceCursor(ivec2 const& cursor) = 0;
 
     // Stop window loop.
     void Stop();
@@ -62,6 +62,6 @@ namespace Coil
   class WindowSystem
   {
   public:
-    virtual Window& CreateWindow(Book& book, std::string const& title, int width, int height) = 0;
+    virtual Window& CreateWindow(Book& book, std::string const& title, ivec2 const& size) = 0;
   };
 }

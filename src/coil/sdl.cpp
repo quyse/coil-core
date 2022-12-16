@@ -40,63 +40,59 @@ namespace Coil
     {
     case SDL_KEYDOWN:
     case SDL_KEYUP:
+      AddEvent(InputKeyboardKeyEvent
       {
-        InputEvent event;
-        event.device = InputEvent::deviceKeyboard;
-        event.keyboard.type = sdlEvent.type == SDL_KEYDOWN ? InputEvent::Keyboard::typeKeyDown : InputEvent::Keyboard::typeKeyUp;
-        event.keyboard.key = ConvertKey(sdlEvent.key.keysym.scancode);
-        AddEvent(event);
-      }
+        .key = ConvertKey(sdlEvent.key.keysym.scancode),
+        .isPressed = sdlEvent.type == SDL_KEYDOWN,
+      });
       break;
     case SDL_TEXTINPUT:
       for(Unicode::Iterator<char, char32_t, char const*> i(sdlEvent.text.text); *i; ++i)
       {
-        InputEvent event;
-        event.device = InputEvent::deviceKeyboard;
-        event.keyboard.type = InputEvent::Keyboard::typeCharacter;
-        event.keyboard.character = *i;
-        AddEvent(event);
+        AddEvent(InputKeyboardCharacterEvent
+        {
+          .character = *i,
+        });
       }
       break;
     case SDL_MOUSEMOTION:
       // raw move event
+      AddEvent(InputMouseRawMoveEvent
       {
-        InputEvent event;
-        event.device = InputEvent::deviceMouse;
-        event.mouse.type = InputEvent::Mouse::typeRawMove;
-        event.mouse.rawMoveX = sdlEvent.motion.xrel;
-        event.mouse.rawMoveY = sdlEvent.motion.yrel;
-        event.mouse.rawMoveZ = 0;
-        AddEvent(event);
-      }
+        .rawMove =
+        {
+          (float)sdlEvent.motion.xrel,
+          (float)sdlEvent.motion.yrel,
+          0,
+        },
+      });
       // cursor move event
+      _lastCursor =
       {
-        InputEvent event;
-        event.device = InputEvent::deviceMouse;
-        event.mouse.type = InputEvent::Mouse::typeCursorMove;
-        _lastCursorX = event.mouse.cursorX = (int)(sdlEvent.motion.x * _widthScale);
-        _lastCursorY = event.mouse.cursorY = (int)(sdlEvent.motion.y * _heightScale);
-        event.mouse.cursorZ = 0;
-        AddEvent(event);
-      }
+        (int32_t)(sdlEvent.motion.x * _scale.x()),
+        (int32_t)(sdlEvent.motion.y * _scale.y()),
+      };
+      AddEvent(InputMouseCursorMoveEvent
+      {
+        .cursor = _lastCursor,
+        .wheel = 0,
+      });
       break;
     case SDL_MOUSEBUTTONDOWN:
     case SDL_MOUSEBUTTONUP:
       {
-        InputEvent event;
-        event.device = InputEvent::deviceMouse;
-        event.mouse.type = sdlEvent.type == SDL_MOUSEBUTTONDOWN ? InputEvent::Mouse::typeButtonDown : InputEvent::Mouse::typeButtonUp;
+        InputMouseButton button;
         bool ok = true;
         switch(sdlEvent.button.button)
         {
         case SDL_BUTTON_LEFT:
-          event.mouse.button = InputEvent::Mouse::buttonLeft;
+          button = InputMouseButton::Left;
           break;
         case SDL_BUTTON_MIDDLE:
-          event.mouse.button = InputEvent::Mouse::buttonMiddle;
+          button = InputMouseButton::Middle;
           break;
         case SDL_BUTTON_RIGHT:
-          event.mouse.button = InputEvent::Mouse::buttonRight;
+          button = InputMouseButton::Right;
           break;
         default:
           ok = false;
@@ -104,37 +100,31 @@ namespace Coil
         }
         if(ok)
         {
-          AddEvent(event);
-          // send double click event for second button up
-          if(event.mouse.type == InputEvent::Mouse::typeButtonUp && sdlEvent.button.clicks == 2)
+          AddEvent(InputMouseButtonEvent
           {
-            event.mouse.type = InputEvent::Mouse::typeDoubleClick;
-            AddEvent(event);
-          }
+            .button = button,
+            .isPressed = sdlEvent.type == SDL_MOUSEBUTTONDOWN,
+          });
         }
       }
       break;
     case SDL_MOUSEWHEEL:
       // raw move event
+      AddEvent(InputMouseRawMoveEvent
       {
-        InputEvent event;
-        event.device = InputEvent::deviceMouse;
-        event.mouse.type = InputEvent::Mouse::typeRawMove;
-        event.mouse.rawMoveX = 0;
-        event.mouse.rawMoveY = 0;
-        event.mouse.rawMoveZ = sdlEvent.wheel.direction == SDL_MOUSEWHEEL_FLIPPED ? -sdlEvent.wheel.y : sdlEvent.wheel.y;
-        AddEvent(event);
-      }
+        .rawMove =
+        {
+          0,
+          0,
+          (float)(sdlEvent.wheel.direction == SDL_MOUSEWHEEL_FLIPPED ? -sdlEvent.wheel.y : sdlEvent.wheel.y),
+        },
+      });
       // cursor move event
+      AddEvent(InputMouseCursorMoveEvent
       {
-        InputEvent event;
-        event.device = InputEvent::deviceMouse;
-        event.mouse.type = InputEvent::Mouse::typeCursorMove;
-        event.mouse.cursorX = _lastCursorX;
-        event.mouse.cursorY = _lastCursorY;
-        event.mouse.cursorZ = sdlEvent.wheel.direction == SDL_MOUSEWHEEL_FLIPPED ? -sdlEvent.wheel.y : sdlEvent.wheel.y;
-        AddEvent(event);
-      }
+        .cursor = _lastCursor,
+        .wheel = sdlEvent.wheel.direction == SDL_MOUSEWHEEL_FLIPPED ? -sdlEvent.wheel.y : sdlEvent.wheel.y,
+      });
       break;
     case SDL_CONTROLLERDEVICEADDED:
       // device added event
@@ -147,11 +137,14 @@ namespace Coil
           InputControllerId controllerId = controller->GetId();
           _controllers.insert({ controllerId, std::move(controller) });
 
-          InputEvent event;
-          event.device = InputEvent::deviceController;
-          event.controller.type = InputEvent::Controller::typeDeviceAdded;
-          event.controller.device = controllerId;
-          AddEvent(event);
+          AddEvent(InputControllerEvent
+          {
+            .controllerId = controllerId,
+            .event = InputControllerEvent::ControllerEvent
+            {
+              .isAdded = true,
+            },
+          });
         }
       }
       break;
@@ -166,11 +159,14 @@ namespace Coil
           _controllers.erase(i);
 
           // emit event
-          InputEvent event;
-          event.device = InputEvent::deviceController;
-          event.controller.type = InputEvent::Controller::typeDeviceRemoved;
-          event.controller.device = sdlEvent.cdevice.which;
-          AddEvent(event);
+          AddEvent(InputControllerEvent
+          {
+            .controllerId = (InputControllerId)sdlEvent.cdevice.which,
+            .event = InputControllerEvent::ControllerEvent
+            {
+              .isAdded = false,
+            },
+          });
         }
       }
       break;
@@ -178,11 +174,11 @@ namespace Coil
     case SDL_CONTROLLERBUTTONUP:
       // controller button down/up event
       {
-        InputEvent::Controller::Button button;
+        InputControllerButton button;
         bool ok = true;
         switch(sdlEvent.cbutton.button)
         {
-#define B(a, b) case SDL_CONTROLLER_BUTTON_##a: button = InputEvent::Controller::button##b; break
+#define B(a, b) case SDL_CONTROLLER_BUTTON_##a: button = InputControllerButton::b; break
         B(A, A);
         B(B, B);
         B(X, X);
@@ -203,23 +199,26 @@ namespace Coil
         }
         if(ok)
         {
-          InputEvent event;
-          event.device = InputEvent::deviceController;
-          event.controller.type = sdlEvent.type == SDL_CONTROLLERBUTTONDOWN ? InputEvent::Controller::typeButtonDown : InputEvent::Controller::typeButtonUp;
-          event.controller.device = sdlEvent.cbutton.which;
-          event.controller.button = button;
-          AddEvent(event);
+          AddEvent(InputControllerEvent
+          {
+            .controllerId = (InputControllerId)sdlEvent.cbutton.which,
+            .event = InputControllerEvent::ButtonEvent
+            {
+              .button = button,
+              .isPressed = sdlEvent.type == SDL_CONTROLLERBUTTONDOWN,
+            },
+          });
         }
       }
       break;
     case SDL_CONTROLLERAXISMOTION:
       // controller axis motion event
       {
-        InputEvent::Controller::Axis axis;
+        InputControllerAxis axis;
         bool ok = true;
         switch(sdlEvent.caxis.axis)
         {
-#define A(a, b) case SDL_CONTROLLER_AXIS_##a: axis = InputEvent::Controller::axis##b; break
+#define A(a, b) case SDL_CONTROLLER_AXIS_##a: axis = InputControllerAxis::b; break
         A(LEFTX, LeftX);
         A(LEFTY, LeftY);
         A(RIGHTX, RightX);
@@ -231,23 +230,24 @@ namespace Coil
         }
         if(ok)
         {
-          InputEvent event;
-          event.device = InputEvent::deviceController;
-          event.controller.type = InputEvent::Controller::typeAxisMotion;
-          event.controller.device = sdlEvent.caxis.which;
-          event.controller.axis = axis;
-          event.controller.axisValue = sdlEvent.caxis.value;
-          AddEvent(event);
+          AddEvent(InputControllerEvent
+          {
+            .controllerId = (InputControllerId)sdlEvent.caxis.which,
+            .event = InputControllerEvent::AxisMotionEvent
+            {
+              .axis = axis,
+              .axisValue = sdlEvent.caxis.value,
+            },
+          });
         }
       }
       break;
     }
   }
 
-  void SdlInputManager::SetVirtualScale(float widthScale, float heightScale)
+  void SdlInputManager::SetVirtualScale(vec2 const& scale)
   {
-    _widthScale = widthScale;
-    _heightScale = heightScale;
+    _scale = scale;
   }
 
   InputKey SdlInputManager::ConvertKey(SDL_Scancode code)
@@ -460,9 +460,9 @@ namespace Coil
   SdlWindow::SdlWindow(SDL_Window* window)
   : _window(window), _windowId(SDL_GetWindowID(_window))
   {
-    SDL_GetWindowSize(_window, &_virtualWidth, &_virtualHeight);
-    SDL_GL_GetDrawableSize(_window, &_clientWidth, &_clientHeight);
-    _dpiScale = float(_clientWidth) / float(_virtualWidth);
+    SDL_GetWindowSize(_window, &_virtualSize.x(), &_virtualSize.y());
+    SDL_GL_GetDrawableSize(_window, &_clientSize.x(), &_clientSize.y());
+    _dpiScale = float(_clientSize.x()) / float(_virtualSize.x());
     UpdateInputManager();
   }
 
@@ -499,7 +499,7 @@ namespace Coil
 
   ivec2 SdlWindow::GetDrawableSize() const
   {
-    return ivec2(_clientWidth, _clientHeight);
+    return _clientSize;
   }
 
   float SdlWindow::GetDPIScale() const
@@ -529,9 +529,9 @@ namespace Coil
           switch(event.window.event)
           {
           case SDL_WINDOWEVENT_SIZE_CHANGED:
-            SDL_GetWindowSize(_window, &_virtualWidth, &_virtualHeight);
-            SDL_GL_GetDrawableSize(_window, &_clientWidth, &_clientHeight);
-            _dpiScale = float(_clientWidth) / float(_virtualWidth);
+            SDL_GetWindowSize(_window, &_virtualSize.x(), &_virtualSize.y());
+            SDL_GL_GetDrawableSize(_window, &_clientSize.x(), &_clientSize.y());
+            _dpiScale = float(_clientSize.x()) / float(_virtualSize.x());
             UpdateInputManager();
             if(_presenter)
             {
@@ -565,9 +565,9 @@ namespace Coil
     }
   }
 
-  void SdlWindow::PlaceCursor(int x, int y)
+  void SdlWindow::PlaceCursor(ivec2 const& cursor)
   {
-    SDL_WarpMouseInWindow(_window, x, y);
+    SDL_WarpMouseInWindow(_window, cursor.x(), cursor.y());
   }
 
   SDL_Window* SdlWindow::GetSdlWindow() const
@@ -587,14 +587,18 @@ namespace Coil
 
   void SdlWindow::UpdateInputManager()
   {
-    _inputManager.SetVirtualScale((float)_clientWidth / (float)_virtualWidth, (float)_clientHeight / (float)_virtualHeight);
+    _inputManager.SetVirtualScale(
+    {
+      (float)_clientSize.x() / (float)_virtualSize.x(),
+      (float)_clientSize.y() / (float)_virtualSize.y(),
+    });
   }
 
-  SdlWindow& SdlWindowSystem::CreateWindow(Book& book, std::string const& title, int width, int height)
+  SdlWindow& SdlWindowSystem::CreateWindow(Book& book, std::string const& title, ivec2 const& size)
   {
     SDL_Window* window = SDL_CreateWindow(title.c_str(),
       SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-      width, height,
+      size.x(), size.y(),
       SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_VULKAN
     );
     if(!window)

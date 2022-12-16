@@ -9,58 +9,60 @@ namespace Coil
       // process next event in state
       InputEvent const& event = _events[_nextEvent++];
 
-      switch(event.device)
+      if(!std::visit([&](auto const& event) -> bool
       {
-      case InputEvent::deviceKeyboard:
-        switch(event.keyboard.type)
+        using E = std::decay_t<decltype(event)>;
+        if constexpr(std::is_same_v<E, InputKeyboardEvent>)
         {
-        case InputEvent::Keyboard::typeKeyDown:
-          // if key already pressed, skip
-          if(_state.keyboard[event.keyboard.key])
-            continue;
-          _state.keyboard[event.keyboard.key] = 1;
-          break;
-        case InputEvent::Keyboard::typeKeyUp:
-          // if key already released, skip
-          if(!_state.keyboard[event.keyboard.key])
-            continue;
-          _state.keyboard[event.keyboard.key] = 0;
-          break;
-        case InputEvent::Keyboard::typeCharacter:
-          break;
+          return std::visit([&](auto const& event) -> bool
+          {
+            using E = std::decay_t<decltype(event)>;
+            if constexpr(std::is_same_v<E, InputKeyboardKeyEvent>)
+            {
+              // if key is already in this state, skip
+              if(_state[event.key] == event.isPressed) return false;
+              // otherwise apply state
+              _state[event.key] = event.isPressed;
+              _ProcessKeyboardVirtualEvents(event);
+              return true;
+            }
+            if constexpr(std::is_same_v<E, InputKeyboardCharacterEvent>)
+            {
+              return true;
+            }
+          }, event);
         }
-        _ProcessKeyboardVirtualEvents(event);
-        break;
-      case InputEvent::deviceMouse:
-        switch(event.mouse.type)
+        if constexpr(std::is_same_v<E, InputMouseEvent>)
         {
-        case InputEvent::Mouse::typeButtonDown:
-          // if mouse button is already pressed, skip
-          if(_state.mouseButtons[event.mouse.button])
-            continue;
-          _state.mouseButtons[event.mouse.button] = true;
-          break;
-        case InputEvent::Mouse::typeButtonUp:
-          // if mouse button is already released, skip
-          if(!_state.mouseButtons[event.mouse.button])
-            continue;
-          _state.mouseButtons[event.mouse.button] = false;
-          break;
-        case InputEvent::Mouse::typeRawMove:
-          // there is no state for raw move
-          break;
-        case InputEvent::Mouse::typeCursorMove:
-          _state.cursorX = event.mouse.cursorX;
-          _state.cursorY = event.mouse.cursorY;
-          break;
-        case InputEvent::Mouse::typeDoubleClick:
-          break;
+          return std::visit([&](auto const& event) -> bool
+          {
+            using E = std::decay_t<decltype(event)>;
+            if constexpr(std::is_same_v<E, InputMouseButtonEvent>)
+            {
+              // if button already in this state, skip
+              if(_state[event.button] == event.isPressed) return false;
+              // otherwise apply state
+              _state[event.button] = event.isPressed;
+              return true;
+            }
+            if constexpr(std::is_same_v<E, InputMouseRawMoveEvent>)
+            {
+              // no state for raw move
+              return true;
+            }
+            if constexpr(std::is_same_v<E, InputMouseCursorMoveEvent>)
+            {
+              _state.cursor = event.cursor;
+              return true;
+            }
+          }, event);
         }
-        break;
-      case InputEvent::deviceController:
-        // TODO: controller state
-        break;
-      }
+        if constexpr(std::is_same_v<E, InputControllerEvent>)
+        {
+          // TODO: controller state
+          return true;
+        }
+      }, event)) continue;
 
       // if we are here, event changes something
       return &event;
@@ -90,48 +92,43 @@ namespace Coil
     _events.push_back(event);
   }
 
-  void InputFrame::_ProcessKeyboardVirtualEvents(InputEvent const& event)
+  void InputFrame::_ProcessKeyboardVirtualEvents(InputKeyboardKeyEvent const& event)
   {
-    switch(event.keyboard.type)
-    {
-    case InputEvent::Keyboard::typeKeyDown:
-    case InputEvent::Keyboard::typeKeyUp:
-      break;
-    default:
-      return;
-    }
-
     InputKey virtualKey;
     bool newPressed;
-    switch(event.keyboard.key)
+    switch(event.key)
     {
     case InputKey::ShiftL:
     case InputKey::ShiftR:
       virtualKey = InputKey::Shift;
-      newPressed = _state.keyboard[InputKey::ShiftL] || _state.keyboard[InputKey::ShiftR];
+      newPressed = _state[InputKey::ShiftL] || _state[InputKey::ShiftR];
       break;
     case InputKey::ControlL:
     case InputKey::ControlR:
       virtualKey = InputKey::Control;
-      newPressed = _state.keyboard[InputKey::ControlL] || _state.keyboard[InputKey::ControlR];
+      newPressed = _state[InputKey::ControlL] || _state[InputKey::ControlR];
       break;
     case InputKey::AltL:
     case InputKey::AltR:
       virtualKey = InputKey::Alt;
-      newPressed = _state.keyboard[InputKey::AltL] || _state.keyboard[InputKey::AltR];
+      newPressed = _state[InputKey::AltL] || _state[InputKey::AltR];
       break;
     default:
       return;
     }
 
-    bool oldPressed = !!_state.keyboard[virtualKey];
+    bool oldPressed = _state[virtualKey];
 
     if(newPressed != oldPressed)
     {
-      InputEvent virtualEvent;
-      virtualEvent.device = InputEvent::deviceKeyboard;
-      virtualEvent.keyboard.type = newPressed ? InputEvent::Keyboard::typeKeyDown : InputEvent::Keyboard::typeKeyUp;
-      virtualEvent.keyboard.key = virtualKey;
+      InputEvent virtualEvent = InputKeyboardEvent
+      {
+        InputKeyboardKeyEvent
+        {
+          .key = virtualKey,
+          .isPressed = newPressed,
+        }
+      };
       _events.push_back(virtualEvent);
     }
   }
@@ -160,23 +157,29 @@ namespace Coil
       _releaseButtonsOnUpdate = false;
 
       const State& state = _internalFrame->GetCurrentState();
-      for(size_t i = 0; i < sizeof(state.keyboard) / sizeof(state.keyboard[0]); ++i)
+      for(size_t i = 0; i < state.keyboard.size(); ++i)
         if(state.keyboard[i])
         {
-          InputEvent event;
-          event.device = InputEvent::deviceKeyboard;
-          event.keyboard.type = InputEvent::Keyboard::typeKeyUp;
-          event.keyboard.key = InputKey(i);
-          _internalFrame->AddEvent(event);
+          _internalFrame->AddEvent(InputKeyboardEvent
+          {
+            InputKeyboardKeyEvent
+            {
+              .key = InputKey(i),
+              .isPressed = false,
+            }
+          });
         }
       for(size_t i = 0; i < sizeof(state.mouseButtons) / sizeof(state.mouseButtons[0]); ++i)
         if(state.mouseButtons[i])
         {
-          InputEvent event;
-          event.device = InputEvent::deviceMouse;
-          event.mouse.type = InputEvent::Mouse::typeButtonUp;
-          event.mouse.button = InputEvent::Mouse::Button(i);
-          _internalFrame->AddEvent(event);
+          _internalFrame->AddEvent(InputMouseEvent
+          {
+            InputMouseButtonEvent
+            {
+              .button = InputMouseButton(i),
+              .isPressed = false,
+            }
+          });
         }
     }
   }
@@ -209,10 +212,23 @@ namespace Coil
   void InputManager::AddEvent(InputEvent const& event)
   {
     // skip text input events if text input is disabled
-    if(
-      event.device == InputEvent::deviceKeyboard &&
-      event.keyboard.type == InputEvent::Keyboard::typeCharacter &&
-      !_textInputEnabled) return;
+    if(!_textInputEnabled && !std::visit([&](auto const& event) -> bool
+    {
+      using E = std::decay_t<decltype(event)>;
+      if constexpr(std::is_same_v<E, InputKeyboardEvent>)
+      {
+        return std::visit([&](auto const& event) -> bool
+        {
+          using E = std::decay_t<decltype(event)>;
+          if constexpr(std::is_same_v<E, InputKeyboardCharacterEvent>)
+          {
+            return false;
+          }
+          return true;
+        }, event);
+      }
+      return true;
+    }, event)) return;
 
     _internalFrame->AddEvent(event);
   }

@@ -145,7 +145,7 @@ set_property(TARGET coil_core_input PROPERTY PUBLIC_HEADER
 )
 target_link_libraries(coil_core_input
   PUBLIC
-    coil_core_base
+    coil_core_math
   PRIVATE
     coil_core_unicode
 )

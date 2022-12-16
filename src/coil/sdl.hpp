@@ -22,13 +22,13 @@ namespace Coil
   {
   public:
     void ProcessEvent(SDL_Event const& event);
-    void SetVirtualScale(float widthScale, float heightScale);
+    void SetVirtualScale(vec2 const& scale);
 
   private:
     static InputKey ConvertKey(SDL_Scancode code);
 
-    float _widthScale = 1, _heightScale = 1;
-    int _lastCursorX = 0, _lastCursorY = 0;
+    vec2 _scale = { 1, 1 };
+    ivec2 _lastCursor;
 
     class SdlController final : public InputController
     {
@@ -67,7 +67,7 @@ namespace Coil
     float GetDPIScale() const override;
     SdlInputManager& GetInputManager() override;
     void Run(std::function<void()> const& loop) override;
-    void PlaceCursor(int x, int y) override;
+    void PlaceCursor(ivec2 const& cursor) override;
 
     SDL_Window* GetSdlWindow() const;
 
@@ -81,8 +81,7 @@ namespace Coil
     SDL_Window* _window = nullptr;
     uint32_t _windowId = 0;
     SdlInputManager _inputManager;
-    int _virtualWidth = 0, _virtualHeight = 0;
-    int _clientWidth = 0, _clientHeight = 0;
+    ivec2 _virtualSize, _clientSize;
     float _dpiScale = 0;
     bool _fullScreen = false;
   };
@@ -90,6 +89,6 @@ namespace Coil
   class SdlWindowSystem final : public WindowSystem
   {
   public:
-    SdlWindow& CreateWindow(Book& book, std::string const& title, int width, int height) override;
+    SdlWindow& CreateWindow(Book& book, std::string const& title, ivec2 const& size) override;
   };
 }

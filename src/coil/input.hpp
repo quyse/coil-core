@@ -1,305 +1,271 @@
 #pragma once
 
-#include "base.hpp"
+#include "math.hpp"
+#include <variant>
+#include <bitset>
 
 namespace Coil
 {
   // Key numbers.
-  struct InputKeys
+  enum class InputKey : uint8_t
   {
-    enum _
-    {
-      _Unknown = 0,
+    _Unknown = 0,
 
-      BackSpace = 0x08,
-      Tab = 0x09,
-      LineFeed = 0x0a,
-      Clear = 0x0b,
-      Return = 0x0d,
-      Pause = 0x13,
-      ScrollLock = 0x14,
-      SysReq = 0x15,
-      Escape = 0x1b,
-      Insert = 0x1c,
-      Delete = 0x1d,
+    BackSpace = 0x08,
+    Tab = 0x09,
+    LineFeed = 0x0a,
+    Clear = 0x0b,
+    Return = 0x0d,
+    Pause = 0x13,
+    ScrollLock = 0x14,
+    SysReq = 0x15,
+    Escape = 0x1b,
+    Insert = 0x1c,
+    Delete = 0x1d,
 
-      Space = ' ', // 0x20
+    Space = ' ', // 0x20
 
-      Plus = '+', // 0x2b
-      Comma = ',', // 0x2c
-      Hyphen = '-', // 0x2d
-      Period = '.', // 0x2e
-      Slash = '/', // 0x2f
+    Plus = '+', // 0x2b
+    Comma = ',', // 0x2c
+    Hyphen = '-', // 0x2d
+    Period = '.', // 0x2e
+    Slash = '/', // 0x2f
 
-      _0 = '0', // 0x30
-      _1 = '1',
-      _2 = '2',
-      _3 = '3',
-      _4 = '4',
-      _5 = '5',
-      _6 = '6',
-      _7 = '7',
-      _8 = '8',
-      _9 = '9', // 0x39
+    _0 = '0', // 0x30
+    _1 = '1',
+    _2 = '2',
+    _3 = '3',
+    _4 = '4',
+    _5 = '5',
+    _6 = '6',
+    _7 = '7',
+    _8 = '8',
+    _9 = '9', // 0x39
 
-      A = 'A', // 0x41
-      B = 'B',
-      C = 'C',
-      D = 'D',
-      E = 'E',
-      F = 'F',
-      G = 'G',
-      H = 'H',
-      I = 'I',
-      J = 'J',
-      K = 'K',
-      L = 'L',
-      M = 'M',
-      N = 'N',
-      O = 'O',
-      P = 'P',
-      Q = 'Q',
-      R = 'R',
-      S = 'S',
-      T = 'T',
-      U = 'U',
-      V = 'V',
-      W = 'W',
-      X = 'X',
-      Y = 'Y',
-      Z = 'Z', // 0x5A
+    A = 'A', // 0x41
+    B = 'B',
+    C = 'C',
+    D = 'D',
+    E = 'E',
+    F = 'F',
+    G = 'G',
+    H = 'H',
+    I = 'I',
+    J = 'J',
+    K = 'K',
+    L = 'L',
+    M = 'M',
+    N = 'N',
+    O = 'O',
+    P = 'P',
+    Q = 'Q',
+    R = 'R',
+    S = 'S',
+    T = 'T',
+    U = 'U',
+    V = 'V',
+    W = 'W',
+    X = 'X',
+    Y = 'Y',
+    Z = 'Z', // 0x5A
 
-      Home = 0x60,
-      Left = 0x61,
-      Up = 0x62,
-      Right = 0x63,
-      Down = 0x64,
-      PageUp = 0x65,
-      PageDown = 0x66,
-      End = 0x67,
-      Begin = 0x68,
-      Grave = 0x7e,
+    Home = 0x60,
+    Left = 0x61,
+    Up = 0x62,
+    Right = 0x63,
+    Down = 0x64,
+    PageUp = 0x65,
+    PageDown = 0x66,
+    End = 0x67,
+    Begin = 0x68,
+    Grave = 0x7e,
 
-      // keypad
-      NumLock = 0x7f,
-      NumPadSpace = 0x80,
-      NumPadTab = 0x89,
-      NumPadEnter = 0x8d,
-      NumPadF1 = 0x91,
-      NumPadF2 = 0x92,
-      NumPadF3 = 0x93,
-      NumPadF4 = 0x94,
-      NumPadHome = 0x95,
-      NumPadLeft = 0x96,
-      NumPadUp = 0x97,
-      NumPadRight = 0x98,
-      NumPadDown = 0x99,
-      NumPadPageUp = 0x9a,
-      NumPadPageDown = 0x9b,
-      NumPadEnd = 0x9c,
-      NumPadBegin = 0x9d,
-      NumPadInsert = 0x9e,
-      NumPadDelete = 0x9f,
-      NumPadEqual = 0xbd,
-      NumPadMultiply = 0xaa,
-      NumPadAdd = 0xab,
-      NumPadSeparator = 0xac, // comma
-      NumPadSubtract = 0xad,
-      NumPadDecimal = 0xae,
-      NumPadDivide = 0xaf,
+    // keypad
+    NumLock = 0x7f,
+    NumPadSpace = 0x80,
+    NumPadTab = 0x89,
+    NumPadEnter = 0x8d,
+    NumPadF1 = 0x91,
+    NumPadF2 = 0x92,
+    NumPadF3 = 0x93,
+    NumPadF4 = 0x94,
+    NumPadHome = 0x95,
+    NumPadLeft = 0x96,
+    NumPadUp = 0x97,
+    NumPadRight = 0x98,
+    NumPadDown = 0x99,
+    NumPadPageUp = 0x9a,
+    NumPadPageDown = 0x9b,
+    NumPadEnd = 0x9c,
+    NumPadBegin = 0x9d,
+    NumPadInsert = 0x9e,
+    NumPadDelete = 0x9f,
+    NumPadEqual = 0xbd,
+    NumPadMultiply = 0xaa,
+    NumPadAdd = 0xab,
+    NumPadSeparator = 0xac, // comma
+    NumPadSubtract = 0xad,
+    NumPadDecimal = 0xae,
+    NumPadDivide = 0xaf,
 
-      NumPad0 = 0xb0,
-      NumPad1 = 0xb1,
-      NumPad2 = 0xb2,
-      NumPad3 = 0xb3,
-      NumPad4 = 0xb4,
-      NumPad5 = 0xb5,
-      NumPad6 = 0xb6,
-      NumPad7 = 0xb7,
-      NumPad8 = 0xb8,
-      NumPad9 = 0xb9,
+    NumPad0 = 0xb0,
+    NumPad1 = 0xb1,
+    NumPad2 = 0xb2,
+    NumPad3 = 0xb3,
+    NumPad4 = 0xb4,
+    NumPad5 = 0xb5,
+    NumPad6 = 0xb6,
+    NumPad7 = 0xb7,
+    NumPad8 = 0xb8,
+    NumPad9 = 0xb9,
 
-      F1 = 0xbe,
-      F2 = 0xbf,
-      F3 = 0xc0,
-      F4 = 0xc1,
-      F5 = 0xc2,
-      F6 = 0xc3,
-      F7 = 0xc4,
-      F8 = 0xc5,
-      F9 = 0xc6,
-      F10 = 0xc7,
-      F11 = 0xc8,
-      F12 = 0xc9,
+    F1 = 0xbe,
+    F2 = 0xbf,
+    F3 = 0xc0,
+    F4 = 0xc1,
+    F5 = 0xc2,
+    F6 = 0xc3,
+    F7 = 0xc4,
+    F8 = 0xc5,
+    F9 = 0xc6,
+    F10 = 0xc7,
+    F11 = 0xc8,
+    F12 = 0xc9,
 
-      ShiftL = 0xe1,
-      ShiftR = 0xe2,
-      ControlL = 0xe3,
-      ControlR = 0xe4,
-      CapsLock = 0xe5,
-      AltL = 0xe9,
-      AltR = 0xea,
-      SuperL = 0xeb,
-      SuperR = 0xec,
+    ShiftL = 0xe1,
+    ShiftR = 0xe2,
+    ControlL = 0xe3,
+    ControlR = 0xe4,
+    CapsLock = 0xe5,
+    AltL = 0xe9,
+    AltR = 0xea,
+    SuperL = 0xeb,
+    SuperR = 0xec,
 
-      // virtual keys
-      Shift = 0xed,
-      Control = 0xee,
-      Alt = 0xef
-    };
+    // virtual keys
+    Shift = 0xed,
+    Control = 0xee,
+    Alt = 0xef
   };
-  using InputKey = InputKeys::_;
 
   // Controller ID.
   using InputControllerId = uint64_t;
 
-  // Input event.
-  struct InputEvent
+  // keyboard event
+  struct InputKeyboardKeyEvent
   {
-    enum Device
-    {
-      deviceKeyboard,
-      deviceMouse,
-      deviceController
-    } device;
-
-    struct Keyboard
-    {
-      enum Type
-      {
-        typeKeyDown,
-        typeKeyUp,
-        typeCharacter
-      } type;
-
-      union
-      {
-        // in case type == typeKey{Down,Up}
-        InputKey key;
-        // in case type == typeCharacter
-        char32_t character;
-      };
-    };
-
-    struct Mouse
-    {
-      enum Type
-      {
-        typeButtonDown,
-        typeButtonUp,
-        typeRawMove,
-        typeCursorMove,
-        typeDoubleClick
-      } type;
-
-      enum Button
-      {
-        buttonLeft,
-        buttonRight,
-        buttonMiddle
-      };
-
-      union
-      {
-        // in case type == typeButton{Down,Up,DoubleClick}
-        Button button;
-        // in case type == typeRawMove
-        struct
-        {
-          //*** Raw relative moving.
-          /** In "device" arbitrary units, no kind of acceleration applied. */
-          float rawMoveX;
-          float rawMoveY;
-          float rawMoveZ;
-        };
-        // in case type == typeCursorMove
-        struct
-        {
-          //*** Absolute cursor position (in window coordinates).
-          int cursorX;
-          int cursorY;
-          //*** Relative mouse wheel movement.
-          int cursorZ;
-        };
-      };
-    };
-
-    struct Controller
-    {
-      enum Type
-      {
-        typeDeviceAdded,
-        typeDeviceRemoved,
-        typeButtonDown,
-        typeButtonUp,
-        typeAxisMotion
-      } type;
-
-      enum Button
-      {
-        buttonA,
-        buttonB,
-        buttonX,
-        buttonY,
-        buttonBack,
-        buttonGuide,
-        buttonStart,
-        buttonLeftStick,
-        buttonRightStick,
-        buttonLeftShoulder,
-        buttonRightShoulder,
-        buttonDPadUp,
-        buttonDPadDown,
-        buttonDPadLeft,
-        buttonDPadRight
-      };
-
-      enum Axis
-      {
-        axisLeftX,
-        axisLeftY,
-        axisRightX,
-        axisRightY,
-        axisTriggerLeft,
-        axisTriggerRight
-      };
-
-      // Device id (for all event types).
-      InputControllerId device;
-
-      union
-      {
-        // in case type == typeButton{Down,Up}
-        Button button;
-        // in case type == typeAxisMotion
-        struct
-        {
-          Axis axis;
-          int axisValue;
-        };
-      };
-    };
-
-    union
-    {
-      // in case device == deviceKeyboard
-      Keyboard keyboard;
-      // in case device == deviceMouse
-      Mouse mouse;
-      // in case device == deviceController
-      Controller controller;
-    };
+    InputKey key;
+    bool isPressed;
   };
+  struct InputKeyboardCharacterEvent
+  {
+    char32_t character;
+  };
+  using InputKeyboardEvent = std::variant<InputKeyboardKeyEvent, InputKeyboardCharacterEvent>;
+
+  // mouse event
+  enum class InputMouseButton : uint8_t
+  {
+    Left,
+    Right,
+    Middle,
+  };
+  struct InputMouseButtonEvent
+  {
+    InputMouseButton button;
+    bool isPressed;
+  };
+  struct InputMouseRawMoveEvent
+  {
+    // raw relative movement in device units
+    vec3 rawMove;
+  };
+  struct InputMouseCursorMoveEvent
+  {
+    // absolute cursor position
+    ivec2 cursor;
+    // relative mouse wheel change
+    int32_t wheel;
+  };
+  using InputMouseEvent = std::variant<InputMouseButtonEvent, InputMouseRawMoveEvent, InputMouseCursorMoveEvent>;
+
+  // controller event
+  enum class InputControllerButton : uint8_t
+  {
+    A,
+    B,
+    X,
+    Y,
+    Back,
+    Guide,
+    Start,
+    LeftStick,
+    RightStick,
+    LeftShoulder,
+    RightShoulder,
+    DPadUp,
+    DPadDown,
+    DPadLeft,
+    DPadRight,
+  };
+  enum class InputControllerAxis : uint8_t
+  {
+    LeftX,
+    LeftY,
+    RightX,
+    RightY,
+    TriggerLeft,
+    TriggerRight,
+  };
+  struct InputControllerEvent
+  {
+    InputControllerId controllerId;
+    struct ControllerEvent
+    {
+      bool isAdded;
+    };
+    struct ButtonEvent
+    {
+      InputControllerButton button;
+      bool isPressed;
+    };
+    struct AxisMotionEvent
+    {
+      InputControllerAxis axis;
+      int32_t axisValue;
+    };
+    std::variant<ControllerEvent, ButtonEvent, AxisMotionEvent> event;
+  };
+
+  using InputEvent = std::variant<InputKeyboardEvent, InputMouseEvent, InputControllerEvent>;
 
   // Input state.
   struct State
   {
     // Keyboard keys state.
-    uint8_t keyboard[256] = { 0 };
+    std::bitset<256> keyboard;
     // Mouse buttons state.
     bool mouseButtons[3] = { false };
     // Mouse cursor position.
-    int cursorX = 0, cursorY = 0;
+    ivec2 cursor;
+
+    auto operator[](InputKey key)
+    {
+      return keyboard[(size_t)key];
+    }
+    auto operator[](InputKey key) const
+    {
+      return keyboard[(size_t)key];
+    }
+
+    bool& operator[](InputMouseButton button)
+    {
+      return mouseButtons[(size_t)button];
+    }
+    bool operator[](InputMouseButton button) const
+    {
+      return mouseButtons[(size_t)button];
+    }
   };
 
   // Input frame.
@@ -314,7 +280,7 @@ namespace Coil
     void AddEvent(InputEvent const& event);
 
   private:
-    void _ProcessKeyboardVirtualEvents(InputEvent const& event);
+    void _ProcessKeyboardVirtualEvents(InputKeyboardKeyEvent const& event);
 
     std::vector<InputEvent> _events;
     size_t _nextEvent = 0;

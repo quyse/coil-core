@@ -1,139 +1,111 @@
 #include "input_debug.hpp"
+#include "math_debug.hpp"
 #include "unicode.hpp"
 
 namespace Coil
 {
   std::ostream& operator<<(std::ostream& stream, InputEvent const& event)
   {
-    switch(event.device)
+    std::visit([&](auto const& event)
     {
-    case InputEvent::deviceKeyboard:
-      switch(event.keyboard.type)
+      using E = std::decay_t<decltype(event)>;
+      if constexpr(std::is_same_v<E, InputKeyboardEvent>)
       {
-      case InputEvent::Keyboard::typeKeyDown:
-        stream << "KEYDOWN " << event.keyboard.key;
-        break;
-      case InputEvent::Keyboard::typeKeyUp:
-        stream << "KEYUP " << event.keyboard.key;
-        break;
-      case InputEvent::Keyboard::typeCharacter:
+        std::visit([&](auto const& event)
         {
-          char32_t s[] = { event.keyboard.character, 0 };
-          stream << "KEYPRESS ";
-          for(Unicode::Iterator<char32_t, char, char32_t const*> i(s); *i; ++i)
-            stream << *i;
-        }
-        break;
-      }
-      break;
-    case InputEvent::deviceMouse:
-      switch(event.mouse.type)
-      {
-        case InputEvent::Mouse::typeButtonDown:
-          stream << "MOUSEDOWN";
-          break;
-        case InputEvent::Mouse::typeButtonUp:
-          stream << "MOUSEUP";
-          break;
-        case InputEvent::Mouse::typeRawMove:
-          stream << "MOUSERAWMOVE";
-          break;
-        case InputEvent::Mouse::typeCursorMove:
-          stream << "MOUSECURSORMOVE";
-          break;
-        case InputEvent::Mouse::typeDoubleClick:
-          stream << "MOUSEDOUBLECLICK";
-          break;
-      }
-      stream << ' ';
-      switch(event.mouse.type)
-      {
-        case InputEvent::Mouse::typeButtonDown:
-        case InputEvent::Mouse::typeButtonUp:
-        case InputEvent::Mouse::typeDoubleClick:
-          switch(event.mouse.button)
+          using E = std::decay_t<decltype(event)>;
+          if constexpr(std::is_same_v<E, InputKeyboardKeyEvent>)
           {
-          case InputEvent::Mouse::buttonLeft:
-            stream << "LEFT";
-            break;
-          case InputEvent::Mouse::buttonRight:
-            stream << "RIGHT";
-            break;
-          case InputEvent::Mouse::buttonMiddle:
-            stream << "MIDDLE";
-            break;
+            stream << (event.isPressed ? "KEYDOWN " : "KEYUP ") << (uint8_t)event.key;
           }
-          break;
-        case InputEvent::Mouse::typeRawMove:
-          stream << event.mouse.rawMoveX << ' ' << event.mouse.rawMoveY << ' ' << event.mouse.rawMoveZ;
-          break;
-        case InputEvent::Mouse::typeCursorMove:
-          stream << event.mouse.cursorX << ' ' << event.mouse.cursorY << ' ' << event.mouse.cursorZ;
-          break;
+          if constexpr(std::is_same_v<E, InputKeyboardCharacterEvent>)
+          {
+            char32_t s[] = { event.character, 0 };
+            stream << "KEYPRESS ";
+            for(Unicode::Iterator<char32_t, char, char32_t const*> i(s); *i; ++i)
+              stream << *i;
+          }
+        }, event);
       }
-      break;
-    case InputEvent::deviceController:
-      switch(event.controller.type)
+      if constexpr(std::is_same_v<E, InputMouseEvent>)
       {
-      case InputEvent::Controller::typeDeviceAdded:
-        stream << "CONTROLLERADDED";
-        break;
-      case InputEvent::Controller::typeDeviceRemoved:
-        stream << "CONTROLLERREMOVED";
-        break;
-      case InputEvent::Controller::typeButtonDown:
-        stream << "CONTROLLERBUTTONDOWN";
-        break;
-      case InputEvent::Controller::typeButtonUp:
-        stream << "CONTROLLERBUTTONUP";
-        break;
-      case InputEvent::Controller::typeAxisMotion:
-        stream << "CONTROLLERAXISMOTION";
-        break;
+        std::visit([&](auto const& event)
+        {
+          using E = std::decay_t<decltype(event)>;
+          if constexpr(std::is_same_v<E, InputMouseButtonEvent>)
+          {
+            stream << (event.isPressed ? "MOUSEDOWN " : "MOUSEUP ");
+            switch(event.button)
+            {
+            case InputMouseButton::Left:
+              stream << "LEFT";
+              break;
+            case InputMouseButton::Right:
+              stream << "RIGHT";
+              break;
+            case InputMouseButton::Middle:
+              stream << "MIDDLE";
+              break;
+            }
+          }
+          if constexpr(std::is_same_v<E, InputMouseRawMoveEvent>)
+          {
+            stream << "MOUSERAWMOVE " << event.rawMove;
+          }
+          if constexpr(std::is_same_v<E, InputMouseCursorMoveEvent>)
+          {
+            stream << "MOUSECURSORMOVE " << event.cursor << ' ' << event.wheel;
+          }
+        }, event);
       }
-      stream << " D" << event.controller.device;
-      switch(event.controller.type)
+      if constexpr(std::is_same_v<E, InputControllerEvent>)
       {
-      case InputEvent::Controller::typeDeviceAdded:
-      case InputEvent::Controller::typeDeviceRemoved:
-        break;
-      case InputEvent::Controller::typeButtonDown:
-      case InputEvent::Controller::typeButtonUp:
-        stream << ' ';
-        switch(event.controller.button)
+        stream << "CONTROLLER " << event.controllerId << ' ';
+        std::visit([&](auto const& event)
         {
-        case InputEvent::Controller::buttonA:             stream << "A"; break;
-        case InputEvent::Controller::buttonB:             stream << "B"; break;
-        case InputEvent::Controller::buttonX:             stream << "X"; break;
-        case InputEvent::Controller::buttonY:             stream << "Y"; break;
-        case InputEvent::Controller::buttonBack:          stream << "BACK"; break;
-        case InputEvent::Controller::buttonGuide:         stream << "GUIDE"; break;
-        case InputEvent::Controller::buttonStart:         stream << "START"; break;
-        case InputEvent::Controller::buttonLeftStick:     stream << "LEFTSTICK"; break;
-        case InputEvent::Controller::buttonRightStick:    stream << "RIGHTSTICK"; break;
-        case InputEvent::Controller::buttonLeftShoulder:  stream << "LEFTSHOULDER"; break;
-        case InputEvent::Controller::buttonRightShoulder: stream << "RIGHTSHOULDER"; break;
-        case InputEvent::Controller::buttonDPadUp:        stream << "DPADUP"; break;
-        case InputEvent::Controller::buttonDPadDown:      stream << "DPADDOWN"; break;
-        case InputEvent::Controller::buttonDPadLeft:      stream << "DPADLEFT"; break;
-        case InputEvent::Controller::buttonDPadRight:     stream << "DPADRIGHT"; break;
-        }
-        break;
-      case InputEvent::Controller::typeAxisMotion:
-        stream << ' ';
-        switch(event.controller.axis)
-        {
-        case InputEvent::Controller::axisLeftX:        stream << "AXISLEFTX"; break;
-        case InputEvent::Controller::axisLeftY:        stream << "AXISLEFTY"; break;
-        case InputEvent::Controller::axisRightX:       stream << "AXISRIGHTX"; break;
-        case InputEvent::Controller::axisRightY:       stream << "AXISRIGHTY"; break;
-        case InputEvent::Controller::axisTriggerLeft:  stream << "AXISTRIGGERLEFT"; break;
-        case InputEvent::Controller::axisTriggerRight: stream << "AXISTRIGGERRIGHT"; break;
-        }
-        stream << ' ' << event.controller.axisValue;
-        break;
+          using E = std::decay_t<decltype(event)>;
+          if constexpr(std::is_same_v<E, InputControllerEvent::ControllerEvent>)
+          {
+            stream << (event.isAdded ? "ADDED" : "REMOVED");
+          }
+          if constexpr(std::is_same_v<E, InputControllerEvent::ButtonEvent>)
+          {
+            stream << (event.isPressed ? "DOWN " : "UP ");
+            switch(event.button)
+            {
+            case InputControllerButton::A:             stream << "A"; break;
+            case InputControllerButton::B:             stream << "B"; break;
+            case InputControllerButton::X:             stream << "X"; break;
+            case InputControllerButton::Y:             stream << "Y"; break;
+            case InputControllerButton::Back:          stream << "BACK"; break;
+            case InputControllerButton::Guide:         stream << "GUIDE"; break;
+            case InputControllerButton::Start:         stream << "START"; break;
+            case InputControllerButton::LeftStick:     stream << "LEFTSTICK"; break;
+            case InputControllerButton::RightStick:    stream << "RIGHTSTICK"; break;
+            case InputControllerButton::LeftShoulder:  stream << "LEFTSHOULDER"; break;
+            case InputControllerButton::RightShoulder: stream << "RIGHTSHOULDER"; break;
+            case InputControllerButton::DPadUp:        stream << "DPADUP"; break;
+            case InputControllerButton::DPadDown:      stream << "DPADDOWN"; break;
+            case InputControllerButton::DPadLeft:      stream << "DPADLEFT"; break;
+            case InputControllerButton::DPadRight:     stream << "DPADRIGHT"; break;
+            }
+          }
+          if constexpr(std::is_same_v<E, InputControllerEvent::AxisMotionEvent>)
+          {
+            switch(event.axis)
+            {
+            case InputControllerAxis::LeftX:        stream << "AXISLEFTX"; break;
+            case InputControllerAxis::LeftY:        stream << "AXISLEFTY"; break;
+            case InputControllerAxis::RightX:       stream << "AXISRIGHTX"; break;
+            case InputControllerAxis::RightY:       stream << "AXISRIGHTY"; break;
+            case InputControllerAxis::TriggerLeft:  stream << "AXISTRIGGERLEFT"; break;
+            case InputControllerAxis::TriggerRight: stream << "AXISTRIGGERRIGHT"; break;
+            }
+            stream << ' ' << event.axisValue;
+          }
+        }, event.event);
       }
-    }
+    }, event);
 
     return stream;
   }
