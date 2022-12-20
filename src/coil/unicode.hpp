@@ -14,8 +14,10 @@ namespace Coil::Unicode
   class Iterator<char, char32_t, FromIterator>
   {
   public:
-    Iterator(FromIterator it)
+    Iterator(FromIterator const& it)
     : _it(it) {}
+    Iterator(FromIterator&& it)
+    : _it(std::move(it)) {}
 
     char32_t operator*() const
     {
@@ -25,11 +27,11 @@ namespace Coil::Unicode
       if((b0 & 0xC0) == 0x80) return 0xFFFD; // return replacement character
       auto it = _it;
       uint8_t b1 = *++it;
-      if((b0 & 0xE0) == 0xC0) return ((char32_t)b0 & 0x1F) | ((char32_t)b1 & 0x3F) << 5;
+      if((b0 & 0xE0) == 0xC0) return ((char32_t)b0 & 0x1F) << 6 | ((char32_t)b1 & 0x3F);
       uint8_t b2 = *++it;
-      if((b0 & 0xF0) == 0xE0) return ((char32_t)b0 & 0x0F) | ((char32_t)b1 & 0x3F) << 4 | ((char32_t)b2 & 0x3F) << 10;
+      if((b0 & 0xF0) == 0xE0) return ((char32_t)b0 & 0x0F) << 12 | ((char32_t)b1 & 0x3F) << 6 | ((char32_t)b2 & 0x3F);
       uint8_t b3 = *++it;
-      if((b0 & 0xF8) == 0xF0) return ((char32_t)b0 & 0x07) | ((char32_t)b1 & 0x3F) << 3 | ((char32_t)b2 & 0x3F) << 9 | ((char32_t)b3 & 0x3F) << 15;
+      if((b0 & 0xF8) == 0xF0) return ((char32_t)b0 & 0x07) << 18 | ((char32_t)b1 & 0x3F) << 12 | ((char32_t)b2 & 0x3F) << 6 | ((char32_t)b3 & 0x3F);
       return 0xFFFD;
     }
 
@@ -63,8 +65,10 @@ namespace Coil::Unicode
   class Iterator<char32_t, char, FromIterator>
   {
   public:
-    Iterator(FromIterator it)
+    Iterator(FromIterator const& it)
     : _it(it) {}
+    Iterator(FromIterator&& it)
+    : _it(std::move(it)) {}
 
     char operator*() const
     {
@@ -76,23 +80,23 @@ namespace Coil::Unicode
       case 2:
         switch(_octet)
         {
-        case 0: return (c & 0x1F) | 0xC0;
-        case 1: return ((c >> 5) & 0x3F) | 0x80;
+        case 0: return ((c >> 6) & 0x1F) | 0xC0;
+        case 1: return (c & 0x3F) | 0x80;
         }
       case 3:
         switch(_octet)
         {
-        case 0: return (c & 0x0F) | 0xE0;
-        case 1: return ((c >> 4) & 0x3F) | 0x80;
-        case 2: return ((c >> 10) & 0x3F) | 0x80;
+        case 0: return ((c >> 12) & 0x0F) | 0xE0;
+        case 1: return ((c >> 6) & 0x3F) | 0x80;
+        case 2: return (c & 0x3F) | 0x80;
         }
       case 4:
         switch(_octet)
         {
-        case 0: return (c & 0x07) | 0xF0;
-        case 1: return ((c >> 3) & 0x3F) | 0x80;
-        case 2: return ((c >> 9) & 0x3F) | 0x80;
-        case 3: return ((c >> 15) & 0x3F) | 0x80;
+        case 0: return ((c >> 18) & 0x07) | 0xF0;
+        case 1: return ((c >> 12) & 0x3F) | 0x80;
+        case 2: return ((c >> 6) & 0x3F) | 0x80;
+        case 3: return (c & 0x3F) | 0x80;
         }
       }
       return 0; // impossible
@@ -146,8 +150,10 @@ namespace Coil::Unicode
   class Iterator<char32_t, char16_t, FromIterator>
   {
   public:
-    Iterator(FromIterator it)
+    Iterator(FromIterator const& it)
     : _it(it) {}
+    Iterator(FromIterator&& it)
+    : _it(std::move(it)) {}
 
     char16_t operator*() const
     {
