@@ -12,6 +12,9 @@
 , libpng
 , freetype
 , harfbuzz
+, wayland
+, wayland-protocols
+, libxkbcommon
 }:
 
 stdenv.mkDerivation {
@@ -31,6 +34,10 @@ stdenv.mkDerivation {
     libpng
     freetype
     harfbuzz
+  ] ++ lib.optionals stdenv.hostPlatform.isLinux [
+    wayland
+    wayland-protocols
+    libxkbcommon
   ];
   doCheck = true;
 }

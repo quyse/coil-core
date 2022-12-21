@@ -356,6 +356,59 @@ target_link_libraries(coil_core_fthb
     PkgConfig::Harfbuzz
 )
 
+add_library(coil_core_wayland STATIC
+  wayland.cpp
+  wayland_keys.cpp
+)
+set_property(TARGET coil_core_wayland PROPERTY PUBLIC_HEADER
+  wayland.hpp
+)
+target_link_libraries(coil_core_wayland
+  PUBLIC
+    coil_core_graphics
+    coil_core_input
+    coil_core_platform
+    PkgConfig::WaylandClient
+    PkgConfig::WaylandProtocols
+    PkgConfig::XkbCommon
+)
+find_program(WaylandScanner wayland-scanner REQUIRED)
+pkg_get_variable(WaylandProtocols_DataDir wayland-protocols pkgdatadir)
+file(GLOB_RECURSE WaylandProtocols_Xmls "${WaylandProtocols_DataDir}/*.xml")
+foreach(protocol_xml_path ${WaylandProtocols_Xmls})
+  cmake_path(GET protocol_xml_path FILENAME protocol_xml)
+  cmake_path(REMOVE_EXTENSION protocol_xml OUTPUT_VARIABLE protocol)
+  set(protocol_c "${CMAKE_BINARY_DIR}/wayland-${protocol}-protocol.c")
+  set(protocol_h "${CMAKE_BINARY_DIR}/wayland-${protocol}-client-protocol.h")
+  add_custom_command(OUTPUT ${protocol_c}
+    COMMAND ${WaylandScanner} -c private-code ${protocol_xml_path} ${protocol_c}
+    DEPENDS ${protocol_xml_path}
+  )
+  add_custom_command(OUTPUT ${protocol_h}
+    COMMAND ${WaylandScanner} -c client-header ${protocol_xml_path} ${protocol_h}
+    DEPENDS ${protocol_xml_path}
+  )
+  target_sources(coil_core_wayland PRIVATE ${protocol_c})
+  set_property(TARGET coil_core_wayland APPEND PROPERTY PUBLIC_HEADER ${protocol_h})
+  list(APPEND WaylandProtocols_Outputs ${protocol_c} ${protocol_h})
+endforeach()
+add_custom_target(WaylandProtocolsGenerated DEPENDS ${WaylandProtocols_Outputs})
+add_dependencies(coil_core_wayland WaylandProtocolsGenerated)
+target_include_directories(coil_core_wayland PRIVATE ${CMAKE_BINARY_DIR})
+message(STATUS "CMAKE_BINARY_DIR=${CMAKE_BINARY_DIR}")
+
+add_library(coil_core_wayland_vulkan STATIC
+  wayland_vulkan.cpp
+)
+set_property(TARGET coil_core_wayland_vulkan PROPERTY PUBLIC_HEADER
+  wayland_vulkan.hpp
+)
+target_link_libraries(coil_core_wayland_vulkan
+  PUBLIC
+    coil_core_vulkan
+    coil_core_wayland
+)
+
 set(coil_core_libraries
   coil_core_asset_gltf
   coil_core_asset_mesh
@@ -386,6 +439,8 @@ set(coil_core_libraries
   coil_core_unicode
   coil_core_util
   coil_core_vulkan
+  coil_core_wayland
+  coil_core_wayland_vulkan
   coil_core_windows
 )
 
