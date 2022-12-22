@@ -5,6 +5,7 @@
 
 // prototypes for Wayland types
 struct wl_array;
+struct wl_buffer;
 struct wl_compositor;
 struct wl_display;
 struct wl_interface;
@@ -14,6 +15,7 @@ struct wl_pointer;
 struct wl_registry;
 struct wl_seat;
 struct wl_shm;
+struct wl_shm_pool;
 struct wl_surface;
 struct xdg_surface;
 struct xdg_toplevel;
@@ -27,6 +29,52 @@ struct xkb_state;
 
 namespace Coil
 {
+  void DestroyWaylandObject(wl_buffer* object);
+  void DestroyWaylandObject(wl_display* object);
+  void DestroyWaylandObject(wl_keyboard* object);
+  void DestroyWaylandObject(wl_output* object);
+  void DestroyWaylandObject(wl_pointer* object);
+  void DestroyWaylandObject(wl_registry* object);
+  void DestroyWaylandObject(wl_shm_pool* object);
+  void DestroyWaylandObject(wl_surface* object);
+  void DestroyWaylandObject(xdg_surface* object);
+  void DestroyWaylandObject(xdg_toplevel* object);
+
+  template <typename T>
+  class WaylandObject
+  {
+  public:
+    WaylandObject(T* object = nullptr)
+    : _object(object) {}
+    WaylandObject(WaylandObject const&) = delete;
+    WaylandObject(WaylandObject&& other)
+    {
+      std::swap(_object, other._object);
+    }
+    WaylandObject& operator=(WaylandObject const&) = delete;
+    WaylandObject& operator=(WaylandObject&& other)
+    {
+      std::swap(_object, other._object);
+      return *this;
+    }
+
+    ~WaylandObject()
+    {
+      if(_object)
+      {
+        DestroyWaylandObject(_object);
+      }
+    }
+
+    operator T*() const
+    {
+      return _object;
+    }
+
+  private:
+    T* _object = nullptr;
+  };
+
   class WaylandWindow;
   class WaylandWindowSystem;
 
@@ -42,7 +90,7 @@ namespace Coil
   class WaylandWindow final : public Window
   {
   public:
-    WaylandWindow(WaylandWindowSystem& windowSystem, wl_surface* surface, xdg_surface* xdgSurface, xdg_toplevel* xdgToplevel, std::string const& title, ivec2 const& size);
+    WaylandWindow(WaylandWindowSystem& windowSystem, WaylandObject<wl_surface>&& surface, WaylandObject<xdg_surface>&& xdgSurface, WaylandObject<xdg_toplevel>&& xdgToplevel, std::string const& title, ivec2 const& size);
 
     void SetTitle(std::string const& title) override;
     void Close() override;
@@ -70,9 +118,9 @@ namespace Coil
     void OnEvent(InputEvent const& event);
 
     WaylandWindowSystem& _windowSystem;
-    wl_surface* _surface = nullptr;
-    xdg_surface* _xdgSurface = nullptr;
-    xdg_toplevel* _xdgToplevel = nullptr;
+    WaylandObject<wl_surface> _surface;
+    WaylandObject<xdg_surface> _xdgSurface;
+    WaylandObject<xdg_toplevel> _xdgToplevel;
 
     ivec2 _size;
     ivec2 _xdgBounds;
@@ -85,7 +133,7 @@ namespace Coil
   class WaylandWindowSystem final : public WindowSystem
   {
   public:
-    WaylandWindowSystem(Book& book);
+    WaylandWindowSystem();
     ~WaylandWindowSystem();
 
     WaylandWindow& CreateWindow(Book& book, std::string const& title, ivec2 const& size) override;
@@ -94,15 +142,16 @@ namespace Coil
 
     // get global object by type
     template <typename T>
-    T const& Get() const
+    T* Get() const
     {
-      return std::get<T>(_objects);
+      return std::get<T*>(_objects);
     }
+
     // getters for specific objects
     wl_compositor* GetCompositor() const;
     wl_seat* GetSeat() const;
     wl_shm* GetShm() const;
-    std::unordered_map<uint32_t, wl_output*> const& GetOutputs() const;
+    std::unordered_map<uint32_t, WaylandObject<wl_output>> const& GetOutputs() const;
     xdg_wm_base* GetXdgWmBase() const;
 
   private:
@@ -140,7 +189,8 @@ namespace Coil
 
     static InputKey ConvertKey(uint32_t code);
 
-    wl_display* _display = nullptr;
+    WaylandObject<wl_display> _display;
+    WaylandObject<wl_registry> _registry;
 
     std::tuple<
       wl_compositor*,
@@ -148,11 +198,11 @@ namespace Coil
       wl_shm*,
       xdg_wm_base*,
       zwp_relative_pointer_manager_v1*,
-      std::unordered_map<uint32_t, wl_output*>
+      std::unordered_map<uint32_t, WaylandObject<wl_output>>
     > _objects;
 
-    wl_keyboard* _keyboard = nullptr;
-    wl_pointer* _pointer = nullptr;
+    WaylandObject<wl_keyboard> _keyboard;
+    WaylandObject<wl_pointer> _pointer;
 
     xkb_context* _xkbContext = nullptr;
     xkb_keymap* _xkbKeymap = nullptr;

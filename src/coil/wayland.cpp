@@ -16,36 +16,6 @@
 // helper objects
 namespace
 {
-  // book helpers
-  void DestroyWaylandObject(wl_buffer* buffer)       { wl_buffer_destroy(buffer); }
-  void DestroyWaylandObject(wl_display* display)     { wl_display_disconnect(display); }
-  void DestroyWaylandObject(wl_registry* registry)   { wl_registry_destroy(registry); }
-  void DestroyWaylandObject(wl_shm_pool* shmPool)    { wl_shm_pool_destroy(shmPool); }
-  void DestroyWaylandObject(wl_surface* surface)     { wl_surface_destroy(surface); }
-  void DestroyWaylandObject(xdg_surface* xdgSurface) { xdg_surface_destroy(xdgSurface); }
-  void DestroyWaylandObject(xdg_toplevel* xdgToplevel) { xdg_toplevel_destroy(xdgToplevel); }
-
-  template <typename... Args>
-  class WaylandObject
-  {
-  public:
-    WaylandObject(Args... args)
-    : _args(args...) {}
-    ~WaylandObject()
-    {
-      std::apply((void(&)(Args...))DestroyWaylandObject, _args);
-    }
-
-  private:
-    std::tuple<Args...> _args;
-  };
-
-  template <typename... Args>
-  void AllocateWaylandObject(Coil::Book& book, Args... args)
-  {
-    book.Allocate<WaylandObject<Args...>>(args...);
-  }
-
   // event handler binding to class member
   template <typename F>
   struct WaylandEventBase;
@@ -67,8 +37,19 @@ namespace
 
 namespace Coil
 {
-  WaylandWindow::WaylandWindow(WaylandWindowSystem& windowSystem, wl_surface* surface, xdg_surface* xdgSurface, xdg_toplevel* xdgToplevel, std::string const& title, ivec2 const& size)
-  : _windowSystem(windowSystem), _surface(surface), _xdgSurface(xdgSurface), _xdgToplevel(xdgToplevel)
+  void DestroyWaylandObject(wl_buffer* object)    { wl_buffer_destroy(object);     }
+  void DestroyWaylandObject(wl_display* object)   { wl_display_disconnect(object); }
+  void DestroyWaylandObject(wl_keyboard* object)  { wl_keyboard_release(object);   }
+  void DestroyWaylandObject(wl_output* object)    { wl_output_release(object);     }
+  void DestroyWaylandObject(wl_pointer* object)   { wl_pointer_release(object);    }
+  void DestroyWaylandObject(wl_registry* object)  { wl_registry_destroy(object);   }
+  void DestroyWaylandObject(wl_shm_pool* object)  { wl_shm_pool_destroy(object);   }
+  void DestroyWaylandObject(wl_surface* object)   { wl_surface_destroy(object);    }
+  void DestroyWaylandObject(xdg_surface* object)  { xdg_surface_destroy(object);   }
+  void DestroyWaylandObject(xdg_toplevel* object) { xdg_toplevel_destroy(object);  }
+
+  WaylandWindow::WaylandWindow(WaylandWindowSystem& windowSystem, WaylandObject<wl_surface>&& surface, WaylandObject<xdg_surface>&& xdgSurface, WaylandObject<xdg_toplevel>&& xdgToplevel, std::string const& title, ivec2 const& size)
+  : _windowSystem(windowSystem), _surface(std::move(surface)), _xdgSurface(std::move(xdgSurface)), _xdgToplevel(std::move(xdgToplevel))
   {
     wl_surface_set_user_data(_surface, this);
 
@@ -271,17 +252,17 @@ namespace Coil
   // stored as unordered map by name
 #define GLOBAL_OBJECT_INFO(T, v) \
   template <> \
-  struct WaylandWindowSystem::GlobalInfo<std::unordered_map<uint32_t, T*>> \
+  struct WaylandWindowSystem::GlobalInfo<std::unordered_map<uint32_t, WaylandObject<T>>> \
   { \
     static constexpr wl_interface const& interface = T##_interface; \
     static constexpr uint32_t requiredVersion = v; \
     static void Register(WaylandWindowSystem& windowSystem, uint32_t name, void* object) \
     { \
-      std::get<std::unordered_map<uint32_t, T*>>(windowSystem._objects)[name] = (T*)object; \
+      std::get<std::unordered_map<uint32_t, WaylandObject<T>>>(windowSystem._objects)[name] = (T*)object; \
     } \
     static void Unregister(WaylandWindowSystem& windowSystem, uint32_t name) \
     { \
-      std::get<std::unordered_map<uint32_t, T*>>(windowSystem._objects).erase(name); \
+      std::get<std::unordered_map<uint32_t, WaylandObject<T>>>(windowSystem._objects).erase(name); \
     } \
   }
 
@@ -295,7 +276,7 @@ namespace Coil
 #undef GLOBAL_SINGLETON_INFO
 #undef GLOBAL_OBJECT_INFO
 
-  WaylandWindowSystem::WaylandWindowSystem(Book& book)
+  WaylandWindowSystem::WaylandWindowSystem()
   {
     // connect to display
     _display = wl_display_connect(nullptr);
@@ -303,20 +284,18 @@ namespace Coil
     {
       throw Coil::Exception("connecting to Wayland server failed");
     }
-    AllocateWaylandObject(book, _display);
 
     _xkbContext = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
 
     // get registry
-    wl_registry* registry = wl_display_get_registry(_display);
-    AllocateWaylandObject(book, registry);
+    _registry = wl_display_get_registry(_display);
     {
       static constinit wl_registry_listener const listener =
       {
         .global        = WaylandEvent<&WaylandWindowSystem::OnRegistryGlobal      >::Handler,
         .global_remove = WaylandEvent<&WaylandWindowSystem::OnRegistryGlobalRemove>::Handler,
       };
-      wl_registry_add_listener(registry, &listener, this);
+      wl_registry_add_listener(_registry, &listener, this);
     }
 
     wl_display_roundtrip(_display);
@@ -341,16 +320,13 @@ namespace Coil
   WaylandWindow& WaylandWindowSystem::CreateWindow(Book& book, std::string const& title, ivec2 const& size)
   {
     // create surface
-    wl_surface* surface = wl_compositor_create_surface(GetCompositor());
-    AllocateWaylandObject(book, surface);
+    WaylandObject<wl_surface> surface = wl_compositor_create_surface(GetCompositor());
     // create XDG surface
-    xdg_surface* xdgSurface = xdg_wm_base_get_xdg_surface(GetXdgWmBase(), surface);
-    AllocateWaylandObject(book, xdgSurface);
+    WaylandObject<xdg_surface> xdgSurface = xdg_wm_base_get_xdg_surface(GetXdgWmBase(), surface);
     // assign toplevel role
-    xdg_toplevel* xdgToplevel = xdg_surface_get_toplevel(xdgSurface);
-    AllocateWaylandObject(book, xdgToplevel);
+    WaylandObject<xdg_toplevel> xdgToplevel = xdg_surface_get_toplevel(xdgSurface);
 
-    return book.Allocate<WaylandWindow>(*this, surface, xdgSurface, xdgToplevel, title, size);
+    return book.Allocate<WaylandWindow>(*this, std::move(surface), std::move(xdgSurface), std::move(xdgToplevel), title, size);
   }
 
   wl_display* WaylandWindowSystem::GetDisplay() const
@@ -360,23 +336,23 @@ namespace Coil
 
   wl_compositor* WaylandWindowSystem::GetCompositor() const
   {
-    return Get<wl_compositor*>();
+    return Get<wl_compositor>();
   }
   wl_seat* WaylandWindowSystem::GetSeat() const
   {
-    return Get<wl_seat*>();
+    return Get<wl_seat>();
   }
   wl_shm* WaylandWindowSystem::GetShm() const
   {
-    return Get<wl_shm*>();
+    return Get<wl_shm>();
   }
-  std::unordered_map<uint32_t, wl_output*> const& WaylandWindowSystem::GetOutputs() const
+  std::unordered_map<uint32_t, WaylandObject<wl_output>> const& WaylandWindowSystem::GetOutputs() const
   {
-    return Get<std::unordered_map<uint32_t, wl_output*>>();
+    return std::get<std::unordered_map<uint32_t, WaylandObject<wl_output>>>(_objects);
   }
   xdg_wm_base* WaylandWindowSystem::GetXdgWmBase() const
   {
-    return Get<xdg_wm_base*>();
+    return Get<xdg_wm_base>();
   }
 
   void WaylandWindowSystem::OnRegistryGlobal(wl_registry* registry, uint32_t name, char const* interface, uint32_t version)
@@ -598,7 +574,7 @@ namespace Coil
   void WaylandWindowSystem::RegisterRelativePointer()
   {
     if(!_pointer) return;
-    auto* relativePointerManager = Get<zwp_relative_pointer_manager_v1*>();
+    auto* relativePointerManager = Get<zwp_relative_pointer_manager_v1>();
     if(!relativePointerManager) return;
 
     zwp_relative_pointer_v1* relativePointer = zwp_relative_pointer_manager_v1_get_relative_pointer(relativePointerManager, _pointer);
