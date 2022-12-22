@@ -21,21 +21,27 @@ set_property(TARGET coil_core_base PROPERTY PUBLIC_HEADER
   base.hpp
   base_debug.hpp
 )
+list(APPEND coil_core_libraries coil_core_base)
 
 add_library(coil_core_unicode INTERFACE)
 set_property(TARGET coil_core_unicode PROPERTY PUBLIC_HEADER
   unicode.hpp
 )
+list(APPEND coil_core_libraries coil_core_unicode)
 
+if(WIN32)
 add_library(coil_core_windows INTERFACE)
 set_property(TARGET coil_core_windows PROPERTY PUBLIC_HEADER
   windows.hpp
 )
+list(APPEND coil_core_libraries coil_core_windows)
+endif()
 
 add_library(coil_core_util INTERFACE)
 set_property(TARGET coil_core_util PROPERTY PUBLIC_HEADER
   util.hpp
 )
+list(APPEND coil_core_libraries coil_core_util)
 
 add_library(coil_core_entrypoint INTERFACE)
 set_property(TARGET coil_core_entrypoint PROPERTY PUBLIC_HEADER
@@ -49,6 +55,7 @@ target_link_options(coil_core_entrypoint
   INTERFACE
     $<$<BOOL:${WIN32}>:-municode>
 )
+list(APPEND coil_core_libraries coil_core_entrypoint)
 
 add_library(coil_core_entrypoint_console STATIC
   entrypoint_console.cpp
@@ -56,12 +63,13 @@ add_library(coil_core_entrypoint_console STATIC
 target_link_libraries(coil_core_entrypoint_console
   PRIVATE
     coil_core_entrypoint
-    coil_core_windows
+    $<$<BOOL:${WIN32}>:coil_core_windows>
 )
 target_link_options(coil_core_entrypoint_console
   INTERFACE
     $<$<BOOL:${WIN32}>:-mconsole>
 )
+list(APPEND coil_core_libraries coil_core_entrypoint_console)
 
 add_library(coil_core_entrypoint_graphical STATIC
   entrypoint_graphical.cpp
@@ -69,12 +77,13 @@ add_library(coil_core_entrypoint_graphical STATIC
 target_link_libraries(coil_core_entrypoint_graphical
   PRIVATE
     coil_core_entrypoint
-    coil_core_windows
+    $<$<BOOL:${WIN32}>:coil_core_windows>
 )
 target_link_options(coil_core_entrypoint_graphical
   INTERFACE
     $<$<BOOL:${WIN32}>:-mwindows>
 )
+list(APPEND coil_core_libraries coil_core_entrypoint_graphical)
 
 add_library(coil_core_data STATIC
   data.cpp
@@ -86,6 +95,7 @@ target_link_libraries(coil_core_data
   PUBLIC
     coil_core_base
 )
+list(APPEND coil_core_libraries coil_core_data)
 
 add_library(coil_core_fs STATIC
   fs.cpp
@@ -98,8 +108,9 @@ target_link_libraries(coil_core_fs
     coil_core_base
   PRIVATE
     coil_core_unicode
-    coil_core_windows
+    $<$<BOOL:${WIN32}>:coil_core_windows>
 )
+list(APPEND coil_core_libraries coil_core_fs)
 
 add_library(coil_core_math INTERFACE)
 set_property(TARGET coil_core_math PROPERTY PUBLIC_HEADER
@@ -111,6 +122,7 @@ target_link_libraries(coil_core_math
   INTERFACE
     coil_core_base
 )
+list(APPEND coil_core_libraries coil_core_math)
 
 add_library(coil_core_json INTERFACE)
 set_property(TARGET coil_core_json PROPERTY PUBLIC_HEADER
@@ -121,6 +133,7 @@ target_link_libraries(coil_core_json
     coil_core_math
     PkgConfig::nlohmann_json
 )
+list(APPEND coil_core_libraries coil_core_json)
 
 add_library(coil_core_time STATIC
   time.cpp
@@ -132,8 +145,9 @@ target_link_libraries(coil_core_time
   PUBLIC
     coil_core_base
   PRIVATE
-    coil_core_windows
+    $<$<BOOL:${WIN32}>:coil_core_windows>
 )
+list(APPEND coil_core_libraries coil_core_time)
 
 add_library(coil_core_input STATIC
   input.cpp
@@ -149,6 +163,7 @@ target_link_libraries(coil_core_input
   PRIVATE
     coil_core_unicode
 )
+list(APPEND coil_core_libraries coil_core_input)
 
 add_library(coil_core_platform STATIC
   platform.cpp
@@ -161,6 +176,7 @@ target_link_libraries(coil_core_platform
     coil_core_input
     coil_core_math
 )
+list(APPEND coil_core_libraries coil_core_platform)
 
 add_library(coil_core_graphics STATIC
   graphics.cpp
@@ -177,6 +193,7 @@ target_link_libraries(coil_core_graphics
     coil_core_platform
     coil_core_util
 )
+list(APPEND coil_core_libraries coil_core_graphics)
 
 add_library(coil_core_image STATIC
   image.cpp
@@ -188,6 +205,7 @@ target_link_libraries(coil_core_image
   PUBLIC
     coil_core_math
 )
+list(APPEND coil_core_libraries coil_core_image)
 
 add_library(coil_core_render STATIC
   render.cpp
@@ -199,6 +217,7 @@ target_link_libraries(coil_core_render
   PUBLIC
     coil_core_graphics
 )
+list(APPEND coil_core_libraries coil_core_render)
 
 add_library(coil_core_spirv STATIC
   spirv.cpp
@@ -211,6 +230,7 @@ target_link_libraries(coil_core_spirv
     coil_core_graphics
     PkgConfig::SPIRV-Headers
 )
+list(APPEND coil_core_libraries coil_core_spirv)
 
 add_library(coil_core_vulkan STATIC
   vulkan.cpp
@@ -225,6 +245,7 @@ target_link_libraries(coil_core_vulkan
     coil_core_spirv
     PkgConfig::Vulkan
 )
+list(APPEND coil_core_libraries coil_core_vulkan)
 
 add_library(coil_core_sdl STATIC
   sdl.cpp
@@ -241,6 +262,7 @@ target_link_libraries(coil_core_sdl
   PRIVATE
     coil_core_unicode
 )
+list(APPEND coil_core_libraries coil_core_sdl)
 
 add_library(coil_core_sdl_vulkan STATIC
   sdl_vulkan.cpp
@@ -254,6 +276,7 @@ target_link_libraries(coil_core_sdl_vulkan
     coil_core_sdl
     SDL2::SDL2
 )
+list(APPEND coil_core_libraries coil_core_sdl_vulkan)
 
 add_library(coil_core_render_math INTERFACE)
 set_property(TARGET coil_core_render_math PROPERTY PUBLIC_HEADER
@@ -264,6 +287,7 @@ target_link_libraries(coil_core_render_math
     coil_core_graphics
     coil_core_math
 )
+list(APPEND coil_core_libraries coil_core_render_math)
 
 add_library(coil_core_logic INTERFACE)
 set_property(TARGET coil_core_logic PROPERTY PUBLIC_HEADER
@@ -273,6 +297,7 @@ target_link_libraries(coil_core_logic
   INTERFACE
     coil_core_math
 )
+list(APPEND coil_core_libraries coil_core_logic)
 
 add_library(coil_core_image_png STATIC
   image_png.cpp
@@ -285,6 +310,7 @@ target_link_libraries(coil_core_image_png
     coil_core_graphics
     PNG::PNG
 )
+list(APPEND coil_core_libraries coil_core_image_png)
 
 add_library(coil_core_compress_zstd STATIC
   compress_zstd.cpp
@@ -297,6 +323,7 @@ target_link_libraries(coil_core_compress_zstd
     coil_core_base
     PkgConfig::Zstd
 )
+list(APPEND coil_core_libraries coil_core_compress_zstd)
 
 add_library(coil_core_asset_mesh INTERFACE)
 set_property(TARGET coil_core_asset_mesh PROPERTY PUBLIC_HEADER
@@ -306,6 +333,7 @@ target_link_libraries(coil_core_asset_mesh
   INTERFACE
     coil_core_math
 )
+list(APPEND coil_core_libraries coil_core_asset_mesh)
 
 add_library(coil_core_asset_gltf STATIC
   asset_gltf.cpp
@@ -320,6 +348,7 @@ target_link_libraries(coil_core_asset_gltf
     coil_core_json
     coil_core_math
 )
+list(APPEND coil_core_libraries coil_core_asset_gltf)
 
 add_library(coil_core_sqlite STATIC
   sqlite.cpp
@@ -332,6 +361,7 @@ target_link_libraries(coil_core_sqlite
     coil_core_base
     SQLite::SQLite3
 )
+list(APPEND coil_core_libraries coil_core_sqlite)
 
 add_library(coil_core_fonts INTERFACE)
 set_property(TARGET coil_core_fonts PROPERTY PUBLIC_HEADER
@@ -342,6 +372,7 @@ target_link_libraries(coil_core_fonts
     coil_core_graphics
     coil_core_image
 )
+list(APPEND coil_core_libraries coil_core_fonts)
 
 add_library(coil_core_fthb STATIC
   fthb.cpp
@@ -355,7 +386,9 @@ target_link_libraries(coil_core_fthb
     Freetype::Freetype
     PkgConfig::Harfbuzz
 )
+list(APPEND coil_core_libraries coil_core_fthb)
 
+if(LINUX)
 add_library(coil_core_wayland STATIC
   wayland.cpp
   wayland_keys.cpp
@@ -395,8 +428,10 @@ endforeach()
 add_custom_target(WaylandProtocolsGenerated DEPENDS ${WaylandProtocols_Outputs})
 add_dependencies(coil_core_wayland WaylandProtocolsGenerated)
 target_include_directories(coil_core_wayland PRIVATE ${CMAKE_BINARY_DIR})
-message(STATUS "CMAKE_BINARY_DIR=${CMAKE_BINARY_DIR}")
+list(APPEND coil_core_libraries coil_core_wayland)
+endif()
 
+if(LINUX)
 add_library(coil_core_wayland_vulkan STATIC
   wayland_vulkan.cpp
 )
@@ -408,41 +443,8 @@ target_link_libraries(coil_core_wayland_vulkan
     coil_core_vulkan
     coil_core_wayland
 )
-
-set(coil_core_libraries
-  coil_core_asset_gltf
-  coil_core_asset_mesh
-  coil_core_base
-  coil_core_compress_zstd
-  coil_core_data
-  coil_core_entrypoint
-  coil_core_entrypoint_console
-  coil_core_entrypoint_graphical
-  coil_core_fonts
-  coil_core_fs
-  coil_core_fthb
-  coil_core_graphics
-  coil_core_image
-  coil_core_image_png
-  coil_core_input
-  coil_core_json
-  coil_core_logic
-  coil_core_math
-  coil_core_platform
-  coil_core_render
-  coil_core_render_math
-  coil_core_sdl
-  coil_core_sdl_vulkan
-  coil_core_spirv
-  coil_core_sqlite
-  coil_core_time
-  coil_core_unicode
-  coil_core_util
-  coil_core_vulkan
-  coil_core_wayland
-  coil_core_wayland_vulkan
-  coil_core_windows
-)
+list(APPEND coil_core_libraries coil_core_wayland_vulkan)
+endif()
 
 # interface
 foreach(library ${coil_core_libraries})
