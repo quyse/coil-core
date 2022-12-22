@@ -2,6 +2,7 @@
 #include "graphics.hpp"
 #include <wayland-client.h>
 #include <wayland-xdg-shell-client-protocol.h>
+#include <wayland-pointer-constraints-unstable-v1-client-protocol.h>
 #include <wayland-relative-pointer-unstable-v1-client-protocol.h>
 #include <xkbcommon/xkbcommon.h>
 #include <linux/input-event-codes.h>
@@ -37,16 +38,17 @@ namespace
 
 namespace Coil
 {
-  void DestroyWaylandObject(wl_buffer* object)    { wl_buffer_destroy(object);     }
-  void DestroyWaylandObject(wl_display* object)   { wl_display_disconnect(object); }
-  void DestroyWaylandObject(wl_keyboard* object)  { wl_keyboard_release(object);   }
-  void DestroyWaylandObject(wl_output* object)    { wl_output_release(object);     }
-  void DestroyWaylandObject(wl_pointer* object)   { wl_pointer_release(object);    }
-  void DestroyWaylandObject(wl_registry* object)  { wl_registry_destroy(object);   }
-  void DestroyWaylandObject(wl_shm_pool* object)  { wl_shm_pool_destroy(object);   }
-  void DestroyWaylandObject(wl_surface* object)   { wl_surface_destroy(object);    }
-  void DestroyWaylandObject(xdg_surface* object)  { xdg_surface_destroy(object);   }
-  void DestroyWaylandObject(xdg_toplevel* object) { xdg_toplevel_destroy(object);  }
+  void DestroyWaylandObject(wl_buffer* object)             { wl_buffer_destroy(object);             }
+  void DestroyWaylandObject(wl_display* object)            { wl_display_disconnect(object);         }
+  void DestroyWaylandObject(wl_keyboard* object)           { wl_keyboard_release(object);           }
+  void DestroyWaylandObject(wl_output* object)             { wl_output_release(object);             }
+  void DestroyWaylandObject(wl_pointer* object)            { wl_pointer_release(object);            }
+  void DestroyWaylandObject(wl_registry* object)           { wl_registry_destroy(object);           }
+  void DestroyWaylandObject(wl_shm_pool* object)           { wl_shm_pool_destroy(object);           }
+  void DestroyWaylandObject(wl_surface* object)            { wl_surface_destroy(object);            }
+  void DestroyWaylandObject(xdg_surface* object)           { xdg_surface_destroy(object);           }
+  void DestroyWaylandObject(xdg_toplevel* object)          { xdg_toplevel_destroy(object);          }
+  void DestroyWaylandObject(zwp_locked_pointer_v1* object) { zwp_locked_pointer_v1_destroy(object); }
 
   WaylandWindow::WaylandWindow(WaylandWindowSystem& windowSystem, WaylandObject<wl_surface>&& surface, WaylandObject<xdg_surface>&& xdgSurface, WaylandObject<xdg_toplevel>&& xdgToplevel, std::string const& title, ivec2 const& size)
   : _windowSystem(windowSystem), _surface(std::move(surface)), _xdgSurface(std::move(xdgSurface)), _xdgToplevel(std::move(xdgToplevel))
@@ -84,14 +86,24 @@ namespace Coil
 
   void WaylandWindow::SetTitle(std::string const& title)
   {
+    xdg_toplevel_set_title(_xdgToplevel, title.c_str());
   }
 
   void WaylandWindow::Close()
   {
+    Stop();
   }
 
   void WaylandWindow::SetFullScreen(bool fullScreen)
   {
+    if(fullScreen)
+    {
+      xdg_toplevel_set_fullscreen(_xdgToplevel, nullptr);
+    }
+    else
+    {
+      xdg_toplevel_unset_fullscreen(_xdgToplevel);
+    }
   }
 
   ivec2 WaylandWindow::GetDrawableSize() const
@@ -174,6 +186,20 @@ namespace Coil
 
   void WaylandWindow::_UpdateMouseLock()
   {
+    if(_mouseLock == !!_lockedPointer) return;
+
+    if(_mouseLock)
+    {
+      _lockedPointer = zwp_pointer_constraints_v1_lock_pointer(
+        _windowSystem.GetPointerConstraints(), _surface,
+        _windowSystem.GetPointer(),
+        nullptr,
+        ZWP_POINTER_CONSTRAINTS_V1_LIFETIME_PERSISTENT);
+    }
+    else
+    {
+      _lockedPointer = nullptr;
+    }
   }
 
   void WaylandWindow::_UpdateCursorVisible()
@@ -270,6 +296,7 @@ namespace Coil
   GLOBAL_SINGLETON_INFO(wl_seat, 5);
   GLOBAL_SINGLETON_INFO(wl_shm, 1);
   GLOBAL_SINGLETON_INFO(xdg_wm_base, 2);
+  GLOBAL_SINGLETON_INFO(zwp_pointer_constraints_v1, 1);
   GLOBAL_SINGLETON_INFO(zwp_relative_pointer_manager_v1, 1);
   GLOBAL_OBJECT_INFO(wl_output, 4);
 
@@ -346,6 +373,10 @@ namespace Coil
   {
     return Get<wl_shm>();
   }
+  zwp_pointer_constraints_v1* WaylandWindowSystem::GetPointerConstraints() const
+  {
+    return Get<zwp_pointer_constraints_v1>();
+  }
   std::unordered_map<uint32_t, WaylandObject<wl_output>> const& WaylandWindowSystem::GetOutputs() const
   {
     return std::get<std::unordered_map<uint32_t, WaylandObject<wl_output>>>(_objects);
@@ -353,6 +384,11 @@ namespace Coil
   xdg_wm_base* WaylandWindowSystem::GetXdgWmBase() const
   {
     return Get<xdg_wm_base>();
+  }
+
+  wl_pointer* WaylandWindowSystem::GetPointer() const
+  {
+    return _pointer;
   }
 
   void WaylandWindowSystem::OnRegistryGlobal(wl_registry* registry, uint32_t name, char const* interface, uint32_t version)

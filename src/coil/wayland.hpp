@@ -20,8 +20,10 @@ struct wl_surface;
 struct xdg_surface;
 struct xdg_toplevel;
 struct xdg_wm_base;
-struct zwp_relative_pointer_v1;
+struct zwp_locked_pointer_v1;
+struct zwp_pointer_constraints_v1;
 struct zwp_relative_pointer_manager_v1;
+struct zwp_relative_pointer_v1;
 // prototypes for xkbcommon types
 struct xkb_context;
 struct xkb_keymap;
@@ -39,6 +41,7 @@ namespace Coil
   void DestroyWaylandObject(wl_surface* object);
   void DestroyWaylandObject(xdg_surface* object);
   void DestroyWaylandObject(xdg_toplevel* object);
+  void DestroyWaylandObject(zwp_locked_pointer_v1* object);
 
   template <typename T>
   class WaylandObject
@@ -121,6 +124,7 @@ namespace Coil
     WaylandObject<wl_surface> _surface;
     WaylandObject<xdg_surface> _xdgSurface;
     WaylandObject<xdg_toplevel> _xdgToplevel;
+    WaylandObject<zwp_locked_pointer_v1> _lockedPointer;
 
     ivec2 _size;
     ivec2 _xdgBounds;
@@ -151,8 +155,11 @@ namespace Coil
     wl_compositor* GetCompositor() const;
     wl_seat* GetSeat() const;
     wl_shm* GetShm() const;
+    zwp_pointer_constraints_v1* GetPointerConstraints() const;
     std::unordered_map<uint32_t, WaylandObject<wl_output>> const& GetOutputs() const;
     xdg_wm_base* GetXdgWmBase() const;
+
+    wl_pointer* GetPointer() const;
 
   private:
     void OnRegistryGlobal(wl_registry* registry, uint32_t name, char const* interface, uint32_t version);
@@ -198,6 +205,7 @@ namespace Coil
       wl_shm*,
       xdg_wm_base*,
       zwp_relative_pointer_manager_v1*,
+      zwp_pointer_constraints_v1*,
       std::unordered_map<uint32_t, WaylandObject<wl_output>>
     > _objects;
 
