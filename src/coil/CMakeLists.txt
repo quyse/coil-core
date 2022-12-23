@@ -34,6 +34,10 @@ add_library(coil_core_windows INTERFACE)
 set_property(TARGET coil_core_windows PROPERTY PUBLIC_HEADER
   windows.hpp
 )
+target_link_libraries(coil_core_windows
+  PUBLIC
+    coil_core_base
+)
 list(APPEND coil_core_libraries coil_core_windows)
 endif()
 
@@ -255,11 +259,11 @@ set_property(TARGET coil_core_sdl PROPERTY PUBLIC_HEADER
 )
 target_link_libraries(coil_core_sdl
   PUBLIC
-    coil_core_graphics
     coil_core_input
     coil_core_platform
     SDL2::SDL2
   PRIVATE
+    coil_core_graphics
     coil_core_unicode
 )
 list(APPEND coil_core_libraries coil_core_sdl)
@@ -308,6 +312,7 @@ set_property(TARGET coil_core_image_png PROPERTY PUBLIC_HEADER
 target_link_libraries(coil_core_image_png
   PUBLIC
     coil_core_graphics
+  PRIVATE
     PNG::PNG
 )
 list(APPEND coil_core_libraries coil_core_image_png)
@@ -344,9 +349,11 @@ set_property(TARGET coil_core_asset_gltf PROPERTY PUBLIC_HEADER
 )
 target_link_libraries(coil_core_asset_gltf
   PUBLIC
+    coil_core_asset_mesh
+    coil_core_math
+  PRIVATE
     coil_core_data
     coil_core_json
-    coil_core_math
 )
 list(APPEND coil_core_libraries coil_core_asset_gltf)
 
@@ -398,9 +405,9 @@ set_property(TARGET coil_core_wayland PROPERTY PUBLIC_HEADER
 )
 target_link_libraries(coil_core_wayland
   PUBLIC
-    coil_core_graphics
-    coil_core_input
     coil_core_platform
+  PRIVATE
+    coil_core_graphics
     PkgConfig::WaylandClient
     PkgConfig::WaylandProtocols
     PkgConfig::XkbCommon
@@ -439,7 +446,7 @@ set_property(TARGET coil_core_wayland_vulkan PROPERTY PUBLIC_HEADER
   wayland_vulkan.hpp
 )
 target_link_libraries(coil_core_wayland_vulkan
-  PUBLIC
+  PRIVATE
     coil_core_vulkan
     coil_core_wayland
 )
