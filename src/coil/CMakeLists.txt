@@ -455,6 +455,34 @@ target_link_libraries(coil_core_wayland_vulkan
 list(APPEND coil_core_libraries coil_core_wayland_vulkan)
 endif()
 
+add_library(coil_core_ogg STATIC
+  ogg.cpp
+)
+set_property(TARGET coil_core_ogg PROPERTY PUBLIC_HEADER
+  ogg.hpp
+)
+target_link_libraries(coil_core_ogg
+  PUBLIC
+    coil_core_base
+    PkgConfig::Ogg
+)
+list(APPEND coil_core_libraries coil_core_ogg)
+
+add_library(coil_core_opus STATIC
+  opus.cpp
+)
+set_property(TARGET coil_core_opus PROPERTY PUBLIC_HEADER
+  opus.hpp
+)
+target_link_libraries(coil_core_opus
+  PUBLIC
+    coil_core_ogg
+  PRIVATE
+    PkgConfig::Opus
+)
+list(APPEND coil_core_libraries coil_core_opus)
+
+
 # interface
 foreach(library ${coil_core_libraries})
   target_include_directories(${library}

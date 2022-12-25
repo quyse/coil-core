@@ -15,6 +15,8 @@
 , wayland
 , wayland-protocols
 , libxkbcommon
+, libogg
+, libopus
 }:
 
 stdenv.mkDerivation {
@@ -34,6 +36,8 @@ stdenv.mkDerivation {
     libpng
     freetype
     harfbuzz
+    libogg
+    libopus
   ] ++ lib.optionals stdenv.hostPlatform.isLinux [
     wayland
     wayland-protocols
