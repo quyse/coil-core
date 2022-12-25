@@ -455,6 +455,32 @@ target_link_libraries(coil_core_wayland_vulkan
 list(APPEND coil_core_libraries coil_core_wayland_vulkan)
 endif()
 
+add_library(coil_core_audio STATIC
+  audio.cpp
+)
+set_property(TARGET coil_core_audio PROPERTY PUBLIC_HEADER
+  audio.hpp
+)
+# target_link_libraries(coil_core_audio
+#   PUBLIC
+# )
+list(APPEND coil_core_libraries coil_core_audio)
+
+if(WIN32)
+add_library(coil_core_wincoreaudio STATIC
+  wincoreaudio.cpp
+)
+set_property(TARGET coil_core_wincoreaudio PROPERTY PUBLIC_HEADER
+  wincoreaudio.hpp
+)
+target_link_libraries(coil_core_wincoreaudio
+  PUBLIC
+    coil_core_audio
+    coil_core_windows
+)
+list(APPEND coil_core_libraries coil_core_wincoreaudio)
+endif()
+
 add_library(coil_core_ogg STATIC
   ogg.cpp
 )
@@ -476,6 +502,7 @@ set_property(TARGET coil_core_opus PROPERTY PUBLIC_HEADER
 )
 target_link_libraries(coil_core_opus
   PUBLIC
+    coil_core_audio
     coil_core_ogg
   PRIVATE
     PkgConfig::Opus

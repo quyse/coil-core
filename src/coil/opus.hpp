@@ -1,20 +1,19 @@
 #pragma once
 
+#include "audio.hpp"
 #include "ogg.hpp"
 
 struct OpusDecoder;
 
 namespace Coil
 {
-  class OpusDecodeStream
+  class OpusDecodeStream : public AudioInputStream
   {
   public:
     OpusDecodeStream(OggDecodeStream& inputStream);
     ~OpusDecodeStream();
 
-    // read one packet, empty buffer if EOF
-    // buffer is valid only until next read
-    Buffer Read();
+    Buffer Read() override;
 
     // always decode at 48 kHz
     static constexpr int32_t samplingRate = 48000;
