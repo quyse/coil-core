@@ -30,7 +30,9 @@ set_property(TARGET coil_core_unicode PROPERTY PUBLIC_HEADER
 list(APPEND coil_core_libraries coil_core_unicode)
 
 if(WIN32)
-add_library(coil_core_windows INTERFACE)
+add_library(coil_core_windows STATIC
+  windows.cpp
+)
 set_property(TARGET coil_core_windows PROPERTY PUBLIC_HEADER
   windows.hpp
 )
