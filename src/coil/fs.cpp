@@ -350,5 +350,4 @@ namespace Coil
     for(i = path.length() - 1; i > 0 && path[i] != FilePathSeparator; --i);
     return path.substr(0, i);
   }
-
 }

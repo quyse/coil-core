@@ -120,6 +120,11 @@ namespace Coil
     Buffer(std::vector<T> const& v)
     : data(const_cast<void*>(static_cast<void const*>(v.data()))), size(v.size() * sizeof(T)) {}
 
+    operator bool() const
+    {
+      return data && size;
+    }
+
     Buffer slice(size_t sliceOffset, size_t sliceSize)
     {
       return Buffer(static_cast<uint8_t* const>(data) + sliceOffset, sliceSize);

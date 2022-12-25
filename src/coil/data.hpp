@@ -150,5 +150,4 @@ namespace Coil
   private:
     std::istream& _stream;
   };
-
 }
