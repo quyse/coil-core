@@ -397,7 +397,7 @@ target_link_libraries(coil_core_fthb
 )
 list(APPEND coil_core_libraries coil_core_fthb)
 
-if(LINUX)
+if(UNIX)
 add_library(coil_core_wayland STATIC
   wayland.cpp
   wayland_keys.cpp
@@ -440,7 +440,7 @@ target_include_directories(coil_core_wayland PRIVATE ${CMAKE_BINARY_DIR})
 list(APPEND coil_core_libraries coil_core_wayland)
 endif()
 
-if(LINUX)
+if(UNIX)
 add_library(coil_core_wayland_vulkan STATIC
   wayland_vulkan.cpp
 )
