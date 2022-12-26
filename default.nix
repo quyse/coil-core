@@ -1,7 +1,6 @@
 { pkgsFun ? import <nixpkgs>
 , pkgs ? pkgsFun {}
 , lib ? pkgs.lib
-, toolchain
 }:
 
 rec {
@@ -17,25 +16,34 @@ rec {
     ];
   });
 
-  # overlay with Coil Toolchain
-  overlay = self: super: let
-    stdenv = (toolchain.llvm14 rec {
-      pkgs = super;
-    }).stdenv;
-  in ((toolchain.libs {
-    inherit stdenv;
-  }).overlay self super) // {
-    coil-core = self.callPackage ./coil-core.nix {
-      inherit stdenv;
-    };
-  };
-
-  linuxGlibc = pkgsFun {
-    overlays = [ overlay ];
-  };
+  # Ubuntu build
+  coil-core-ubuntu = pkgs.vmTools.runInLinuxImage (coil-core.overrideAttrs (attrs: {
+    diskImage = pkgs.vmTools.diskImageExtraFuns.ubuntu2204x86_64 [
+      "clang"
+      "cmake"
+      "libfreetype-dev"
+      "libharfbuzz-dev"
+      "libogg-dev"
+      "libopus-dev"
+      "libpng-dev"
+      "libsdl2-dev"
+      "libsqlite3-dev"
+      "libstdc++-10-dev"
+      "libvulkan-dev"
+      "libwayland-dev"
+      "libxkbcommon-dev"
+      "libzstd-dev"
+      "ninja-build"
+      "nlohmann-json3-dev"
+      "pkg-config"
+      "spirv-headers"
+      "wayland-protocols"
+    ];
+    diskImageFormat = "qcow2";
+    memSize = 2048;
+  }));
 
   touch = {
-    inherit coil-core;
-    linuxGlibcCoilCore = linuxGlibc.coil-core;
+    inherit coil-core coil-core-ubuntu;
   };
 }
