@@ -16,14 +16,18 @@ namespace Coil
           using E = std::decay_t<decltype(event)>;
           if constexpr(std::is_same_v<E, InputKeyboardKeyEvent>)
           {
-            stream << (event.isPressed ? "KEYDOWN " : "KEYUP ") << (uint8_t)event.key;
+            stream << (event.isPressed ? "KEYDOWN " : "KEYUP ") << (uint32_t)event.key;
           }
           if constexpr(std::is_same_v<E, InputKeyboardCharacterEvent>)
           {
             char32_t s[] = { event.character, 0 };
             stream << "KEYPRESS ";
+            char r[8];
+            char* p = r;
             for(Unicode::Iterator<char32_t, char, char32_t const*> i(s); *i; ++i)
-              stream << *i;
+              *p++ = *i;
+            *p = 0;
+            stream << r;
           }
         }, event);
       }

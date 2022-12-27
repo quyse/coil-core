@@ -38,7 +38,7 @@ namespace Coil
   };
 
   template <typename... Args>
-  void AllocateVulkanObject(Coil::Book& book, Args... args)
+  void AllocateVulkanObject(Book& book, Args... args)
   {
     book.Allocate<VulkanObject<Args...>>(args...);
   }

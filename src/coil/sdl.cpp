@@ -255,7 +255,7 @@ namespace Coil
     InputKey key;
     switch(code)
     {
-  #define C(c, k) case SDL_SCANCODE_##c: key = InputKey::k; break
+#define C(c, k) case SDL_SCANCODE_##c: key = InputKey::k; break
 
       C(BACKSPACE, BackSpace);
       C(TAB, Tab);
@@ -270,7 +270,6 @@ namespace Coil
 
       C(SPACE, Space);
 
-      // C(PLUS, Plus);
       C(COMMA, Comma);
       C(MINUS, Hyphen);
       C(PERIOD, Period);
@@ -368,7 +367,7 @@ namespace Coil
       C(LALT, AltL);
       C(RALT, AltR);
 
-  #undef C
+#undef C
 
     default:
       key = InputKey::_Unknown;
@@ -519,7 +518,8 @@ namespace Coil
     while(_running)
     {
       SDL_Event event;
-      while((_loopOnlyVisible && !_visible ? SDL_WaitEvent : SDL_PollEvent)(&event))
+      bool wait = _loopOnlyVisible && !_visible;
+      while((wait ? SDL_WaitEvent : SDL_PollEvent)(&event))
       {
         _inputManager.ProcessEvent(event);
 

@@ -162,6 +162,7 @@ add_library(coil_core_input STATIC
 set_property(TARGET coil_core_input PROPERTY PUBLIC_HEADER
   input.hpp
   input_debug.hpp
+  input_keys.hpp
 )
 target_link_libraries(coil_core_input
   PUBLIC
@@ -280,7 +281,6 @@ target_link_libraries(coil_core_sdl_vulkan
   PRIVATE
     coil_core_vulkan
     coil_core_sdl
-    SDL2::SDL2
 )
 list(APPEND coil_core_libraries coil_core_sdl_vulkan)
 
