@@ -137,7 +137,7 @@ set_property(TARGET coil_core_json PROPERTY PUBLIC_HEADER
 target_link_libraries(coil_core_json
   INTERFACE
     coil_core_math
-    PkgConfig::nlohmann_json
+    nlohmann_json::nlohmann_json
 )
 list(APPEND coil_core_libraries coil_core_json)
 
@@ -235,7 +235,7 @@ set_property(TARGET coil_core_spirv PROPERTY PUBLIC_HEADER
 target_link_libraries(coil_core_spirv
   PUBLIC
     coil_core_graphics
-    PkgConfig::SPIRV-Headers
+    SPIRV-Headers::SPIRV-Headers
 )
 list(APPEND coil_core_libraries coil_core_spirv)
 
@@ -250,7 +250,7 @@ target_link_libraries(coil_core_vulkan
   PUBLIC
     coil_core_graphics
     coil_core_spirv
-    PkgConfig::Vulkan
+    Vulkan::Vulkan
 )
 list(APPEND coil_core_libraries coil_core_vulkan)
 
@@ -328,7 +328,7 @@ set_property(TARGET coil_core_compress_zstd PROPERTY PUBLIC_HEADER
 target_link_libraries(coil_core_compress_zstd
   PUBLIC
     coil_core_base
-    PkgConfig::Zstd
+    zstd::libzstd_shared
 )
 list(APPEND coil_core_libraries coil_core_compress_zstd)
 
@@ -393,7 +393,7 @@ target_link_libraries(coil_core_fthb
   PUBLIC
     coil_core_fonts
     Freetype::Freetype
-    PkgConfig::Harfbuzz
+    harfbuzz::harfbuzz
 )
 list(APPEND coil_core_libraries coil_core_fthb)
 
@@ -490,7 +490,7 @@ set_property(TARGET coil_core_ogg PROPERTY PUBLIC_HEADER
 target_link_libraries(coil_core_ogg
   PUBLIC
     coil_core_base
-    PkgConfig::Ogg
+    Ogg::ogg
 )
 list(APPEND coil_core_libraries coil_core_ogg)
 
@@ -505,7 +505,7 @@ target_link_libraries(coil_core_opus
     coil_core_audio
     coil_core_ogg
   PRIVATE
-    PkgConfig::Opus
+    Opus::opus
 )
 list(APPEND coil_core_libraries coil_core_opus)
 

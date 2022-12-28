@@ -4,6 +4,7 @@
 , pkg-config
 , writeText
 , SDL2
+, vulkan-headers
 , vulkan-loader
 , spirv-headers
 , nlohmann_json
@@ -28,6 +29,7 @@ stdenv.mkDerivation {
   ];
   buildInputs = [
     SDL2
+    vulkan-headers
     vulkan-loader
     spirv-headers
     nlohmann_json
