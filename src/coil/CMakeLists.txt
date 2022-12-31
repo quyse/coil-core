@@ -431,7 +431,6 @@ foreach(protocol_xml_path ${WaylandProtocols_Xmls})
     DEPENDS ${protocol_xml_path}
   )
   target_sources(coil_core_wayland PRIVATE ${protocol_c})
-  set_property(TARGET coil_core_wayland APPEND PROPERTY PUBLIC_HEADER ${protocol_h})
   list(APPEND WaylandProtocols_Outputs ${protocol_c} ${protocol_h})
 endforeach()
 add_custom_target(WaylandProtocolsGenerated DEPENDS ${WaylandProtocols_Outputs})
