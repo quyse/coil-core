@@ -2,6 +2,7 @@
 #include "vulkan_objects.hpp"
 #include "spirv.hpp"
 #include <vector>
+#include <algorithm>
 #include <limits>
 #include <cstring>
 
@@ -1658,7 +1659,7 @@ namespace Coil
           .pNext = nullptr,
           .flags = 0,
           .size = _maxBufferSize,
-          .usage = usage,
+          .usage = (VkBufferUsageFlags)usage,
           .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
           .queueFamilyIndexCount = 0,
           .pQueueFamilyIndices = nullptr,
@@ -1943,7 +1944,7 @@ namespace Coil
     {
       .book = _sizeDependentBook,
       .size = { (int32_t)extent.width, (int32_t)extent.height },
-      .pixelFormat = _surfaceFormat,
+      .pixelFormat = (GraphicsOpaquePixelFormat)_surfaceFormat,
     };
     _recreatePresent(presentConfig, _images.size());
     for(size_t i = 0; i < _images.size(); ++i)

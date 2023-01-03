@@ -1,4 +1,5 @@
 #include "image.hpp"
+#include <algorithm>
 
 namespace Coil
 {
