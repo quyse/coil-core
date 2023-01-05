@@ -1,6 +1,7 @@
 { stdenv
 , lib
 , cmake
+, ninja
 , pkg-config
 , writeText
 , SDL2
@@ -25,6 +26,7 @@ stdenv.mkDerivation {
   src = ./src/coil;
   nativeBuildInputs = [
     cmake
+    ninja
     pkg-config
   ];
   buildInputs = [
