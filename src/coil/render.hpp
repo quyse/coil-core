@@ -2,6 +2,7 @@
 
 #include "graphics.hpp"
 #include <vector>
+#include <algorithm>
 #include <unordered_map>
 #include <concepts>
 
