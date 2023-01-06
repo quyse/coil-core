@@ -29,7 +29,7 @@ stdenv.mkDerivation {
     ninja
     pkg-config
   ];
-  buildInputs = [
+  propagatedBuildInputs = [
     SDL2
     vulkan-headers
     vulkan-loader
