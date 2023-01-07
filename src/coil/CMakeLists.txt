@@ -4,6 +4,7 @@ project(coil_core VERSION 3.0)
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
+include(CTest)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -59,7 +60,7 @@ target_link_libraries(coil_core_entrypoint
 )
 target_link_options(coil_core_entrypoint
   INTERFACE
-    $<$<BOOL:${WIN32}>:-municode>
+    $<$<BOOL:${MINGW}>:-municode>
 )
 list(APPEND coil_core_libraries coil_core_entrypoint)
 
@@ -73,7 +74,7 @@ target_link_libraries(coil_core_entrypoint_console
 )
 target_link_options(coil_core_entrypoint_console
   INTERFACE
-    $<$<BOOL:${WIN32}>:-mconsole>
+    $<$<BOOL:${WIN32}>:$<IF:$<BOOL:${MSVC}>,/subsystem:console,-mconsole>>
 )
 list(APPEND coil_core_libraries coil_core_entrypoint_console)
 
@@ -87,7 +88,7 @@ target_link_libraries(coil_core_entrypoint_graphical
 )
 target_link_options(coil_core_entrypoint_graphical
   INTERFACE
-    $<$<BOOL:${WIN32}>:-mwindows>
+    $<$<BOOL:${WIN32}>:$<IF:$<BOOL:${MSVC}>,/subsystem:windows,-mwindows>>
 )
 list(APPEND coil_core_libraries coil_core_entrypoint_graphical)
 
@@ -538,7 +539,8 @@ install(FILES
   DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/coil_core"
 )
 
-enable_testing()
+# tests
+if(BUILD_TESTING)
 
 add_executable(test_json
   test_json.cpp
@@ -568,3 +570,5 @@ target_link_libraries(test_sqlite
   coil_core_sqlite
 )
 add_test(NAME test_sqlite COMMAND test_sqlite)
+
+endif() # BUILD_TESTING

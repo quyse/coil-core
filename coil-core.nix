@@ -27,6 +27,7 @@ stdenv.mkDerivation {
   nativeBuildInputs = [
     cmake
     ninja
+  ] ++ lib.optionals stdenv.hostPlatform.isLinux [
     pkg-config
   ];
   propagatedBuildInputs = [
