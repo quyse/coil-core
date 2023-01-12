@@ -1,3 +1,9 @@
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
+
+if(UNIX)
+  find_package(PkgConfig REQUIRED)
+endif()
+
 find_package(nlohmann_json REQUIRED)
 find_package(Vulkan REQUIRED)
 find_package(SPIRV-Headers REQUIRED)
@@ -9,9 +15,9 @@ find_package(Freetype REQUIRED)
 find_package(harfbuzz REQUIRED)
 find_package(Ogg REQUIRED)
 find_package(Opus REQUIRED)
+
 if(UNIX)
-find_package(PkgConfig REQUIRED)
-pkg_search_module(WaylandClient REQUIRED IMPORTED_TARGET wayland-client)
-pkg_search_module(WaylandProtocols REQUIRED IMPORTED_TARGET wayland-protocols)
-pkg_search_module(XkbCommon REQUIRED IMPORTED_TARGET xkbcommon)
+  pkg_search_module(WaylandClient REQUIRED IMPORTED_TARGET wayland-client)
+  pkg_search_module(WaylandProtocols REQUIRED IMPORTED_TARGET wayland-protocols)
+  pkg_search_module(XkbCommon REQUIRED IMPORTED_TARGET xkbcommon)
 endif()

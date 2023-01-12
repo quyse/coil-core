@@ -4,4 +4,4 @@ include("${CMAKE_CURRENT_LIST_DIR}/coil_coreTargets.cmake")
 
 check_required_components(coil_core)
 
-include("${CMAKE_CURRENT_LIST_DIR}/deps.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/cmake/deps.cmake")

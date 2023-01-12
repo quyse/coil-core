@@ -172,7 +172,6 @@ rec {
         spirv-headers
         zstd
         SDL2
-        zlib
         libpng
         sqlite
         freetype

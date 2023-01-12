@@ -13,7 +13,7 @@ set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZAITON ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-include(deps.cmake)
+include(cmake/deps.cmake)
 
 add_library(coil_core_base STATIC
   base.cpp
@@ -535,7 +535,10 @@ configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake.in"
 )
 install(FILES
   "${CMAKE_CURRENT_BINARY_DIR}/coil_coreConfig.cmake"
-  deps.cmake
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/coil_core"
+)
+install(DIRECTORY
+  cmake
   DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/coil_core"
 )
 
