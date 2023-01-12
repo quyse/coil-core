@@ -75,52 +75,43 @@ rec {
     inherit (msvc) mkCmakePkg;
 
     nlohmann_json = mkCmakePkg {
-      name = "nlohmann_json";
-      inherit (pkgs.nlohmann_json) src;
+      inherit (pkgs.nlohmann_json) pname version src;
       cmakeFlags = "-DJSON_BuildTests=OFF";
     };
     vulkan-headers = mkCmakePkg {
-      name = "vulkan-headers";
-      inherit (pkgs.vulkan-headers) src;
+      inherit (pkgs.vulkan-headers) pname version src;
     };
     vulkan-loader = mkCmakePkg {
-      name = "vulkan-loader";
-      inherit (pkgs.vulkan-loader) src;
+      inherit (pkgs.vulkan-loader) pname version src;
       buildInputs = [
         vulkan-headers
       ];
       cmakeFlags = "-DENABLE_WERROR=OFF";
     };
     spirv-headers = mkCmakePkg {
-      name = "spirv-headers";
-      inherit (pkgs.spirv-headers) src;
+      inherit (pkgs.spirv-headers) pname version src;
     };
     zstd = mkCmakePkg {
-      name = "zstd";
-      inherit (pkgs.zstd) src;
+      inherit (pkgs.zstd) pname version src;
       cmakeFlags = "-DZSTD_MULTITHREAD_SUPPORT=OFF -DZSTD_BUILD_PROGRAMS=OFF -DZSTD_BUILD_TESTS=OFF";
       sourceDir = "build/cmake";
     };
     SDL2 = mkCmakePkg {
-      name = "SDL2";
-      inherit (pkgs.SDL2) src;
+      inherit (pkgs.SDL2) pname version src;
       cmakeFlags = "-DBUILD_SHARED_LIBS=ON";
     };
     zlib = mkCmakePkg {
-      name = "zlib";
-      src = pkgs.zlib.src;
+      inherit (pkgs.zlib) pname version src;
     };
     libpng = mkCmakePkg {
-      name = "libpng";
-      inherit (pkgs.libpng) src;
+      inherit (pkgs.libpng) pname version src;
       buildInputs = [
         zlib
       ];
       cmakeFlags = "-DPNG_STATIC=OFF -DPNG_EXECUTABLES=OFF -DPNG_TESTS=OFF";
     };
     sqlite = mkCmakePkg {
-      name = "sqlite";
-      inherit (pkgs.sqlite) src;
+      inherit (pkgs.sqlite) pname version src;
       postPatch = ''
         ln -s ${pkgs.writeText "sqlite-CMakeLists.txt" ''
           cmake_minimum_required(VERSION 3.19)
@@ -136,19 +127,19 @@ rec {
       '';
     };
     freetype = mkCmakePkg {
-      name = "freetype";
-      inherit (pkgs.freetype) src;
+      inherit (pkgs.freetype) pname version src;
       buildInputs = [
         libpng
       ];
       cmakeFlags = "-DBUILD_SHARED_LIBS=ON";
     };
-    harfbuzz = mkCmakePkg {
-      name = "harfbuzz";
+    harfbuzz = mkCmakePkg rec {
+      pname = "harfbuzz";
+      version = "6.0.0";
       # harfbuzz 6.0 is not in nixpkgs yet
       src = pkgs.fetchgit {
         url = "https://github.com/harfbuzz/harfbuzz.git";
-        rev = "6.0.0";
+        rev = version;
         hash = "sha256-AnmpJjzbVE1KxuOdJOfNehQC+oxt1+4e6j8oGw1EDFk=";
       };
       buildInputs = [
@@ -157,16 +148,16 @@ rec {
       cmakeFlags = "-DBUILD_SHARED_LIBS=ON -DHB_HAVE_FREETYPE=ON";
     };
     ogg = mkCmakePkg {
-      name = "ogg";
-      inherit (pkgs.libogg) src;
+      inherit (pkgs.libogg) pname version src;
       cmakeFlags = "-DBUILD_SHARED_LIBS=ON";
     };
-    opus = mkCmakePkg {
-      name = "opus";
+    opus = mkCmakePkg rec {
+      pname = "opus";
+      version = "1.3.1";
       # use git checkout instead of tarball to get cmake exports
       src = pkgs.fetchgit {
         url = "https://github.com/xiph/opus";
-        rev = "v1.3.1";
+        rev = "v${version}";
         hash = "sha256-DO9JAO6907VpOUgBiJ4WIZm9hTAYBM2Qabi+x1ibqN4=";
       };
       cmakeFlags = "-DBUILD_SHARED_LIBS=ON -DOPUS_X86_MAY_HAVE_SSE4_1=OFF -DOPUS_X86_MAY_HAVE_AVX=OFF";
