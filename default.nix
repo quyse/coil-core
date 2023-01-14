@@ -7,7 +7,7 @@
 rec {
   # NixOS build
   coil-core = (pkgs.callPackage ./coil-core.nix {
-    # fix cmake files; harfbuzz has this fix
+    # fix cmake files; harfbuzz 6.0 has this fix
     harfbuzz = pkgs.harfbuzz.overrideAttrs (attrs: {
       patches = (attrs.patches or []) ++ [
         (pkgs.fetchpatch {
@@ -15,19 +15,6 @@ rec {
           hash = "sha256-a2RMkRVk+yDReZjn7IHbLLHpuAkyCdvtkKc8ubVN98w=";
         })
       ];
-    });
-    # build with cmake to get cmake exports
-    libogg = pkgs.libogg.overrideAttrs (attrs: {
-      nativeBuildInputs = (attrs.nativeBuildInputs or []) ++ [pkgs.cmake];
-    });
-    # use git checkout instead of tarball to get cmake exports
-    libopus = pkgs.libopus.overrideAttrs (attrs: {
-      src = pkgs.fetchgit {
-        url = "https://github.com/xiph/opus";
-        rev = "v1.3.1";
-        hash = "sha256-DO9JAO6907VpOUgBiJ4WIZm9hTAYBM2Qabi+x1ibqN4=";
-      };
-      nativeBuildInputs = (attrs.nativeBuildInputs or []) ++ [pkgs.cmake];
     });
   }).overrideAttrs (attrs: {
     # force clang
