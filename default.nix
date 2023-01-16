@@ -2,6 +2,7 @@
 , pkgs ? pkgsFun {}
 , lib ? pkgs.lib
 , toolchain-windows
+, toolchain-steam
 }:
 
 rec {
@@ -16,6 +17,8 @@ rec {
         })
       ];
     });
+
+    steam = toolchain-steam.sdk;
   }).overrideAttrs (attrs: {
     # force clang
     cmakeFlags = (attrs.cmakeFlags or []) ++ [
@@ -59,7 +62,7 @@ rec {
     coil-core-nix = coil-core;
   in lib.makeExtensible (self: with self; {
     msvc = toolchain-windows.msvc {};
-    inherit (msvc) mkCmakePkg;
+    inherit (msvc) mkCmakePkg finalizePkg;
 
     nlohmann_json = mkCmakePkg {
       inherit (pkgs.nlohmann_json) pname version src;
@@ -149,6 +152,11 @@ rec {
       };
       cmakeFlags = "-DBUILD_SHARED_LIBS=ON -DOPUS_X86_MAY_HAVE_SSE4_1=OFF -DOPUS_X86_MAY_HAVE_AVX=OFF";
     };
+    steam = toolchain-steam.sdk.overrideAttrs (attrs: {
+      installPhase = (attrs.installPhase or "") + (finalizePkg {
+        buildInputs = [];
+      });
+    });
     coil-core = mkCmakePkg {
       name = "coil-core";
       inherit (coil-core-nix) src;
@@ -165,6 +173,7 @@ rec {
         harfbuzz
         ogg
         opus
+        steam
       ];
       doCheck = false;
     };

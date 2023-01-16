@@ -13,6 +13,7 @@ find_package(Freetype)
 find_package(harfbuzz)
 find_package(Ogg)
 find_package(Opus)
+find_package(Steam)
 
 pkg_search_module(WaylandClient IMPORTED_TARGET wayland-client)
 pkg_search_module(WaylandProtocols IMPORTED_TARGET wayland-protocols)

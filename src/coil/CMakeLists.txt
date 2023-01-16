@@ -615,6 +615,23 @@ if(TARGET coil_core_ogg AND TARGET Opus::opus)
 endif()
 list(APPEND coil_core_all_libraries opus)
 
+if(TARGET Steam::Steam)
+  add_library(coil_core_steam STATIC
+    steam.cpp
+  )
+  set_property(TARGET coil_core_steam PROPERTY PUBLIC_HEADER
+    steam.hpp
+  )
+  target_link_libraries(coil_core_steam
+    PUBLIC
+      coil_core_base
+    PRIVATE
+      Steam::Steam
+  )
+  list(APPEND coil_core_libraries steam)
+endif()
+list(APPEND coil_core_all_libraries steam)
+
 
 list(TRANSFORM coil_core_libraries PREPEND coil_core_)
 
@@ -686,6 +703,17 @@ if(BUILD_TESTING)
       coil_core_sqlite
     )
     add_test(NAME test_sqlite COMMAND test_sqlite)
+  endif()
+
+  if(TARGET coil_core_steam)
+    add_executable(test_steam
+      test_steam.cpp
+    )
+    target_link_libraries(test_steam
+      coil_core_entrypoint_console
+      coil_core_steam
+    )
+    add_test(NAME test_steam COMMAND test_steam)
   endif()
 
 endif() # BUILD_TESTING

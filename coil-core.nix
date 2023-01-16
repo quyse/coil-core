@@ -19,6 +19,7 @@
 , libxkbcommon
 , libogg
 , libopus
+, steam
 }:
 
 stdenv.mkDerivation {
@@ -43,6 +44,7 @@ stdenv.mkDerivation {
     harfbuzz
     libogg
     libopus
+    steam
   ] ++ lib.optionals stdenv.hostPlatform.isLinux [
     wayland
     wayland-protocols
