@@ -175,7 +175,6 @@ rec {
         opus
         steam
       ];
-      doCheck = false;
     };
   });
   coil-core-windows = windows-pkgs.coil-core;
