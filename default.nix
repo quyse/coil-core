@@ -8,16 +8,6 @@
 rec {
   # NixOS build
   coil-core = (pkgs.callPackage ./coil-core.nix {
-    # fix cmake files; harfbuzz 6.0 has this fix
-    harfbuzz = pkgs.harfbuzz.overrideAttrs (attrs: {
-      patches = (attrs.patches or []) ++ [
-        (pkgs.fetchpatch {
-          url = "https://github.com/harfbuzz/harfbuzz/pull/3857.patch";
-          hash = "sha256-a2RMkRVk+yDReZjn7IHbLLHpuAkyCdvtkKc8ubVN98w=";
-        })
-      ];
-    });
-
     steam = toolchain-steam.sdk;
   }).overrideAttrs (attrs: {
     # force clang
@@ -124,14 +114,7 @@ rec {
       cmakeFlags = "-DBUILD_SHARED_LIBS=ON";
     };
     harfbuzz = mkCmakePkg rec {
-      pname = "harfbuzz";
-      version = "6.0.0";
-      # harfbuzz 6.0 is not in nixpkgs yet
-      src = pkgs.fetchgit {
-        url = "https://github.com/harfbuzz/harfbuzz.git";
-        rev = version;
-        hash = "sha256-AnmpJjzbVE1KxuOdJOfNehQC+oxt1+4e6j8oGw1EDFk=";
-      };
+      inherit (pkgs.harfbuzz) pname version src;
       buildInputs = [
         freetype
       ];
