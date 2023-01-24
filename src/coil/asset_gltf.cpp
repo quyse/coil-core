@@ -25,241 +25,241 @@ namespace
 namespace Coil
 {
   template <>
-  struct JsonParser<GLTF::Accessor> : public JsonParserBase<GLTF::Accessor>
+  struct JsonDecoder<GLTF::Accessor> : public JsonDecoderBase<GLTF::Accessor>
   {
-    static GLTF::Accessor Parse(json const& j)
+    static GLTF::Accessor Decode(json const& j)
     {
       return
       {
-        .bufferView = JsonParser<std::optional<GLTF::BufferViewIndex>>::ParseField(j, "bufferView", {}),
-        .byteOffset = JsonParser<uint32_t>::ParseField(j, "byteOffset", 0),
-        .componentType = JsonParser<uint32_t>::ParseField(j, "componentType"),
-        .normalized = JsonParser<bool>::ParseField(j, "normalized", false),
-        .count = JsonParser<uint32_t>::ParseField(j, "count"),
-        .type = JsonParser<std::string>::ParseField(j, "type"),
+        .bufferView = JsonDecoder<std::optional<GLTF::BufferViewIndex>>::DecodeField(j, "bufferView", {}),
+        .byteOffset = JsonDecoder<uint32_t>::DecodeField(j, "byteOffset", 0),
+        .componentType = JsonDecoder<uint32_t>::DecodeField(j, "componentType"),
+        .normalized = JsonDecoder<bool>::DecodeField(j, "normalized", false),
+        .count = JsonDecoder<uint32_t>::DecodeField(j, "count"),
+        .type = JsonDecoder<std::string>::DecodeField(j, "type"),
       };
     }
   };
   template <>
-  struct JsonParser<GLTF::Buffer> : public JsonParserBase<GLTF::Buffer>
+  struct JsonDecoder<GLTF::Buffer> : public JsonDecoderBase<GLTF::Buffer>
   {
-    static GLTF::Buffer Parse(json const& j)
+    static GLTF::Buffer Decode(json const& j)
     {
       return
       {
-        .uri = JsonParser<std::string>::ParseField(j, "uri", {}),
-        .byteLength = JsonParser<uint32_t>::ParseField(j, "byteLength"),
+        .uri = JsonDecoder<std::string>::DecodeField(j, "uri", {}),
+        .byteLength = JsonDecoder<uint32_t>::DecodeField(j, "byteLength"),
       };
     }
   };
   template <>
-  struct JsonParser<GLTF::BufferView> : public JsonParserBase<GLTF::BufferView>
+  struct JsonDecoder<GLTF::BufferView> : public JsonDecoderBase<GLTF::BufferView>
   {
-    static GLTF::BufferView Parse(json const& j)
+    static GLTF::BufferView Decode(json const& j)
     {
       return
       {
-        .buffer = JsonParser<GLTF::BufferIndex>::ParseField(j, "buffer"),
-        .byteOffset = JsonParser<uint32_t>::ParseField(j, "byteOffset", 0),
-        .byteLength = JsonParser<uint32_t>::ParseField(j, "byteLength"),
-        .byteStride = JsonParser<std::optional<uint32_t>>::ParseField(j, "byteStride", {}),
+        .buffer = JsonDecoder<GLTF::BufferIndex>::DecodeField(j, "buffer"),
+        .byteOffset = JsonDecoder<uint32_t>::DecodeField(j, "byteOffset", 0),
+        .byteLength = JsonDecoder<uint32_t>::DecodeField(j, "byteLength"),
+        .byteStride = JsonDecoder<std::optional<uint32_t>>::DecodeField(j, "byteStride", {}),
       };
     }
   };
   template <>
-  struct JsonParser<GLTF::Image> : public JsonParserBase<GLTF::Image>
+  struct JsonDecoder<GLTF::Image> : public JsonDecoderBase<GLTF::Image>
   {
-    static GLTF::Image Parse(json const& j)
+    static GLTF::Image Decode(json const& j)
     {
       return
       {
-        .uri = JsonParser<std::optional<std::string>>::ParseField(j, "uri", {}),
-        .mimeType = JsonParser<std::optional<std::string>>::ParseField(j, "mimeType", {}),
-        .bufferView = JsonParser<std::optional<GLTF::BufferViewIndex>>::ParseField(j, "bufferView", {}),
-        .name = JsonParser<std::optional<std::string>>::ParseField(j, "name", {}),
+        .uri = JsonDecoder<std::optional<std::string>>::DecodeField(j, "uri", {}),
+        .mimeType = JsonDecoder<std::optional<std::string>>::DecodeField(j, "mimeType", {}),
+        .bufferView = JsonDecoder<std::optional<GLTF::BufferViewIndex>>::DecodeField(j, "bufferView", {}),
+        .name = JsonDecoder<std::optional<std::string>>::DecodeField(j, "name", {}),
       };
     }
   };
   template <>
-  struct JsonParser<GLTF::Material> : public JsonParserBase<GLTF::Material>
+  struct JsonDecoder<GLTF::Material> : public JsonDecoderBase<GLTF::Material>
   {
-    static GLTF::Material Parse(json const& j)
+    static GLTF::Material Decode(json const& j)
     {
       return
       {
-        .name = JsonParser<std::optional<std::string>>::ParseField(j, "name"),
-        .pbrMetallicRoughness = JsonParser<std::optional<GLTF::Material::PbrMetallicRoughness>>::ParseField(j, "pbrMetallicRoughness", {}),
-        .normalTexture = JsonParser<std::optional<GLTF::Material::NormalTextureInfo>>::ParseField(j, "normalTexture", {}),
-        .occlusionTexture = JsonParser<std::optional<GLTF::Material::OcclusionTextureInfo>>::ParseField(j, "occlusionTexture", {}),
-        .emissiveTexture = JsonParser<std::optional<GLTF::Material::TextureInfo>>::ParseField(j, "emissiveTexture", {}),
-        .emissiveFactor = JsonParser<vec3>::ParseField(j, "emissiveFactor", vec3(0, 0, 0)),
-        .alphaMode = JsonParser<std::string>::ParseField(j, "alphaMode", "OPAQUE"),
-        .alphaCutoff = JsonParser<float>::ParseField(j, "alphaCutoff", 0.5f),
-        .doubleSided = JsonParser<bool>::ParseField(j, "doubleSided", false),
+        .name = JsonDecoder<std::optional<std::string>>::DecodeField(j, "name"),
+        .pbrMetallicRoughness = JsonDecoder<std::optional<GLTF::Material::PbrMetallicRoughness>>::DecodeField(j, "pbrMetallicRoughness", {}),
+        .normalTexture = JsonDecoder<std::optional<GLTF::Material::NormalTextureInfo>>::DecodeField(j, "normalTexture", {}),
+        .occlusionTexture = JsonDecoder<std::optional<GLTF::Material::OcclusionTextureInfo>>::DecodeField(j, "occlusionTexture", {}),
+        .emissiveTexture = JsonDecoder<std::optional<GLTF::Material::TextureInfo>>::DecodeField(j, "emissiveTexture", {}),
+        .emissiveFactor = JsonDecoder<vec3>::DecodeField(j, "emissiveFactor", vec3(0, 0, 0)),
+        .alphaMode = JsonDecoder<std::string>::DecodeField(j, "alphaMode", "OPAQUE"),
+        .alphaCutoff = JsonDecoder<float>::DecodeField(j, "alphaCutoff", 0.5f),
+        .doubleSided = JsonDecoder<bool>::DecodeField(j, "doubleSided", false),
       };
     }
   };
   template <>
-  struct JsonParser<GLTF::Material::TextureInfo> : public JsonParserBase<GLTF::Material::TextureInfo>
+  struct JsonDecoder<GLTF::Material::TextureInfo> : public JsonDecoderBase<GLTF::Material::TextureInfo>
   {
-    static GLTF::Material::TextureInfo Parse(json const& j)
+    static GLTF::Material::TextureInfo Decode(json const& j)
     {
       return
       {
-        .index = JsonParser<GLTF::TextureIndex>::ParseField(j, "index"),
-        .texCoord = JsonParser<uint32_t>::ParseField(j, "texCoord", 0),
+        .index = JsonDecoder<GLTF::TextureIndex>::DecodeField(j, "index"),
+        .texCoord = JsonDecoder<uint32_t>::DecodeField(j, "texCoord", 0),
       };
     }
   };
   template <>
-  struct JsonParser<GLTF::Material::NormalTextureInfo> : public JsonParserBase<GLTF::Material::NormalTextureInfo>
+  struct JsonDecoder<GLTF::Material::NormalTextureInfo> : public JsonDecoderBase<GLTF::Material::NormalTextureInfo>
   {
-    static GLTF::Material::NormalTextureInfo Parse(json const& j)
+    static GLTF::Material::NormalTextureInfo Decode(json const& j)
     {
       return
       {
-        .index = JsonParser<GLTF::TextureIndex>::ParseField(j, "index"),
-        .texCoord = JsonParser<uint32_t>::ParseField(j, "texCoord", 0),
-        .scale = JsonParser<float>::ParseField(j, "scale", 1),
+        .index = JsonDecoder<GLTF::TextureIndex>::DecodeField(j, "index"),
+        .texCoord = JsonDecoder<uint32_t>::DecodeField(j, "texCoord", 0),
+        .scale = JsonDecoder<float>::DecodeField(j, "scale", 1),
       };
     }
   };
   template <>
-  struct JsonParser<GLTF::Material::OcclusionTextureInfo> : public JsonParserBase<GLTF::Material::OcclusionTextureInfo>
+  struct JsonDecoder<GLTF::Material::OcclusionTextureInfo> : public JsonDecoderBase<GLTF::Material::OcclusionTextureInfo>
   {
-    static GLTF::Material::OcclusionTextureInfo Parse(json const& j)
+    static GLTF::Material::OcclusionTextureInfo Decode(json const& j)
     {
       return
       {
-        .index = JsonParser<GLTF::TextureIndex>::ParseField(j, "index"),
-        .texCoord = JsonParser<uint32_t>::ParseField(j, "texCoord", 0),
-        .strength = JsonParser<float>::ParseField(j, "strength", 1),
+        .index = JsonDecoder<GLTF::TextureIndex>::DecodeField(j, "index"),
+        .texCoord = JsonDecoder<uint32_t>::DecodeField(j, "texCoord", 0),
+        .strength = JsonDecoder<float>::DecodeField(j, "strength", 1),
       };
     }
   };
   template <>
-  struct JsonParser<GLTF::Material::PbrMetallicRoughness> : public JsonParserBase<GLTF::Material::PbrMetallicRoughness>
+  struct JsonDecoder<GLTF::Material::PbrMetallicRoughness> : public JsonDecoderBase<GLTF::Material::PbrMetallicRoughness>
   {
-    static GLTF::Material::PbrMetallicRoughness Parse(json const& j)
+    static GLTF::Material::PbrMetallicRoughness Decode(json const& j)
     {
       return
       {
-        .baseColorFactor = JsonParser<vec4>::ParseField(j, "baseColorFactor", vec4(1, 1, 1, 1)),
-        .baseColorTexture = JsonParser<std::optional<GLTF::Material::TextureInfo>>::ParseField(j, "baseColorTexture", {}),
-        .metallicFactor = JsonParser<float>::ParseField(j, "metallicFactor", 1),
-        .roughnessFactor = JsonParser<float>::ParseField(j, "roughnessFactor", 1),
-        .metallicRoughnessTexture = JsonParser<std::optional<GLTF::Material::TextureInfo>>::ParseField(j, "metallicRoughnessTexture", {}),
+        .baseColorFactor = JsonDecoder<vec4>::DecodeField(j, "baseColorFactor", vec4(1, 1, 1, 1)),
+        .baseColorTexture = JsonDecoder<std::optional<GLTF::Material::TextureInfo>>::DecodeField(j, "baseColorTexture", {}),
+        .metallicFactor = JsonDecoder<float>::DecodeField(j, "metallicFactor", 1),
+        .roughnessFactor = JsonDecoder<float>::DecodeField(j, "roughnessFactor", 1),
+        .metallicRoughnessTexture = JsonDecoder<std::optional<GLTF::Material::TextureInfo>>::DecodeField(j, "metallicRoughnessTexture", {}),
       };
     }
   };
   template <>
-  struct JsonParser<GLTF::Mesh> : public JsonParserBase<GLTF::Mesh>
+  struct JsonDecoder<GLTF::Mesh> : public JsonDecoderBase<GLTF::Mesh>
   {
-    static GLTF::Mesh Parse(json const& j)
+    static GLTF::Mesh Decode(json const& j)
     {
       return
       {
-        .primitives = JsonParser<std::vector<GLTF::Mesh::MeshPrimitive>>::ParseField(j, "primitives"),
+        .primitives = JsonDecoder<std::vector<GLTF::Mesh::MeshPrimitive>>::DecodeField(j, "primitives"),
       };
     }
   };
   template <>
-  struct JsonParser<GLTF::Mesh::MeshPrimitive> : public JsonParserBase<GLTF::Mesh::MeshPrimitive>
+  struct JsonDecoder<GLTF::Mesh::MeshPrimitive> : public JsonDecoderBase<GLTF::Mesh::MeshPrimitive>
   {
-    static GLTF::Mesh::MeshPrimitive Parse(json const& j)
+    static GLTF::Mesh::MeshPrimitive Decode(json const& j)
     {
       return
       {
         .attributes = j.at("attributes").get<std::unordered_map<std::string, GLTF::AccessorIndex>>(),
-        .indices = JsonParser<std::optional<GLTF::AccessorIndex>>::ParseField(j, "indices", {}),
-        .material = JsonParser<std::optional<GLTF::MaterialIndex>>::ParseField(j, "material", {}),
-        .mode = (GLTF::Mesh::MeshPrimitive::Mode)JsonParser<uint32_t>::ParseField(j, "mode", 4),
+        .indices = JsonDecoder<std::optional<GLTF::AccessorIndex>>::DecodeField(j, "indices", {}),
+        .material = JsonDecoder<std::optional<GLTF::MaterialIndex>>::DecodeField(j, "material", {}),
+        .mode = (GLTF::Mesh::MeshPrimitive::Mode)JsonDecoder<uint32_t>::DecodeField(j, "mode", 4),
       };
     }
   };
   template <>
-  struct JsonParser<GLTF::Node> : public JsonParserBase<GLTF::Node>
+  struct JsonDecoder<GLTF::Node> : public JsonDecoderBase<GLTF::Node>
   {
-    static GLTF::Node Parse(json const& j)
+    static GLTF::Node Decode(json const& j)
     {
       return
       {
-        .children = JsonParser<std::vector<GLTF::NodeIndex>>::ParseField(j, "children", {}),
-        .mesh = JsonParser<std::optional<GLTF::MeshIndex>>::ParseField(j, "mesh", {}),
-        .translation = JsonParser<vec3>::ParseField(j, "translation", {}),
-        .rotation = JsonParser<quat>::ParseField(j, "rotation", {}),
-        .scale = JsonParser<vec3>::ParseField(j, "scale", { 1, 1, 1 }),
-        .name = JsonParser<std::optional<std::string>>::ParseField(j, "name", {}),
+        .children = JsonDecoder<std::vector<GLTF::NodeIndex>>::DecodeField(j, "children", {}),
+        .mesh = JsonDecoder<std::optional<GLTF::MeshIndex>>::DecodeField(j, "mesh", {}),
+        .translation = JsonDecoder<vec3>::DecodeField(j, "translation", {}),
+        .rotation = JsonDecoder<quat>::DecodeField(j, "rotation", {}),
+        .scale = JsonDecoder<vec3>::DecodeField(j, "scale", { 1, 1, 1 }),
+        .name = JsonDecoder<std::optional<std::string>>::DecodeField(j, "name", {}),
       };
     }
   };
   template <>
-  struct JsonParser<GLTF::Sampler> : public JsonParserBase<GLTF::Sampler>
+  struct JsonDecoder<GLTF::Sampler> : public JsonDecoderBase<GLTF::Sampler>
   {
-    static GLTF::Sampler Parse(json const& j)
+    static GLTF::Sampler Decode(json const& j)
     {
       return
       {
-        .magFilter = JsonParser<uint32_t>::ParseField(j, "magFilter", 0),
-        .minFilter = JsonParser<uint32_t>::ParseField(j, "minFilter", 0),
-        .wrapS = JsonParser<uint32_t>::ParseField(j, "wrapS", 10497),
-        .wrapT = JsonParser<uint32_t>::ParseField(j, "wrapT", 10497),
-        .name = JsonParser<std::optional<std::string>>::ParseField(j, "name", {}),
+        .magFilter = JsonDecoder<uint32_t>::DecodeField(j, "magFilter", 0),
+        .minFilter = JsonDecoder<uint32_t>::DecodeField(j, "minFilter", 0),
+        .wrapS = JsonDecoder<uint32_t>::DecodeField(j, "wrapS", 10497),
+        .wrapT = JsonDecoder<uint32_t>::DecodeField(j, "wrapT", 10497),
+        .name = JsonDecoder<std::optional<std::string>>::DecodeField(j, "name", {}),
       };
     }
   };
   template <>
-  struct JsonParser<GLTF::Scene> : public JsonParserBase<GLTF::Scene>
+  struct JsonDecoder<GLTF::Scene> : public JsonDecoderBase<GLTF::Scene>
   {
-    static GLTF::Scene Parse(json const& j)
+    static GLTF::Scene Decode(json const& j)
     {
       return
       {
-        .nodes = JsonParser<std::vector<GLTF::NodeIndex>>::ParseField(j, "nodes", {}),
-        .name = JsonParser<std::optional<std::string>>::ParseField(j, "name", {}),
+        .nodes = JsonDecoder<std::vector<GLTF::NodeIndex>>::DecodeField(j, "nodes", {}),
+        .name = JsonDecoder<std::optional<std::string>>::DecodeField(j, "name", {}),
       };
     }
   };
   template <>
-  struct JsonParser<GLTF::Texture> : public JsonParserBase<GLTF::Texture>
+  struct JsonDecoder<GLTF::Texture> : public JsonDecoderBase<GLTF::Texture>
   {
-    static GLTF::Texture Parse(json const& j)
+    static GLTF::Texture Decode(json const& j)
     {
       return
       {
-        .sampler = JsonParser<std::optional<GLTF::SamplerIndex>>::ParseField(j, "sampler", {}),
-        .source = JsonParser<std::optional<GLTF::ImageIndex>>::ParseField(j, "source", {}),
-        .name = JsonParser<std::optional<std::string>>::ParseField(j, "name", {}),
+        .sampler = JsonDecoder<std::optional<GLTF::SamplerIndex>>::DecodeField(j, "sampler", {}),
+        .source = JsonDecoder<std::optional<GLTF::ImageIndex>>::DecodeField(j, "source", {}),
+        .name = JsonDecoder<std::optional<std::string>>::DecodeField(j, "name", {}),
       };
     }
   };
 
   template <>
-  struct JsonParser<GLTF> : public JsonParserBase<GLTF>
+  struct JsonDecoder<GLTF> : public JsonDecoderBase<GLTF>
   {
-    static GLTF Parse(json const& j)
+    static GLTF Decode(json const& j)
     {
-      auto meshes = JsonParser<std::vector<GLTF::Mesh>>::ParseField(j, "meshes", {});
+      auto meshes = JsonDecoder<std::vector<GLTF::Mesh>>::DecodeField(j, "meshes", {});
       auto meshesByName = IndexByName(meshes);
-      auto nodes = JsonParser<std::vector<GLTF::Node>>::ParseField(j, "nodes", {});
+      auto nodes = JsonDecoder<std::vector<GLTF::Node>>::DecodeField(j, "nodes", {});
       auto nodesByName = IndexByName(nodes);
-      auto scenes = JsonParser<std::vector<GLTF::Scene>>::ParseField(j, "scenes", {});
+      auto scenes = JsonDecoder<std::vector<GLTF::Scene>>::DecodeField(j, "scenes", {});
       auto scenesByName = IndexByName(scenes);
       return
       {
-        .accessors = JsonParser<std::vector<GLTF::Accessor>>::ParseField(j, "accessors", {}),
-        .buffers = JsonParser<std::vector<GLTF::Buffer>>::ParseField(j, "buffers", {}),
-        .bufferViews = JsonParser<std::vector<GLTF::BufferView>>::ParseField(j, "bufferViews", {}),
-        .images = JsonParser<std::vector<GLTF::Image>>::ParseField(j, "images", {}),
-        .materials = JsonParser<std::vector<GLTF::Material>>::ParseField(j, "materials", {}),
+        .accessors = JsonDecoder<std::vector<GLTF::Accessor>>::DecodeField(j, "accessors", {}),
+        .buffers = JsonDecoder<std::vector<GLTF::Buffer>>::DecodeField(j, "buffers", {}),
+        .bufferViews = JsonDecoder<std::vector<GLTF::BufferView>>::DecodeField(j, "bufferViews", {}),
+        .images = JsonDecoder<std::vector<GLTF::Image>>::DecodeField(j, "images", {}),
+        .materials = JsonDecoder<std::vector<GLTF::Material>>::DecodeField(j, "materials", {}),
         .meshes = std::move(meshes),
         .meshesByName = std::move(meshesByName),
         .nodes = std::move(nodes),
         .nodesByName = std::move(nodesByName),
-        .samplers = JsonParser<std::vector<GLTF::Sampler>>::ParseField(j, "samplers", {}),
+        .samplers = JsonDecoder<std::vector<GLTF::Sampler>>::DecodeField(j, "samplers", {}),
         .scenes = std::move(scenes),
         .scenesByName = std::move(scenesByName),
-        .textures = JsonParser<std::vector<GLTF::Texture>>::ParseField(j, "textures", {}),
+        .textures = JsonDecoder<std::vector<GLTF::Texture>>::DecodeField(j, "textures", {}),
       };
     }
   };
@@ -296,20 +296,9 @@ namespace Coil
 
     // read JSON chunk
     std::vector<uint8_t> jsonChunk = readChunk(0x4E4F534A /* JSON */);
-    // parse JSON
-    json const jsonRoot = [&]()
-    {
-      try
-      {
-        return json::parse(jsonChunk.begin(), jsonChunk.end());
-      }
-      catch(json::exception const&)
-      {
-        throw Exception("invalid glTF JSON");
-      }
-    }();
-
-    GLTF gltf = JsonParser<GLTF>::Parse(jsonRoot);
+    // parse & decode JSON
+    json const jsonRoot = ParseJsonBuffer(jsonChunk);
+    GLTF gltf = JsonDecoder<GLTF>::Decode(jsonRoot);
 
     // check if there should be binary chunk
     bool shouldBeBinaryChunk = false;

@@ -95,7 +95,7 @@ template <typename T>
 bool TestEncodeDecode()
 {
   T value = Random<T>::Generate();
-  T decodedValue = JsonParser<T>::Parse(JsonEncoder<T>::Encode(value));
+  T decodedValue = JsonDecoder<T>::Decode(JsonEncoder<T>::Encode(value));
   return value == decodedValue;
 }
 

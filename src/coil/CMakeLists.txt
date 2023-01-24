@@ -163,12 +163,14 @@ endif()
 list(APPEND coil_core_all_libraries math)
 
 if(TARGET nlohmann_json::nlohmann_json)
-  add_library(coil_core_json INTERFACE)
+  add_library(coil_core_json STATIC
+    json.cpp
+  )
   set_property(TARGET coil_core_json PROPERTY PUBLIC_HEADER
     json.hpp
   )
   target_link_libraries(coil_core_json
-    INTERFACE
+    PUBLIC
       coil_core_math
       nlohmann_json::nlohmann_json
   )
