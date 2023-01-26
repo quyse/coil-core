@@ -209,6 +209,21 @@ endif()
 list(APPEND coil_core_all_libraries text)
 
 if(TRUE)
+  add_library(coil_core_localization INTERFACE)
+  set_property(TARGET coil_core_localization PROPERTY PUBLIC_HEADER
+    localization.hpp
+    localization_en.hpp
+    localization_ru.hpp
+  )
+  target_link_libraries(coil_core_localization
+    INTERFACE
+      coil_core_text
+  )
+  list(APPEND coil_core_libraries localization)
+endif()
+list(APPEND coil_core_all_libraries localization)
+
+if(TRUE)
   add_library(coil_core_input STATIC
     input.cpp
     input_debug.cpp
@@ -647,19 +662,40 @@ if(TARGET Steam::Steam)
 endif()
 list(APPEND coil_core_all_libraries steam)
 
-
 list(TRANSFORM coil_core_libraries PREPEND coil_core_)
+
+
+# executables
+
+if(TARGET coil_core_localization)
+  add_executable(coil_core_localization_tool
+    localization_tool.cpp
+  )
+  target_link_libraries(coil_core_localization_tool
+    coil_core_entrypoint_console
+    coil_core_fs
+    coil_core_json
+    coil_core_text
+    coil_core_unicode
+  )
+  list(APPEND coil_core_executables localization_tool)
+endif()
+list(APPEND coil_core_all_executables localization_tool)
+
+list(TRANSFORM coil_core_executables PREPEND coil_core_)
+
 
 # interface
 foreach(library ${coil_core_libraries})
   target_include_directories(${library}
     INTERFACE
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
       $<INSTALL_INTERFACE:include>
   )
 endforeach()
 
 # installation
-install(TARGETS ${coil_core_libraries}
+install(TARGETS ${coil_core_libraries} ${coil_core_executables}
   EXPORT coil_coreTargets
   ARCHIVE DESTINATION lib
   PUBLIC_HEADER DESTINATION include/coil
@@ -695,6 +731,35 @@ if(BUILD_TESTING)
       coil_core_unicode
     )
     add_test(NAME test_json COMMAND test_json)
+  endif()
+
+  if(TARGET coil_core_localization)
+    set(test_localization_localized "${CMAKE_BINARY_DIR}/test_localization_localized")
+    add_custom_command(
+      OUTPUT
+        ${test_localization_localized}/localized.cpp
+        ${test_localization_localized}/localized.hpp
+        ${test_localization_localized}/en.cpp
+        ${test_localization_localized}/ru.cpp
+      COMMAND coil_core_localization_tool -w "${CMAKE_CURRENT_LIST_DIR}" "${CMAKE_CURRENT_LIST_DIR}/test_localization_config.json" "${test_localization_localized}"
+      DEPENDS
+        coil_core_localization_tool
+        "${CMAKE_CURRENT_LIST_DIR}/test_localization_config.json"
+        "${CMAKE_CURRENT_LIST_DIR}/test_localization_en.json"
+        "${CMAKE_CURRENT_LIST_DIR}/test_localization_ru.json"
+    )
+    add_executable(test_localization
+      test_localization.cpp
+      ${test_localization_localized}/localized.cpp
+      ${test_localization_localized}/en.cpp
+      ${test_localization_localized}/ru.cpp
+    )
+    target_link_libraries(test_localization
+      coil_core_entrypoint_console
+      coil_core_localization
+    )
+    target_include_directories(test_localization PRIVATE ${test_localization_localized})
+    add_test(NAME test_localization COMMAND test_localization)
   endif()
 
   if(TARGET coil_core_compress_zstd)

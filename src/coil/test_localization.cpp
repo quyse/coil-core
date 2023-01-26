@@ -1,0 +1,23 @@
+#include "localization.hpp"
+#include "entrypoint.hpp"
+#include <localized.hpp>
+#include <iostream>
+
+using namespace Coil;
+using namespace Localized;
+
+___COIL_ENTRY_POINT = [](std::vector<std::string>&& args) -> int
+{
+  uint64_t p[] = { 0, 1, 2, 3, 4, 5, 10, 11, 15, 21, 22, 25 };
+  for(size_t i = 0; i < sizeof(Localized::Sets) / sizeof(Localized::Sets[0]); ++i)
+  {
+    Localized::Set::Current = Localized::Sets[i];
+    for(size_t j = 0; j < sizeof(p) / sizeof(p[0]); ++j)
+    {
+      "stuff_remaining"_loc(std::cout, p[j], p[j]);
+      std::cout << "\n";
+    }
+  }
+
+  return 0;
+};

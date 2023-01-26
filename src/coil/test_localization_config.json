@@ -1,0 +1,12 @@
+{
+  "langs": {
+    "en": {
+      "lang": "En",
+      "file": "test_localization_en.json"
+    },
+    "ru": {
+      "lang": "Ru",
+      "file": "test_localization_ru.json"
+    }
+  }
+}

@@ -1,8 +1,9 @@
 #pragma once
 
 #include "base.hpp"
-#include <string_view>
 #include <ostream>
+#include <string_view>
+#include <variant>
 
 namespace Coil
 {
@@ -27,9 +28,9 @@ namespace Coil
   class ValueText
   {
   public:
-    ValueText(T const& value)
+    constexpr ValueText(T const& value)
     : _value(value) {}
-    ValueText(T&& value)
+    constexpr ValueText(T&& value)
     : _value(std::move(value)) {}
 
     using Args = std::tuple<>;
@@ -139,7 +140,7 @@ namespace Coil
       using Type = T;
     };
 
-    // combine two types only if they are equal, or missing (nullptr_t)
+    // combine two types only if they are equal, or missing (std::nullptr_t)
     template <typename A, typename B>
     friend auto operator+(TypeProxy<A> const&, TypeProxy<B> const&)
     {
@@ -186,7 +187,7 @@ namespace Coil
               {
                 return std::declval<typename Combiner1<
                   CombinedArgs...,
-                  typename decltype((TypeProxy<nullptr_t>() + ... +
+                  typename decltype((TypeProxy<std::nullptr_t>() + ... +
                     []()
                     {
                       if constexpr(chunksNextIndices < Chunks::argsIndices.size())
@@ -197,12 +198,12 @@ namespace Coil
                         }
                         else
                         {
-                          return TypeProxy<nullptr_t>();
+                          return TypeProxy<std::nullptr_t>();
                         }
                       }
                       else
                       {
-                        return TypeProxy<nullptr_t>();
+                        return TypeProxy<std::nullptr_t>();
                       }
                     }()
                   ))::Type
@@ -350,9 +351,9 @@ namespace Coil
   class PhraseImpl<T, std::tuple<Args...>> final : public PhraseInterface<Args...>
   {
   public:
-    PhraseImpl(T const& text)
+    constexpr PhraseImpl(T const& text)
     : _text(text) {}
-    PhraseImpl(T&& text = {})
+    constexpr PhraseImpl(T&& text = {})
     : _text(std::move(text)) {}
 
     void operator()(std::ostream& stream, Args const&... args) const override
@@ -373,9 +374,9 @@ namespace Coil
   {
   public:
     VariantText() = delete;
-    template <typename Text>
-    VariantText(Text&& text)
-    : _variant(std::move(text)) {}
+    template <typename... T>
+    constexpr VariantText(T&&... init)
+    : _variant(std::forward<T>(init)...) {}
 
     using Args = std::tuple<>;
     static constexpr std::array<size_t, 0> const argsIndices = {};
