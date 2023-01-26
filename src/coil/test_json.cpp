@@ -60,11 +60,11 @@ namespace
   {
     static std::string Generate()
     {
-      std::vector<char32_t> v(Random<uint32_t>::Generate() % 100 + 1);
-      for(size_t i = 0; i < v.size() - 1; ++i)
+      std::vector<char32_t> v(Random<uint32_t>::Generate() % 100);
+      for(size_t i = 0; i < v.size(); ++i)
         v[i] = (Random<uint32_t>::Generate() & ((1 << 20) - 1));
       std::string s;
-      Unicode::Convert<char32_t, char>(v.begin(), s);
+      Unicode::Convert<char32_t, char>(v.begin(), v.end(), s);
       return std::move(s);
     }
   };

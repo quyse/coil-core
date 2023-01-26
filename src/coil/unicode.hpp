@@ -49,6 +49,8 @@ namespace Coil::Unicode
       return i;
     }
 
+    friend auto operator<=>(Iterator const&, Iterator const&) = default;
+
     using difference_type = ptrdiff_t;
     using value_type = char32_t;
     using pointer = value_type*;
@@ -110,6 +112,7 @@ namespace Coil::Unicode
       {
         ++_it;
         _size = 0;
+        _octet = 0;
       }
       return *this;
     }
@@ -120,6 +123,8 @@ namespace Coil::Unicode
       ++(*this);
       return i;
     }
+
+    friend auto operator<=>(Iterator const&, Iterator const&) = default;
 
     using difference_type = ptrdiff_t;
     using value_type = char;
@@ -132,7 +137,6 @@ namespace Coil::Unicode
     void Update() const
     {
       if(_size) return;
-      _octet = 0;
       char32_t c = *_it;
       if(c < 0x80) _size = 1;
       else if(c < 0x800) _size = 2;
@@ -186,6 +190,8 @@ namespace Coil::Unicode
       return i;
     }
 
+    friend auto operator<=>(Iterator const&, Iterator const&) = default;
+
     using difference_type = ptrdiff_t;
     using value_type = char16_t;
     using pointer = value_type*;
@@ -209,10 +215,11 @@ namespace Coil::Unicode
 
   // conversion from iterator into container with back-inserter
   template <typename From, typename To, std::input_iterator FromIterator, typename Container>
-  void Convert(FromIterator s, Container& r)
+  void Convert(FromIterator begin, FromIterator end, Container& r)
   {
-    Iterator<From, To, FromIterator> i(s);
-    To c;
-    for(std::back_insert_iterator j(r); c = *i, *j++ = c, c; ++i);
+    std::back_insert_iterator j(r);
+    Iterator<From, To, FromIterator> iend = end;
+    for(Iterator<From, To, FromIterator> i = begin; i < iend; ++i)
+      *j++ = *i;
   }
 }

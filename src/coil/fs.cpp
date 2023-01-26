@@ -245,7 +245,7 @@ namespace Coil
   void* File::DoOpen(std::string const& name, FileAccessMode accessMode, FileOpenMode openMode)
   {
     std::vector<wchar_t> s;
-    Unicode::Convert<char, char16_t>(name.c_str(), s);
+    Unicode::Convert<char, char16_t>(name.begin(), name.end(), s);
 
     DWORD desiredAccess = 0;
     switch(accessMode)
