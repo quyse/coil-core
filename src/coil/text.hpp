@@ -3,7 +3,10 @@
 #include "base.hpp"
 #include <ostream>
 #include <string_view>
+#include <tuple>
+#include <array>
 #include <variant>
+#include <limits>
 
 namespace Coil
 {
