@@ -2,6 +2,7 @@
 
 #include "math.hpp"
 #include <vector>
+#include <unordered_map>
 #include <nlohmann/json.hpp>
 
 namespace Coil
@@ -150,6 +151,32 @@ namespace Coil
       for(size_t i = 0; i < v.size(); ++i)
         j[i] = JsonEncoder<T>::Encode(v[i]);
       return std::move(j);
+    }
+  };
+
+  template <typename K, typename V>
+  struct JsonDecoder<std::unordered_map<K, V>> : public JsonDecoderBase<std::unordered_map<K, V>>
+  {
+    static std::unordered_map<K, V> Decode(json const& j)
+    {
+      if(!j.is_object())
+        throw Exception() << "decoding " << typeid(std::unordered_map<K, V>).name() << ", expected JSON object but got: " << j;
+      std::unordered_map<K, V> r;
+      r.reserve(j.size());
+      for(auto const& [k, v] : j.items())
+        r.insert({ JsonDecoder<K>::Decode(k), JsonDecoder<V>::Decode(v) });
+      return r;
+    }
+  };
+  template <typename K, typename V>
+  struct JsonEncoder<std::unordered_map<K, V>>
+  {
+    static json Encode(std::unordered_map<K, V> const& m)
+    {
+      json r = json::object();
+      for(auto const& [k, v] : m)
+        r[JsonEncoder<K>::Encode(k)] = JsonEncoder<V>::Encode(v);
+      return r;
     }
   };
 
