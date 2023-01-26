@@ -9,9 +9,10 @@ int wmain(int argc, wchar_t** argv)
   std::vector<std::string> args(argc);
   for(int i = 0; i < argc; ++i)
   {
-    int argSize = WideCharToMultiByte(CP_UTF8, 0, argv[i], -1, NULL, 0, NULL, NULL);
-    args[i].assign(argSize, '\0');
-    WideCharToMultiByte(CP_UTF8, 0, argv[i], -1, args[i].data(), args[i].size(), NULL, NULL);
+    auto& arg = args[i];
+    int argSize = WideCharToMultiByte(CP_UTF8, 0, argv[i], -1, NULL, 0, NULL, NULL) - 1;
+    arg.assign(argSize, '\0');
+    WideCharToMultiByte(CP_UTF8, 0, argv[i], -1, arg.data(), arg.size(), NULL, NULL);
   }
 
   return Coil::g_entryPoint(std::move(args));
