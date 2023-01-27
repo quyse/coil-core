@@ -4,7 +4,6 @@
 #include "unicode.hpp"
 #include "fs.hpp"
 #include <map>
-#include <unordered_map>
 #include <iostream>
 #include <fstream>
 
@@ -32,7 +31,7 @@ struct JsonDecoder<LocalizationLanguageConfig> : public JsonDecoderBase<Localiza
 
 struct LocalizationConfig
 {
-  std::unordered_map<std::string, LocalizationLanguageConfig> langs;
+  std::map<std::string, LocalizationLanguageConfig> langs;
 };
 template <>
 struct JsonDecoder<LocalizationConfig> : public JsonDecoderBase<LocalizationConfig>
@@ -41,7 +40,7 @@ struct JsonDecoder<LocalizationConfig> : public JsonDecoderBase<LocalizationConf
   {
     return
     {
-      .langs = JsonDecoder<std::unordered_map<std::string, LocalizationLanguageConfig>>::DecodeField(j, "langs"),
+      .langs = JsonDecoder<std::map<std::string, LocalizationLanguageConfig>>::DecodeField(j, "langs"),
     };
   }
 };

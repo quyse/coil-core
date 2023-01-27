@@ -155,6 +155,31 @@ namespace Coil
   };
 
   template <typename K, typename V>
+  struct JsonDecoder<std::map<K, V>> : public JsonDecoderBase<std::map<K, V>>
+  {
+    static std::map<K, V> Decode(json const& j)
+    {
+      if(!j.is_object())
+        throw Exception() << "decoding " << typeid(std::map<K, V>).name() << ", expected JSON object but got: " << j;
+      std::map<K, V> r;
+      for(auto const& [k, v] : j.items())
+        r.insert({ JsonDecoder<K>::Decode(k), JsonDecoder<V>::Decode(v) });
+      return r;
+    }
+  };
+  template <typename K, typename V>
+  struct JsonEncoder<std::map<K, V>>
+  {
+    static json Encode(std::map<K, V> const& m)
+    {
+      json r = json::object();
+      for(auto const& [k, v] : m)
+        r[JsonEncoder<K>::Encode(k)] = JsonEncoder<V>::Encode(v);
+      return r;
+    }
+  };
+
+  template <typename K, typename V>
   struct JsonDecoder<std::unordered_map<K, V>> : public JsonDecoderBase<std::unordered_map<K, V>>
   {
     static std::unordered_map<K, V> Decode(json const& j)
