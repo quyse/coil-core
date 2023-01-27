@@ -244,7 +244,7 @@ namespace Coil
 #if defined(___COIL_PLATFORM_WINDOWS)
   void* File::DoOpen(std::string const& name, FileAccessMode accessMode, FileOpenMode openMode)
   {
-    std::vector<wchar_t> s;
+    std::wstring s;
     Unicode::Convert<char, char16_t>(name.begin(), name.end(), s);
 
     DWORD desiredAccess = 0;
@@ -278,7 +278,7 @@ namespace Coil
       break;
     }
 
-    HANDLE hFile = ::CreateFileW(s.data(), desiredAccess, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, creationDisposition, 0, NULL);
+    HANDLE hFile = ::CreateFileW(s.c_str(), desiredAccess, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, creationDisposition, 0, NULL);
     if(hFile == INVALID_HANDLE_VALUE)
       throw Exception("opening file failed: ") << name;
     return hFile;
