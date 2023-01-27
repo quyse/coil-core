@@ -184,11 +184,11 @@ namespace Coil
 
             static constexpr bool const notDone = (minIndex < std::numeric_limits<size_t>::max());
 
-            using NextCombiner = decltype([]()
+            using NextCombiner = typename decltype([]()
             {
               if constexpr(notDone)
               {
-                return std::declval<typename Combiner1<
+                return TypeProxy<typename Combiner1<
                   CombinedArgs...,
                   typename decltype((TypeProxy<std::nullptr_t>() + ... +
                     []()
@@ -228,21 +228,21 @@ namespace Coil
               }
               else
               {
-                return std::declval<void>();
+                return TypeProxy<void>();
               }
-            }());
+            }())::Type;
 
-            using Args = decltype([]()
+            using Args = typename decltype([]()
             {
               if constexpr(notDone)
               {
-                return std::declval<typename NextCombiner::Args>();
+                return TypeProxy<typename NextCombiner::Args>();
               }
               else
               {
-                return std::declval<std::tuple<CombinedArgs...>>();
+                return TypeProxy<std::tuple<CombinedArgs...>>();
               }
-            }());
+            }())::Type;
 
             static constexpr auto const argsIndices = []()
             {
