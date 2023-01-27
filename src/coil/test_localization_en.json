@@ -1,3 +1,4 @@
 {
-  "stuff_remaining": "You have ${plural0|$0 gold coin|$0 gold coins}, and ${plural1|$1 silver bar|$1 silver bars} remaining."
+  "stuff_remaining": "You have ${plural0|$0 gold coin|$0 gold coins}, and ${plural1|$1 silver bar|$1 silver bars} remaining.",
+  "numbers": "Here is some numbers: $0, $1, $2"
 }

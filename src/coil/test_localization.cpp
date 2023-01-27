@@ -17,6 +17,11 @@ ___COIL_ENTRY_POINT = [](std::vector<std::string>&& args) -> int
       "stuff_remaining"_loc(std::cout, p[j], p[j]);
       std::cout << "\n";
     }
+    for(size_t j = 0; j < sizeof(p) / sizeof(p[0]); ++j)
+    {
+      "numbers"_loc(std::cout, p[j], p[j] + 1, p[j] + 2);
+      std::cout << "\n";
+    }
   }
 
   return 0;

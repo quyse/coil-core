@@ -6,7 +6,8 @@
     },
     "ru": {
       "lang": "Ru",
-      "file": "test_localization_ru.json"
+      "file": "test_localization_ru.json",
+      "fallback": "en"
     }
   }
 }

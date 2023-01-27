@@ -14,7 +14,9 @@ struct LocalizationLanguageConfig
   // namespace with methods
   std::string lang;
   // string file
-  std::string file;
+  std::optional<std::string> file;
+  // fallback language
+  std::optional<std::string> fallback;
 };
 template <>
 struct JsonDecoder<LocalizationLanguageConfig> : public JsonDecoderBase<LocalizationLanguageConfig>
@@ -24,7 +26,8 @@ struct JsonDecoder<LocalizationLanguageConfig> : public JsonDecoderBase<Localiza
     return
     {
       .lang = JsonDecoder<std::string>::DecodeField(j, "lang"),
-      .file = JsonDecoder<std::string>::DecodeField(j, "file"),
+      .file = JsonDecoder<std::optional<std::string>>::DecodeField(j, "file", {}),
+      .fallback = JsonDecoder<std::optional<std::string>>::DecodeField(j, "fallback", {}),
     };
   }
 };
@@ -49,7 +52,7 @@ struct LocalizedString
 {
   size_t index;
   // strings by lang
-  std::vector<std::string> strings;
+  std::vector<std::optional<std::string>> strings;
   std::optional<uint64_t> argMask;
 };
 
@@ -145,8 +148,7 @@ public:
     std::string_view string;
   };
 
-  PhraseMaker(std::string const& lang)
-  : _lang(lang)
+  PhraseMaker()
   {
     Reset();
   }
@@ -168,6 +170,11 @@ public:
     _combinedStringsSize += sv.length();
     r.second = _combinedStringsSize;
     return r;
+  }
+
+  void SetLang(std::string const& lang)
+  {
+    _pLang = &lang;
   }
 
   void ParseTokens(std::string_view s)
@@ -303,11 +310,11 @@ public:
           if(methodName.substr(0, 6) == "plural")
           {
             if(methodName.length() != 7) throw Exception("wrong format for pluralN method");
-            _typeStream << "Localization::" << _lang << "::Plural<" << (methodName[6] - '0');
+            _typeStream << "Localization::" << *_pLang << "::Plural<" << (methodName[6] - '0');
             _initStream << "{ ";
             firstInTypeStream = false;
           }
-          else throw Exception("unsupported phrase method: ") << methodName;
+          else throw Exception() << "unsupported phrase method: " << methodName;
 
           ++_tokenIndex;
           bool ok = true;
@@ -362,7 +369,7 @@ public:
   }
 
 private:
-  std::string const _lang;
+  std::string const* _pLang = nullptr;
   std::vector<Token> _tokens;
   size_t _tokenIndex;
   uint64_t _argMask;
@@ -426,11 +433,26 @@ ___COIL_ENTRY_POINT = [](std::vector<std::string>&& args) -> int
 
   Book book;
 
+  // setup for errors
+  std::vector<std::string> errors;
+  auto addError = [&](std::string const& error)
+  {
+    errors.push_back(error);
+  };
+  auto checkErrors = [&]() -> bool
+  {
+    if(errors.empty()) return true;
+    for(size_t i = 0; i < errors.size(); ++i)
+      std::cerr << errors[i] << '\n';
+    return false;
+  };
+
   // read global config
   auto config = JsonDecoder<LocalizationConfig>::Decode(ParseJsonBuffer(File::MapRead(book, localizationConfigFileName)));
 
   size_t langsCount = config.langs.size();
   std::vector<std::string> langsIds;
+  std::map<std::string, size_t> langsIndices;
 
   // global list of strings
   std::map<std::string, LocalizedString> strings;
@@ -443,15 +465,19 @@ ___COIL_ENTRY_POINT = [](std::vector<std::string>&& args) -> int
   {
     size_t langIndex = langsIds.size();
     langsIds.push_back(langId);
+    langsIndices[langId] = langIndex;
 
     langsConfigs[langIndex] = langConfig;
 
     // read language strings
-    for(auto j = ParseJsonBuffer(File::MapRead(book, workingDir + "/" + langConfig.file)); auto const& [key, value] : j.items())
+    if(langConfig.file.has_value())
     {
-      auto& string = strings.insert({ key, {} }).first->second;
-      if(string.strings.size() != langsCount) string.strings.resize(langsCount);
-      string.strings[langIndex] = value;
+      for(auto j = ParseJsonBuffer(File::MapRead(book, workingDir + "/" + langConfig.file.value())); auto const& [key, value] : j.items())
+      {
+        auto& string = strings.insert({ key, {} }).first->second;
+        if(string.strings.size() != langsCount) string.strings.resize(langsCount);
+        string.strings[langIndex] = value;
+      }
     }
   }
 
@@ -462,6 +488,28 @@ ___COIL_ENTRY_POINT = [](std::vector<std::string>&& args) -> int
       value.index = i++;
   }
 
+  // resolve fallbacks
+  std::vector<std::optional<size_t>> langsFallbacks(langsCount);
+  for(size_t langIndex = 0; langIndex < langsCount; ++langIndex)
+  {
+    if(langsConfigs[langIndex].fallback.has_value())
+    {
+      auto i = config.langs.find(langsConfigs[langIndex].fallback.value());
+      if(i == config.langs.end())
+      {
+        std::ostringstream ss;
+        ss << "language \"" << langsIds[langIndex] << "\" refers to missing fallback language \"" << langsConfigs[langIndex].fallback.value() << "\"";
+        addError(ss.str());
+      }
+      else
+      {
+        langsFallbacks[langIndex] = langsIndices[i->first];
+      }
+    }
+  }
+  if(!checkErrors()) return 1;
+
+  // generate <lang>.cpp files
   for(size_t langIndex = 0; langIndex < langsCount; ++langIndex)
   {
     std::ofstream outStream(outputDir + "/" + langsIds[langIndex] + ".cpp", std::ios::out | std::ios::trunc);
@@ -474,7 +522,7 @@ namespace
 {
 )";
 
-    PhraseMaker phraseMaker(langsConfigs[langIndex].lang);
+    PhraseMaker phraseMaker;
     std::ostringstream defsStream;
     std::ostringstream tableStream;
 
@@ -482,12 +530,41 @@ namespace
     for(auto i = strings.begin(); i != strings.end(); ++i)
     {
       phraseMaker.Reset();
-      phraseMaker.ParseTokens(i->second.strings[langIndex]);
+
+      bool ok = false;
+      for(size_t stringLangIndex = langIndex;;)
+      {
+        auto const& string = i->second.strings[stringLangIndex];
+        if(string.has_value())
+        {
+          phraseMaker.SetLang(langsConfigs[stringLangIndex].lang);
+          phraseMaker.ParseTokens(string.value());
+          ok = true;
+          break;
+        }
+
+        if(!langsFallbacks[stringLangIndex].has_value())
+        {
+          std::ostringstream ss;
+          ss << "string \"" << i->first << "\" in language \"" << langsIds[langIndex] << "\" is not specified and there is no fallback language";
+          addError(ss.str());
+          break;
+        }
+
+        stringLangIndex = langsFallbacks[stringLangIndex].value();
+      }
+      if(!ok) continue;
+
       phraseMaker.ParsePhrase();
       phraseMaker.OutputDef(defsStream, index);
 
       uint64_t argMask = phraseMaker.GetArgMask();
-      if(i->second.argMask.has_value() && i->second.argMask.value() != argMask) throw Exception("different arg mask: ") << i->first;
+      if(i->second.argMask.has_value() && i->second.argMask.value() != argMask)
+      {
+        std::ostringstream ss;
+        ss << "string " << i->first << " requires different sets of args in different languages";
+        addError(ss.str());
+      }
       i->second.argMask = argMask;
 
       tableStream << "s" << index << ",\n";
@@ -520,6 +597,7 @@ namespace Localized
 }
 )";
   }
+  if(!checkErrors()) return 1;
 
   // global header
   {
