@@ -170,7 +170,7 @@ public:
     return r;
   }
 
-  void ParseTokens(std::string_view const& s)
+  void ParseTokens(std::string_view s)
   {
     for(auto i = s.begin(); i != s.end(); )
     {
@@ -183,23 +183,26 @@ public:
         c = *j;
         if(c == '{')
         {
-          _tokens.push_back({
+          _tokens.push_back(
+          {
             .type = TokenType::BraceOpen,
-            .string = { i, 2 },
+            .string = { i, i + 2 },
           });
         }
         else if(c >= '0' && c <= '9')
         {
-          _tokens.push_back({
+          _tokens.push_back(
+          {
             .type = TokenType::Arg,
-            .string = { i, 2 },
+            .string = { i, i + 2 },
           });
         }
         else
         {
-          _tokens.push_back({
+          _tokens.push_back(
+          {
             .type = TokenType::String,
-            .string = { j, 1 },
+            .string = { j, j + 1 },
           });
         }
         i = j;
@@ -207,17 +210,19 @@ public:
       }
       else if(c == '|')
       {
-        _tokens.push_back({
+        _tokens.push_back(
+        {
           .type = TokenType::Separator,
-          .string = { i, 1 },
+          .string = { i, i + 1 },
         });
         ++i;
       }
       else if(c == '}')
       {
-        _tokens.push_back({
+        _tokens.push_back(
+        {
           .type = TokenType::BraceClose,
-          .string = { i, 1 },
+          .string = { i, i + 1 },
         });
         ++i;
       }
@@ -229,7 +234,8 @@ public:
           c = *j;
           if(c == '$' || c == '|' || c == '}') break;
         }
-        _tokens.push_back({
+        _tokens.push_back(
+        {
           .type = TokenType::String,
           .string = { i, j },
         });

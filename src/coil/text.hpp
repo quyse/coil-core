@@ -5,6 +5,7 @@
 #include <string_view>
 #include <tuple>
 #include <array>
+#include <algorithm>
 #include <variant>
 #include <limits>
 
@@ -182,7 +183,7 @@ namespace Coil
               }
             }()..., std::numeric_limits<size_t>::max() });
 
-            static constexpr bool const notDone = (minIndex < std::numeric_limits<size_t>::max());
+            static constexpr bool const notDone = minIndex < std::numeric_limits<size_t>::max();
 
             using NextCombiner = typename decltype([]()
             {
