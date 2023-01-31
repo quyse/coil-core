@@ -5,12 +5,14 @@ if(NOT TARGET Steam::Steam)
   find_library(Steam_LIBRARIES
     NAMES steam_api steam_api64
   )
-  add_library(Steam::Steam IMPORTED UNKNOWN)
-  set_target_properties(Steam::Steam
-    PROPERTIES
-    IMPORTED_LOCATION "${Steam_LIBRARIES}"
-    INTERFACE_INCLUDE_DIRECTORIES "${Steam_INCLUDE_DIRS}"
-  )
+  if(Steam_INCLUDE_DIRS AND Steam_LIBRARIES)
+    add_library(Steam::Steam IMPORTED UNKNOWN)
+    set_target_properties(Steam::Steam
+      PROPERTIES
+      IMPORTED_LOCATION "${Steam_LIBRARIES}"
+      INTERFACE_INCLUDE_DIRECTORIES "${Steam_INCLUDE_DIRS}"
+    )
+  endif()
 endif()
 
 include(FindPackageHandleStandardArgs)
