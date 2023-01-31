@@ -4,32 +4,42 @@
 namespace Coil
 {
   OpusDecodeStream::OpusDecodeStream(OggDecodeStream& inputStream)
-  : _inputStream(inputStream) {}
+  : _inputStream(inputStream)
+  {
+    _packet = _inputStream.ReadPacket();
+    _channelsCount = opus_packet_get_nb_channels((uint8_t const*)_packet.data);
+    int err;
+    _decoder = opus_decoder_create(samplingRate, _channelsCount, &err);
+    if(err != OPUS_OK)
+      throw Exception("creating Opus decoder failed");
+  }
 
   OpusDecodeStream::~OpusDecodeStream()
   {
-    if(_decoder)
-    {
-      opus_decoder_destroy(_decoder);
-    }
+    opus_decoder_destroy(_decoder);
   }
 
-  Buffer OpusDecodeStream::Read()
+  AudioFormat OpusDecodeStream::GetFormat() const
   {
-    Buffer packet = _inputStream.ReadPacket();
-    if(!packet) return {};
-
-    int32_t channelsCount = opus_packet_get_nb_channels((uint8_t const*)packet.data);
-    if(!_decoder)
+    return
     {
-      int err;
-      _decoder = opus_decoder_create(samplingRate, channelsCount, &err);
-      if(err != OPUS_OK)
-        throw Exception("creating Opus decoder failed");
+      .channels = GetAudioFormatChannelsFromCount(_channelsCount),
+      .samplingRate = samplingRate,
+    };
+  }
+
+  Buffer OpusDecodeStream::Read(int32_t framesCount)
+  {
+    if(!_packet)
+    {
+      _packet = _inputStream.ReadPacket();
+      if(!_packet) return {};
     }
-    _buffer.resize(maxPacketSamplesCount * channelsCount);
-    int32_t samplesCount = opus_decode_float(_decoder, (uint8_t const*)packet.data, packet.size, _buffer.data(), maxPacketSamplesCount, 0);
-    _buffer.resize(samplesCount * channelsCount);
+
+    _buffer.resize(maxPacketFramesCount * _channelsCount);
+    int32_t samplesCount = opus_decode_float(_decoder, (uint8_t const*)_packet.data, _packet.size, _buffer.data(), maxPacketFramesCount, 0);
+    _packet = {};
+    _buffer.resize(samplesCount * _channelsCount);
     return _buffer;
   }
 }

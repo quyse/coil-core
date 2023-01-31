@@ -4,25 +4,36 @@
 
 namespace Coil
 {
+  WinCoreAudioDevice::WinCoreAudioDevice(std::unique_ptr<AudioStream>&& stream)
+  : _stream(std::move(stream)) {}
+
   WinCoreAudioDevice::~WinCoreAudioDevice()
   {
     Queue<&WinCoreAudioDevice::OnShutdown>();
     _thread.join();
   }
 
-  WinCoreAudioDevice& WinCoreAudioDevice::Init(Book& book)
+  WinCoreAudioDevice& WinCoreAudioDevice::Init(Book& book, std::unique_ptr<AudioStream>&& stream)
   {
-    WinCoreAudioDevice& device = book.Allocate<WinCoreAudioDevice>();
+    WinCoreAudioDevice& device = book.Allocate<WinCoreAudioDevice>(std::move(stream));
 
     device.Init();
 
     return device;
   }
 
-  void WinCoreAudioDevice::Append(std::unique_ptr<AudioInputStream>&& stream)
+  void WinCoreAudioDevice::SetPlaying(bool playing)
   {
-    std::scoped_lock lock(_mutex);
-    _streams.push(std::move(stream));
+    if(_playing == playing) return;
+    _playing = playing;
+    if(_playing)
+    {
+      CheckHResult(_pAudioClient->Start(), "resuming MM device failed");
+    }
+    else
+    {
+      CheckHResult(_pAudioClient->Stop(), "stopping MM device failed");
+    }
   }
 
   void WinCoreAudioDevice::Init()
@@ -104,32 +115,13 @@ namespace Coil
       // if current buffer is empty
       if(!_currentBuffer)
       {
-        // get stream from stream queue
-        AudioInputStream* stream = nullptr;
-        {
-          std::scoped_lock lock(_mutex);
-          if(!_streams.empty())
-          {
-            stream = _streams.front().get();
-          }
-        }
-        // if there's no stream, nothing to do
-        if(!stream)
-          break;
-
         // read packet
-        _currentBuffer = stream->Read();
-        // if stream ended, remove it from queue, and repeat
-        if(!_currentBuffer)
-        {
-          std::scoped_lock lock(_mutex);
-          _streams.pop();
-          continue;
-        }
+        _currentBuffer = _stream->Read(deviceBufferSize / _frameSize);
       }
 
       // get data from current buffer
       size_t size = std::min(_currentBuffer.size, deviceBufferSize);
+      if(!size) break;
       memcpy(deviceBuffer, _currentBuffer.data, size);
       deviceBuffer += size;
       deviceBufferSize -= size;

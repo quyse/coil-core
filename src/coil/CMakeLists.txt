@@ -585,9 +585,11 @@ endif()
 if(TRUE)
   add_library(coil_core_audio STATIC
     audio.cpp
+    audio_soft.cpp
   )
   set_property(TARGET coil_core_audio PROPERTY PUBLIC_HEADER
     audio.hpp
+    audio_soft.hpp
   )
   list(APPEND coil_core_libraries audio)
 endif()
