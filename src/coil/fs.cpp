@@ -1,6 +1,6 @@
 #include "fs.hpp"
-#if defined(___COIL_PLATFORM_WINDOWS)
 #include "unicode.hpp"
+#if defined(___COIL_PLATFORM_WINDOWS)
 #include "windows.hpp"
 #elif defined(___COIL_PLATFORM_POSIX)
 #include <limits>
@@ -337,17 +337,31 @@ namespace Coil
     return book.Allocate<FileInputStream>(File::OpenRead(book, name));
   }
 
-  std::string GetFilePathName(std::string const& path)
+  std::string GetFsPathName(std::string const& path)
   {
     size_t i;
-    for(i = path.length(); i > 0 && path[i - 1] != FilePathSeparator; --i);
+    for(i = path.length(); i > 0 && path[i - 1] != FsPathSeparator; --i);
     return path.substr(i);
   }
 
-  std::string GetFilePathDirectory(std::string const& path)
+  std::string GetFsPathDirectory(std::string const& path)
   {
     size_t i;
-    for(i = path.length() - 1; i > 0 && path[i] != FilePathSeparator; --i);
+    for(i = path.length() - 1; i > 0 && path[i] != FsPathSeparator; --i);
     return path.substr(0, i);
+  }
+
+  std::filesystem::path GetNativeFsPath(std::string const& path)
+  {
+    if constexpr(std::same_as<std::filesystem::path::string_type, std::string>)
+    {
+      return path;
+    }
+    else if constexpr(std::same_as<std::filesystem::path::string_type, std::wstring>)
+    {
+      std::wstring s;
+      Unicode::Convert<char, char16_t>(path.begin(), path.end(), s);
+      return std::move(s);
+    }
   }
 }

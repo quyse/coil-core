@@ -1,6 +1,7 @@
 #pragma once
 
 #include "base.hpp"
+#include <filesystem>
 #include <string>
 
 namespace Coil
@@ -78,7 +79,7 @@ namespace Coil
     uint64_t _size;
   };
 
-  constexpr char FilePathSeparator =
+  constexpr char const FsPathSeparator =
 #if defined(___COIL_PLATFORM_WINDOWS)
     '\\'
 #else
@@ -86,8 +87,11 @@ namespace Coil
 #endif
   ;
 
-  // Get file name from file path.
-  std::string GetFilePathName(std::string const& path);
-  // Get directory from file path.
-  std::string GetFilePathDirectory(std::string const& path);
+  // Get name from path.
+  std::string GetFsPathName(std::string const& path);
+  // Get directory from path.
+  std::string GetFsPathDirectory(std::string const& path);
+
+  // Convert path to native C++ path type.
+  std::filesystem::path GetNativeFsPath(std::string const& path);
 }
