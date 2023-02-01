@@ -12,6 +12,23 @@ namespace Coil
   template <typename T>
   struct JsonDecoder;
 
+  // convenience functions
+  template <typename T>
+  T JsonDecode(json const& j)
+  {
+    return JsonDecoder<T>::Decode(j);
+  }
+  template <typename T, typename Key>
+  T JsonDecodeField(json const& j, Key const& key)
+  {
+    return JsonDecoder<T>::template DecodeField<Key>(j, key);
+  }
+  template <typename T, typename Key>
+  T JsonDecodeField(json const& j, Key const& key, T&& defaultValue)
+  {
+    return JsonDecoder<T>::template DecodeField<Key>(j, key, std::move(defaultValue));
+  }
+
   // some base methods
   template <typename T>
   struct JsonDecoderBase
@@ -24,7 +41,7 @@ namespace Coil
       auto i = j.find(key);
       if(i == j.end())
         throw Exception() << "decoding " << typeid(T).name() << ", missing JSON field " << key;
-      return JsonDecoder<T>::Decode(*i);
+      return JsonDecode<T>(*i);
     }
 
     template <typename Key>
@@ -35,7 +52,7 @@ namespace Coil
       auto i = j.find(key);
       if(i == j.end())
         return std::move(defaultValue);
-      return JsonDecoder<T>::Decode(*i);
+      return JsonDecode<T>(*i);
     }
   };
 
@@ -63,6 +80,13 @@ namespace Coil
     }
   };
 
+  // convenience function
+  template <typename T>
+  json JsonEncode(T const& v)
+  {
+    return JsonEncoder<T>::Encode(v);
+  }
+
   template <typename T, size_t n, MathOptions o>
   struct JsonDecoder<xvec<T, n, o>> : public JsonDecoderBase<xvec<T, n, o>>
   {
@@ -72,7 +96,7 @@ namespace Coil
         throw Exception() << "decoding " << typeid(xvec<T, n, o>).name() << ", expected JSON array of " << n << " " << typeid(T).name() << " but got: " << j;
       xvec<T, n, o> r;
       for(size_t i = 0; i < n; ++i)
-        r(i) = JsonDecoder<T>::Decode(j.at(i));
+        r(i) = JsonDecode<T>(j.at(i));
       return r;
     }
   };
@@ -83,7 +107,7 @@ namespace Coil
     {
       json t[n];
       for(size_t i = 0; i < n; ++i)
-        t[i] = JsonEncoder<T>::Encode(v.t[i]);
+        t[i] = JsonEncode<T>(v.t[i]);
       return t;
     }
   };
@@ -97,7 +121,7 @@ namespace Coil
         throw Exception() << "decoding " << typeid(xquat<T, o>).name() << ", expected JSON array of 4 " << typeid(T).name() << " but got: " << j;
       xquat<T, o> r;
       for(size_t i = 0; i < 4; ++i)
-        r(i) = JsonDecoder<T>::Decode(j.at(i));
+        r(i) = JsonDecode<T>(j.at(i));
       return r;
     }
   };
@@ -116,7 +140,7 @@ namespace Coil
     static std::optional<T> Decode(json const& j)
     {
       if(j.is_null()) return {};
-      return JsonDecoder<T>::Decode(j);
+      return JsonDecode<T>(j);
     }
   };
   template <typename T>
@@ -124,7 +148,7 @@ namespace Coil
   {
     static json Encode(std::optional<T> const& v)
     {
-      return v.has_value() ? JsonEncoder<T>::Encode(v.value()) : nullptr;
+      return v.has_value() ? JsonEncode<T>(v.value()) : nullptr;
     }
   };
 
@@ -138,7 +162,7 @@ namespace Coil
       std::vector<T> r;
       r.reserve(j.size());
       for(size_t i = 0; i < j.size(); ++i)
-        r.push_back(JsonDecoder<T>::Decode(j.at(i)));
+        r.push_back(JsonDecode<T>(j.at(i)));
       return r;
     }
   };
@@ -149,7 +173,7 @@ namespace Coil
     {
       std::vector<json> j(v.size());
       for(size_t i = 0; i < v.size(); ++i)
-        j[i] = JsonEncoder<T>::Encode(v[i]);
+        j[i] = JsonEncode<T>(v[i]);
       return std::move(j);
     }
   };
@@ -163,7 +187,7 @@ namespace Coil
         throw Exception() << "decoding " << typeid(std::map<K, V>).name() << ", expected JSON object but got: " << j;
       std::map<K, V> r;
       for(auto const& [k, v] : j.items())
-        r.insert({ JsonDecoder<K>::Decode(k), JsonDecoder<V>::Decode(v) });
+        r.insert({ JsonDecode<K>(k), JsonDecode<V>(v) });
       return r;
     }
   };
@@ -174,7 +198,7 @@ namespace Coil
     {
       json r = json::object();
       for(auto const& [k, v] : m)
-        r[JsonEncoder<K>::Encode(k)] = JsonEncoder<V>::Encode(v);
+        r[JsonEncode<K>(k)] = JsonEncode<V>(v);
       return r;
     }
   };
@@ -189,7 +213,7 @@ namespace Coil
       std::unordered_map<K, V> r;
       r.reserve(j.size());
       for(auto const& [k, v] : j.items())
-        r.insert({ JsonDecoder<K>::Decode(k), JsonDecoder<V>::Decode(v) });
+        r.insert({ JsonDecode<K>(k), JsonDecode<V>(v) });
       return r;
     }
   };
@@ -200,7 +224,7 @@ namespace Coil
     {
       json r = json::object();
       for(auto const& [k, v] : m)
-        r[JsonEncoder<K>::Encode(k)] = JsonEncoder<V>::Encode(v);
+        r[JsonEncode<K>(k)] = JsonEncode<V>(v);
       return r;
     }
   };

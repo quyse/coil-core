@@ -25,9 +25,9 @@ struct JsonDecoder<LocalizationLanguageConfig> : public JsonDecoderBase<Localiza
   {
     return
     {
-      .lang = JsonDecoder<std::string>::DecodeField(j, "lang"),
-      .file = JsonDecoder<std::optional<std::string>>::DecodeField(j, "file", {}),
-      .fallback = JsonDecoder<std::optional<std::string>>::DecodeField(j, "fallback", {}),
+      .lang = JsonDecodeField<std::string>(j, "lang"),
+      .file = JsonDecodeField<std::optional<std::string>>(j, "file", {}),
+      .fallback = JsonDecodeField<std::optional<std::string>>(j, "fallback", {}),
     };
   }
 };
@@ -43,7 +43,7 @@ struct JsonDecoder<LocalizationConfig> : public JsonDecoderBase<LocalizationConf
   {
     return
     {
-      .langs = JsonDecoder<std::map<std::string, LocalizationLanguageConfig>>::DecodeField(j, "langs"),
+      .langs = JsonDecodeField<std::map<std::string, LocalizationLanguageConfig>>(j, "langs"),
     };
   }
 };

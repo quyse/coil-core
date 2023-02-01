@@ -31,12 +31,12 @@ namespace Coil
     {
       return
       {
-        .bufferView = JsonDecoder<std::optional<GLTF::BufferViewIndex>>::DecodeField(j, "bufferView", {}),
-        .byteOffset = JsonDecoder<uint32_t>::DecodeField(j, "byteOffset", 0),
-        .componentType = JsonDecoder<uint32_t>::DecodeField(j, "componentType"),
-        .normalized = JsonDecoder<bool>::DecodeField(j, "normalized", false),
-        .count = JsonDecoder<uint32_t>::DecodeField(j, "count"),
-        .type = JsonDecoder<std::string>::DecodeField(j, "type"),
+        .bufferView = JsonDecodeField<std::optional<GLTF::BufferViewIndex>>(j, "bufferView", {}),
+        .byteOffset = JsonDecodeField<uint32_t>(j, "byteOffset", 0),
+        .componentType = JsonDecodeField<uint32_t>(j, "componentType"),
+        .normalized = JsonDecodeField<bool>(j, "normalized", false),
+        .count = JsonDecodeField<uint32_t>(j, "count"),
+        .type = JsonDecodeField<std::string>(j, "type"),
       };
     }
   };
@@ -47,8 +47,8 @@ namespace Coil
     {
       return
       {
-        .uri = JsonDecoder<std::string>::DecodeField(j, "uri", {}),
-        .byteLength = JsonDecoder<uint32_t>::DecodeField(j, "byteLength"),
+        .uri = JsonDecodeField<std::string>(j, "uri", {}),
+        .byteLength = JsonDecodeField<uint32_t>(j, "byteLength"),
       };
     }
   };
@@ -59,10 +59,10 @@ namespace Coil
     {
       return
       {
-        .buffer = JsonDecoder<GLTF::BufferIndex>::DecodeField(j, "buffer"),
-        .byteOffset = JsonDecoder<uint32_t>::DecodeField(j, "byteOffset", 0),
-        .byteLength = JsonDecoder<uint32_t>::DecodeField(j, "byteLength"),
-        .byteStride = JsonDecoder<std::optional<uint32_t>>::DecodeField(j, "byteStride", {}),
+        .buffer = JsonDecodeField<GLTF::BufferIndex>(j, "buffer"),
+        .byteOffset = JsonDecodeField<uint32_t>(j, "byteOffset", 0),
+        .byteLength = JsonDecodeField<uint32_t>(j, "byteLength"),
+        .byteStride = JsonDecodeField<std::optional<uint32_t>>(j, "byteStride", {}),
       };
     }
   };
@@ -73,10 +73,10 @@ namespace Coil
     {
       return
       {
-        .uri = JsonDecoder<std::optional<std::string>>::DecodeField(j, "uri", {}),
-        .mimeType = JsonDecoder<std::optional<std::string>>::DecodeField(j, "mimeType", {}),
-        .bufferView = JsonDecoder<std::optional<GLTF::BufferViewIndex>>::DecodeField(j, "bufferView", {}),
-        .name = JsonDecoder<std::optional<std::string>>::DecodeField(j, "name", {}),
+        .uri = JsonDecodeField<std::optional<std::string>>(j, "uri", {}),
+        .mimeType = JsonDecodeField<std::optional<std::string>>(j, "mimeType", {}),
+        .bufferView = JsonDecodeField<std::optional<GLTF::BufferViewIndex>>(j, "bufferView", {}),
+        .name = JsonDecodeField<std::optional<std::string>>(j, "name", {}),
       };
     }
   };
@@ -87,15 +87,15 @@ namespace Coil
     {
       return
       {
-        .name = JsonDecoder<std::optional<std::string>>::DecodeField(j, "name"),
-        .pbrMetallicRoughness = JsonDecoder<std::optional<GLTF::Material::PbrMetallicRoughness>>::DecodeField(j, "pbrMetallicRoughness", {}),
-        .normalTexture = JsonDecoder<std::optional<GLTF::Material::NormalTextureInfo>>::DecodeField(j, "normalTexture", {}),
-        .occlusionTexture = JsonDecoder<std::optional<GLTF::Material::OcclusionTextureInfo>>::DecodeField(j, "occlusionTexture", {}),
-        .emissiveTexture = JsonDecoder<std::optional<GLTF::Material::TextureInfo>>::DecodeField(j, "emissiveTexture", {}),
-        .emissiveFactor = JsonDecoder<vec3>::DecodeField(j, "emissiveFactor", vec3(0, 0, 0)),
-        .alphaMode = JsonDecoder<std::string>::DecodeField(j, "alphaMode", "OPAQUE"),
-        .alphaCutoff = JsonDecoder<float>::DecodeField(j, "alphaCutoff", 0.5f),
-        .doubleSided = JsonDecoder<bool>::DecodeField(j, "doubleSided", false),
+        .name = JsonDecodeField<std::optional<std::string>>(j, "name"),
+        .pbrMetallicRoughness = JsonDecodeField<std::optional<GLTF::Material::PbrMetallicRoughness>>(j, "pbrMetallicRoughness", {}),
+        .normalTexture = JsonDecodeField<std::optional<GLTF::Material::NormalTextureInfo>>(j, "normalTexture", {}),
+        .occlusionTexture = JsonDecodeField<std::optional<GLTF::Material::OcclusionTextureInfo>>(j, "occlusionTexture", {}),
+        .emissiveTexture = JsonDecodeField<std::optional<GLTF::Material::TextureInfo>>(j, "emissiveTexture", {}),
+        .emissiveFactor = JsonDecodeField<vec3>(j, "emissiveFactor", vec3(0, 0, 0)),
+        .alphaMode = JsonDecodeField<std::string>(j, "alphaMode", "OPAQUE"),
+        .alphaCutoff = JsonDecodeField<float>(j, "alphaCutoff", 0.5f),
+        .doubleSided = JsonDecodeField<bool>(j, "doubleSided", false),
       };
     }
   };
@@ -106,8 +106,8 @@ namespace Coil
     {
       return
       {
-        .index = JsonDecoder<GLTF::TextureIndex>::DecodeField(j, "index"),
-        .texCoord = JsonDecoder<uint32_t>::DecodeField(j, "texCoord", 0),
+        .index = JsonDecodeField<GLTF::TextureIndex>(j, "index"),
+        .texCoord = JsonDecodeField<uint32_t>(j, "texCoord", 0),
       };
     }
   };
@@ -118,9 +118,9 @@ namespace Coil
     {
       return
       {
-        .index = JsonDecoder<GLTF::TextureIndex>::DecodeField(j, "index"),
-        .texCoord = JsonDecoder<uint32_t>::DecodeField(j, "texCoord", 0),
-        .scale = JsonDecoder<float>::DecodeField(j, "scale", 1),
+        .index = JsonDecodeField<GLTF::TextureIndex>(j, "index"),
+        .texCoord = JsonDecodeField<uint32_t>(j, "texCoord", 0),
+        .scale = JsonDecodeField<float>(j, "scale", 1),
       };
     }
   };
@@ -131,9 +131,9 @@ namespace Coil
     {
       return
       {
-        .index = JsonDecoder<GLTF::TextureIndex>::DecodeField(j, "index"),
-        .texCoord = JsonDecoder<uint32_t>::DecodeField(j, "texCoord", 0),
-        .strength = JsonDecoder<float>::DecodeField(j, "strength", 1),
+        .index = JsonDecodeField<GLTF::TextureIndex>(j, "index"),
+        .texCoord = JsonDecodeField<uint32_t>(j, "texCoord", 0),
+        .strength = JsonDecodeField<float>(j, "strength", 1),
       };
     }
   };
@@ -144,11 +144,11 @@ namespace Coil
     {
       return
       {
-        .baseColorFactor = JsonDecoder<vec4>::DecodeField(j, "baseColorFactor", vec4(1, 1, 1, 1)),
-        .baseColorTexture = JsonDecoder<std::optional<GLTF::Material::TextureInfo>>::DecodeField(j, "baseColorTexture", {}),
-        .metallicFactor = JsonDecoder<float>::DecodeField(j, "metallicFactor", 1),
-        .roughnessFactor = JsonDecoder<float>::DecodeField(j, "roughnessFactor", 1),
-        .metallicRoughnessTexture = JsonDecoder<std::optional<GLTF::Material::TextureInfo>>::DecodeField(j, "metallicRoughnessTexture", {}),
+        .baseColorFactor = JsonDecodeField<vec4>(j, "baseColorFactor", vec4(1, 1, 1, 1)),
+        .baseColorTexture = JsonDecodeField<std::optional<GLTF::Material::TextureInfo>>(j, "baseColorTexture", {}),
+        .metallicFactor = JsonDecodeField<float>(j, "metallicFactor", 1),
+        .roughnessFactor = JsonDecodeField<float>(j, "roughnessFactor", 1),
+        .metallicRoughnessTexture = JsonDecodeField<std::optional<GLTF::Material::TextureInfo>>(j, "metallicRoughnessTexture", {}),
       };
     }
   };
@@ -159,7 +159,7 @@ namespace Coil
     {
       return
       {
-        .primitives = JsonDecoder<std::vector<GLTF::Mesh::MeshPrimitive>>::DecodeField(j, "primitives"),
+        .primitives = JsonDecodeField<std::vector<GLTF::Mesh::MeshPrimitive>>(j, "primitives"),
       };
     }
   };
@@ -171,9 +171,9 @@ namespace Coil
       return
       {
         .attributes = j.at("attributes").get<std::unordered_map<std::string, GLTF::AccessorIndex>>(),
-        .indices = JsonDecoder<std::optional<GLTF::AccessorIndex>>::DecodeField(j, "indices", {}),
-        .material = JsonDecoder<std::optional<GLTF::MaterialIndex>>::DecodeField(j, "material", {}),
-        .mode = (GLTF::Mesh::MeshPrimitive::Mode)JsonDecoder<uint32_t>::DecodeField(j, "mode", 4),
+        .indices = JsonDecodeField<std::optional<GLTF::AccessorIndex>>(j, "indices", {}),
+        .material = JsonDecodeField<std::optional<GLTF::MaterialIndex>>(j, "material", {}),
+        .mode = (GLTF::Mesh::MeshPrimitive::Mode)JsonDecodeField<uint32_t>(j, "mode", 4),
       };
     }
   };
@@ -184,12 +184,12 @@ namespace Coil
     {
       return
       {
-        .children = JsonDecoder<std::vector<GLTF::NodeIndex>>::DecodeField(j, "children", {}),
-        .mesh = JsonDecoder<std::optional<GLTF::MeshIndex>>::DecodeField(j, "mesh", {}),
-        .translation = JsonDecoder<vec3>::DecodeField(j, "translation", {}),
-        .rotation = JsonDecoder<quat>::DecodeField(j, "rotation", {}),
-        .scale = JsonDecoder<vec3>::DecodeField(j, "scale", { 1, 1, 1 }),
-        .name = JsonDecoder<std::optional<std::string>>::DecodeField(j, "name", {}),
+        .children = JsonDecodeField<std::vector<GLTF::NodeIndex>>(j, "children", {}),
+        .mesh = JsonDecodeField<std::optional<GLTF::MeshIndex>>(j, "mesh", {}),
+        .translation = JsonDecodeField<vec3>(j, "translation", {}),
+        .rotation = JsonDecodeField<quat>(j, "rotation", {}),
+        .scale = JsonDecodeField<vec3>(j, "scale", { 1, 1, 1 }),
+        .name = JsonDecodeField<std::optional<std::string>>(j, "name", {}),
       };
     }
   };
@@ -200,11 +200,11 @@ namespace Coil
     {
       return
       {
-        .magFilter = JsonDecoder<uint32_t>::DecodeField(j, "magFilter", 0),
-        .minFilter = JsonDecoder<uint32_t>::DecodeField(j, "minFilter", 0),
-        .wrapS = JsonDecoder<uint32_t>::DecodeField(j, "wrapS", 10497),
-        .wrapT = JsonDecoder<uint32_t>::DecodeField(j, "wrapT", 10497),
-        .name = JsonDecoder<std::optional<std::string>>::DecodeField(j, "name", {}),
+        .magFilter = JsonDecodeField<uint32_t>(j, "magFilter", 0),
+        .minFilter = JsonDecodeField<uint32_t>(j, "minFilter", 0),
+        .wrapS = JsonDecodeField<uint32_t>(j, "wrapS", 10497),
+        .wrapT = JsonDecodeField<uint32_t>(j, "wrapT", 10497),
+        .name = JsonDecodeField<std::optional<std::string>>(j, "name", {}),
       };
     }
   };
@@ -215,8 +215,8 @@ namespace Coil
     {
       return
       {
-        .nodes = JsonDecoder<std::vector<GLTF::NodeIndex>>::DecodeField(j, "nodes", {}),
-        .name = JsonDecoder<std::optional<std::string>>::DecodeField(j, "name", {}),
+        .nodes = JsonDecodeField<std::vector<GLTF::NodeIndex>>(j, "nodes", {}),
+        .name = JsonDecodeField<std::optional<std::string>>(j, "name", {}),
       };
     }
   };
@@ -227,9 +227,9 @@ namespace Coil
     {
       return
       {
-        .sampler = JsonDecoder<std::optional<GLTF::SamplerIndex>>::DecodeField(j, "sampler", {}),
-        .source = JsonDecoder<std::optional<GLTF::ImageIndex>>::DecodeField(j, "source", {}),
-        .name = JsonDecoder<std::optional<std::string>>::DecodeField(j, "name", {}),
+        .sampler = JsonDecodeField<std::optional<GLTF::SamplerIndex>>(j, "sampler", {}),
+        .source = JsonDecodeField<std::optional<GLTF::ImageIndex>>(j, "source", {}),
+        .name = JsonDecodeField<std::optional<std::string>>(j, "name", {}),
       };
     }
   };
@@ -239,27 +239,27 @@ namespace Coil
   {
     static GLTF Decode(json const& j)
     {
-      auto meshes = JsonDecoder<std::vector<GLTF::Mesh>>::DecodeField(j, "meshes", {});
+      auto meshes = JsonDecodeField<std::vector<GLTF::Mesh>>(j, "meshes", {});
       auto meshesByName = IndexByName(meshes);
-      auto nodes = JsonDecoder<std::vector<GLTF::Node>>::DecodeField(j, "nodes", {});
+      auto nodes = JsonDecodeField<std::vector<GLTF::Node>>(j, "nodes", {});
       auto nodesByName = IndexByName(nodes);
-      auto scenes = JsonDecoder<std::vector<GLTF::Scene>>::DecodeField(j, "scenes", {});
+      auto scenes = JsonDecodeField<std::vector<GLTF::Scene>>(j, "scenes", {});
       auto scenesByName = IndexByName(scenes);
       return
       {
-        .accessors = JsonDecoder<std::vector<GLTF::Accessor>>::DecodeField(j, "accessors", {}),
-        .buffers = JsonDecoder<std::vector<GLTF::Buffer>>::DecodeField(j, "buffers", {}),
-        .bufferViews = JsonDecoder<std::vector<GLTF::BufferView>>::DecodeField(j, "bufferViews", {}),
-        .images = JsonDecoder<std::vector<GLTF::Image>>::DecodeField(j, "images", {}),
-        .materials = JsonDecoder<std::vector<GLTF::Material>>::DecodeField(j, "materials", {}),
+        .accessors = JsonDecodeField<std::vector<GLTF::Accessor>>(j, "accessors", {}),
+        .buffers = JsonDecodeField<std::vector<GLTF::Buffer>>(j, "buffers", {}),
+        .bufferViews = JsonDecodeField<std::vector<GLTF::BufferView>>(j, "bufferViews", {}),
+        .images = JsonDecodeField<std::vector<GLTF::Image>>(j, "images", {}),
+        .materials = JsonDecodeField<std::vector<GLTF::Material>>(j, "materials", {}),
         .meshes = std::move(meshes),
         .meshesByName = std::move(meshesByName),
         .nodes = std::move(nodes),
         .nodesByName = std::move(nodesByName),
-        .samplers = JsonDecoder<std::vector<GLTF::Sampler>>::DecodeField(j, "samplers", {}),
+        .samplers = JsonDecodeField<std::vector<GLTF::Sampler>>(j, "samplers", {}),
         .scenes = std::move(scenes),
         .scenesByName = std::move(scenesByName),
-        .textures = JsonDecoder<std::vector<GLTF::Texture>>::DecodeField(j, "textures", {}),
+        .textures = JsonDecodeField<std::vector<GLTF::Texture>>(j, "textures", {}),
       };
     }
   };
