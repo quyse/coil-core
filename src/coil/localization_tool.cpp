@@ -448,7 +448,7 @@ ___COIL_ENTRY_POINT = [](std::vector<std::string>&& args) -> int
   };
 
   // read global config
-  auto config = JsonDecoder<LocalizationConfig>::Decode(ParseJsonBuffer(File::MapRead(book, localizationConfigFileName)));
+  auto config = JsonDecoder<LocalizationConfig>::Decode(JsonFromBuffer(File::MapRead(book, localizationConfigFileName)));
 
   size_t langsCount = config.langs.size();
   std::vector<std::string> langsIds;
@@ -472,7 +472,7 @@ ___COIL_ENTRY_POINT = [](std::vector<std::string>&& args) -> int
     // read language strings
     if(langConfig.file.has_value())
     {
-      for(auto j = ParseJsonBuffer(File::MapRead(book, workingDir + "/" + langConfig.file.value())); auto const& [key, value] : j.items())
+      for(auto j = JsonFromBuffer(File::MapRead(book, workingDir + "/" + langConfig.file.value())); auto const& [key, value] : j.items())
       {
         auto& string = strings.insert({ key, {} }).first->second;
         if(string.strings.size() != langsCount) string.strings.resize(langsCount);

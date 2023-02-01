@@ -2,7 +2,7 @@
 
 namespace Coil
 {
-  json ParseJsonBuffer(Buffer const& buffer)
+  json JsonFromBuffer(Buffer const& buffer)
   {
     try
     {
@@ -10,7 +10,19 @@ namespace Coil
     }
     catch(json::exception const&)
     {
-      throw Exception("invalid JSON");
+      throw Exception("JSON from buffer failed");
+    }
+  }
+
+  std::string JsonToString(json const& j)
+  {
+    try
+    {
+      return j.dump();
+    }
+    catch(json::exception const&)
+    {
+      throw Exception("JSON to string failed");
     }
   }
 }

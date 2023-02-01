@@ -229,6 +229,8 @@ namespace Coil
     }
   };
 
-  // parse and decode JSON from buffer
-  json ParseJsonBuffer(Buffer const& buffer);
+  // deserialize JSON from buffer
+  json JsonFromBuffer(Buffer const& buffer);
+  // serialize JSON into buffer
+  std::string JsonToString(json const& j);
 }

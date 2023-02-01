@@ -297,7 +297,7 @@ namespace Coil
     // read JSON chunk
     std::vector<uint8_t> jsonChunk = readChunk(0x4E4F534A /* JSON */);
     // parse & decode JSON
-    json const jsonRoot = ParseJsonBuffer(jsonChunk);
+    json const jsonRoot = JsonFromBuffer(jsonChunk);
     GLTF gltf = JsonDecoder<GLTF>::Decode(jsonRoot);
 
     // check if there should be binary chunk

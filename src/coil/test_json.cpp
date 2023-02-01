@@ -62,9 +62,19 @@ namespace
     {
       std::vector<char32_t> v(Random<uint32_t>::Generate() % 100);
       for(size_t i = 0; i < v.size(); ++i)
-        v[i] = (Random<uint32_t>::Generate() & ((1 << 20) - 1));
+      {
+        for(;;)
+        {
+          char32_t c = (Random<uint32_t>::Generate() & ((1 << 20) - 1)) + 1;
+          // do not generate surrogates
+          if(c >= 0xD800 && c <= 0xDFFF) continue;
+          v[i] = c;
+          break;
+        }
+      }
       std::string s;
       Unicode::Convert<char32_t, char>(v.begin(), v.end(), s);
+
       return std::move(s);
     }
   };
@@ -95,8 +105,11 @@ template <typename T>
 bool TestEncodeDecode()
 {
   T value = Random<T>::Generate();
-  T decodedValue = JsonDecode<T>(JsonEncode<T>(value));
-  return value == decodedValue;
+  json j = JsonEncode<T>(value);
+  std::string s = JsonToString(j);
+  json j2 = JsonFromBuffer(Buffer(s.data(), s.length()));
+  T decodedValue = JsonDecode<T>(j);
+  return value == decodedValue && j == j2;
 }
 
 template <typename T>
