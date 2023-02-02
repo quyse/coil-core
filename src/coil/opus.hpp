@@ -18,6 +18,7 @@ namespace Coil
 
     // always decode at 48 kHz
     static constexpr int32_t samplingRate = 48000;
+    static_assert(samplingRate == AudioFormat::recommendedSamplingRate);
     // maximum frame count in packet (120ms = 3/25 s is maximum according to spec)
     static constexpr int32_t maxPacketFramesCount = samplingRate * 3 / 25;
 

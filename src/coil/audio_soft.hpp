@@ -13,7 +13,7 @@ namespace Coil
   class AudioPausingStream : public AudioStream
   {
   public:
-    AudioPausingStream(AudioStream& stream, bool playing = true);
+    AudioPausingStream(std::unique_ptr<AudioStream>&& stream, bool playing = true);
 
     void SetPlaying(bool playing);
 
@@ -21,9 +21,27 @@ namespace Coil
     Buffer Read(int32_t framesCount) override;
 
   private:
-    AudioStream& _stream;
+    std::unique_ptr<AudioStream> _stream;
     std::atomic<bool> _playing = false;
     AudioFormat _format;
+  };
+
+  // volume filter
+  class AudioVolumeStream : public AudioStream
+  {
+  public:
+    AudioVolumeStream(std::unique_ptr<AudioStream>&& stream);
+
+    void SetVolume(float volume);
+
+    AudioFormat GetFormat() const override;
+    Buffer Read(int32_t framesCount) override;
+
+  private:
+    std::unique_ptr<AudioStream> _stream;
+    AudioFormat _format;
+    float _volume = 1.0f;
+    std::vector<uint8_t> _buffer;
   };
 
   // mixer stream

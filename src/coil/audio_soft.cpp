@@ -3,8 +3,8 @@
 
 namespace Coil
 {
-  AudioPausingStream::AudioPausingStream(AudioStream& stream, bool playing)
-  : _stream(stream), _playing(playing), _format(_stream.GetFormat()) {}
+  AudioPausingStream::AudioPausingStream(std::unique_ptr<AudioStream>&& stream, bool playing)
+  : _stream(std::move(stream)), _playing(playing), _format(_stream->GetFormat()) {}
 
   void AudioPausingStream::SetPlaying(bool playing)
   {
@@ -20,7 +20,7 @@ namespace Coil
   {
     if(_playing)
     {
-      return _stream.Read(framesCount);
+      return _stream->Read(framesCount);
     }
     else
     {
@@ -29,6 +29,28 @@ namespace Coil
       int32_t channelsCount = GetAudioFormatChannelsCount(_format.channels);
       return Buffer(silence, std::min(framesCount, silenceSamplesCount / channelsCount) * channelsCount * sizeof(AudioSample));
     }
+  }
+
+  AudioVolumeStream::AudioVolumeStream(std::unique_ptr<AudioStream>&& stream)
+  : _stream(std::move(stream)), _format(_stream->GetFormat()) {}
+
+  void AudioVolumeStream::SetVolume(float volume)
+  {
+    _volume = volume;
+  }
+
+  AudioFormat AudioVolumeStream::GetFormat() const
+  {
+    return _format;
+  }
+
+  Buffer AudioVolumeStream::Read(int32_t framesCount)
+  {
+    Buffer buffer = _stream->Read(framesCount);
+    _buffer.resize(buffer.size);
+    for(size_t i = 0; i < buffer.size; i += sizeof(AudioSample))
+      *(AudioSample*)(_buffer.data() + i) = *(AudioSample*)((uint8_t const*)buffer.data + i) * _volume;
+    return _buffer;
   }
 
   AudioMixerStream::Player::Player(std::unique_ptr<AudioStream>&& stream)

@@ -19,10 +19,13 @@ namespace Coil
   // audio format
   struct AudioFormat
   {
+    // recommended sampling rate
+    static constexpr int32_t recommendedSamplingRate = 48000;
+
     // channels configuration
     AudioFormatChannels channels;
     // sampling rate in Hz
-    int32_t samplingRate;
+    int32_t samplingRate = recommendedSamplingRate;
 
     friend auto operator<=>(AudioFormat const&, AudioFormat const&) = default;
   };
