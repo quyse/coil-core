@@ -115,6 +115,17 @@ endif()
 list(APPEND coil_core_all_libraries entrypoint_graphical)
 
 if(TRUE)
+  add_library(coil_core_appidentity STATIC
+    appidentity.cpp
+  )
+  set_property(TARGET coil_core_appidentity PROPERTY PUBLIC_HEADER
+    appidentity.hpp
+  )
+  list(APPEND coil_core_libraries appidentity)
+endif()
+list(APPEND coil_core_all_libraries appidentity)
+
+if(TRUE)
   add_library(coil_core_data STATIC
     data.cpp
   )
@@ -338,6 +349,8 @@ if(TARGET coil_core_spirv AND TARGET Vulkan::Vulkan)
       coil_core_graphics
       coil_core_spirv
       Vulkan::Vulkan
+    PRIVATE
+      coil_core_appidentity
   )
   list(APPEND coil_core_libraries vulkan)
 endif()

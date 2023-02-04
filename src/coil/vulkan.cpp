@@ -1,6 +1,7 @@
 #include "vulkan.hpp"
 #include "vulkan_objects.hpp"
 #include "spirv.hpp"
+#include "appidentity.hpp"
 #include <vector>
 #include <algorithm>
 #include <limits>
@@ -53,7 +54,7 @@ namespace Coil
   VulkanSystem::VulkanSystem(VkInstance instance)
   : _instance(instance) {}
 
-  VulkanSystem& VulkanSystem::Create(Book& book, Window& window, char const* appName, uint32_t appVersion)
+  VulkanSystem& VulkanSystem::Create(Book& book, Window& window)
   {
     // get instance version
     {
@@ -75,8 +76,8 @@ namespace Coil
       {
         .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
         .pNext = nullptr,
-        .pApplicationName = appName,
-        .applicationVersion = appVersion,
+        .pApplicationName = AppIdentity::name.c_str(),
+        .applicationVersion = AppIdentity::version,
         .pEngineName = "Coil Core",
         .engineVersion = 0,
         .apiVersion = VK_API_VERSION_1_0,

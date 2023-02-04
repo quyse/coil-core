@@ -361,7 +361,7 @@ namespace Coil
   public:
     VulkanSystem(VkInstance instance);
 
-    static VulkanSystem& Create(Book& book, Window& window, char const* appName, uint32_t appVersion);
+    static VulkanSystem& Create(Book& book, Window& window);
 
     VulkanDevice& CreateDefaultDevice(Book& book) override;
 
