@@ -42,6 +42,7 @@ rec {
       "pkg-config"
       "spirv-headers"
       "wayland-protocols"
+      "libpulse-dev"
     ];
     diskImageFormat = "qcow2";
     memSize = 2048;
