@@ -626,6 +626,26 @@ if(WIN32)
   list(APPEND coil_core_all_libraries wincoreaudio)
 endif()
 
+if(TARGET PulseAudio::PulseAudio)
+  add_library(coil_core_pulseaudio STATIC
+    pulseaudio.cpp
+  )
+  set_property(TARGET coil_core_pulseaudio PROPERTY PUBLIC_HEADER
+    pulseaudio.hpp
+  )
+  target_link_libraries(coil_core_pulseaudio
+    PUBLIC
+      coil_core_audio
+    PRIVATE
+      coil_core_appidentity
+      PulseAudio::PulseAudio
+  )
+  list(APPEND coil_core_libraries pulseaudio)
+endif()
+if(UNIX)
+  list(APPEND coil_core_all_libraries pulseaudio)
+endif()
+
 if(TARGET Ogg::ogg)
   add_library(coil_core_ogg STATIC
     ogg.cpp

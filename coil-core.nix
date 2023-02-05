@@ -17,6 +17,7 @@
 , wayland
 , wayland-protocols
 , libxkbcommon
+, pulseaudio
 , libogg
 , libopus
 , steam
@@ -49,6 +50,7 @@ stdenv.mkDerivation {
     wayland
     wayland-protocols
     libxkbcommon
+    pulseaudio
   ];
   doCheck = true;
 }
