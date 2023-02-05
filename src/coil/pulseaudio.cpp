@@ -152,6 +152,9 @@ namespace Coil
         writtenSize += size;
       }
 
+      // stop thread if stream has ended
+      if(!writtenSize) _shutdown = true;
+
       if(pa_stream_write(_stream, deviceBuffer.data, writtenSize, nullptr, 0, PA_SEEK_RELATIVE))
         throw Exception("writing to PulseAudio stream failed");
     }
