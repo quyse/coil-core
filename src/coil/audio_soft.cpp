@@ -3,8 +3,8 @@
 
 namespace Coil
 {
-  AudioPausingStream::AudioPausingStream(std::unique_ptr<AudioStream>&& stream, bool playing)
-  : _stream(std::move(stream)), _playing(playing), _format(_stream->GetFormat()) {}
+  AudioPausingStream::AudioPausingStream(AudioStream& stream, bool playing)
+  : _stream(stream), _playing(playing), _format(_stream.GetFormat()) {}
 
   void AudioPausingStream::SetPlaying(bool playing)
   {
@@ -20,7 +20,7 @@ namespace Coil
   {
     if(_playing)
     {
-      return _stream->Read(framesCount);
+      return _stream.Read(framesCount);
     }
     else
     {
@@ -31,8 +31,8 @@ namespace Coil
     }
   }
 
-  AudioVolumeStream::AudioVolumeStream(std::unique_ptr<AudioStream>&& stream)
-  : _stream(std::move(stream)), _format(_stream->GetFormat()) {}
+  AudioVolumeStream::AudioVolumeStream(AudioStream& stream)
+  : _stream(stream), _format(_stream.GetFormat()) {}
 
   void AudioVolumeStream::SetVolume(float volume)
   {
@@ -46,15 +46,15 @@ namespace Coil
 
   Buffer AudioVolumeStream::Read(int32_t framesCount)
   {
-    Buffer buffer = _stream->Read(framesCount);
+    Buffer buffer = _stream.Read(framesCount);
     _buffer.resize(buffer.size);
     for(size_t i = 0; i < buffer.size; i += sizeof(AudioSample))
       *(AudioSample*)(_buffer.data() + i) = *(AudioSample*)((uint8_t const*)buffer.data + i) * _volume;
     return _buffer;
   }
 
-  AudioMixerStream::Player::Player(std::unique_ptr<AudioStream>&& stream)
-  : _stream(std::move(stream)) {}
+  AudioMixerStream::Player::Player(Book&& book, AudioStream& stream)
+  : _book(std::move(book)), _stream(stream) {}
 
   AudioMixerStream::AudioMixerStream(AudioFormat const& format)
   : _format(format) {}
@@ -64,12 +64,12 @@ namespace Coil
     _playing = false;
   }
 
-  std::shared_ptr<AudioMixerStream::Player> AudioMixerStream::Play(std::unique_ptr<AudioStream>&& stream)
+  std::shared_ptr<AudioMixerStream::Player> AudioMixerStream::Play(Book&& book, AudioStream& stream)
   {
-    if(stream->GetFormat() != _format)
+    if(stream.GetFormat() != _format)
       throw Exception("wrong stream format to play in audio mixer stream");
 
-    std::shared_ptr<Player> player = std::make_shared<Player>(std::move(stream));
+    std::shared_ptr<Player> player = std::make_shared<Player>(std::move(book), stream);
 
     std::scoped_lock lock(_mutex);
     _players.insert(player);
@@ -95,7 +95,7 @@ namespace Coil
       if(player->_playing && !player->_buffer.size)
       {
         // read data
-        player->_buffer = player->_stream->Read(framesCount);
+        player->_buffer = player->_stream.Read(framesCount);
       }
       // if stream is cancelled, or end of sound is reached, remove player
       if(!player->_playing || !player->_buffer.size)

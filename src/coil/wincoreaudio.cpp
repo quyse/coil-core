@@ -4,8 +4,8 @@
 
 namespace Coil
 {
-  WinCoreAudioDevice::WinCoreAudioDevice(std::unique_ptr<AudioStream>&& stream)
-  : _stream(std::move(stream)) {}
+  WinCoreAudioDevice::WinCoreAudioDevice(AudioStream& stream)
+  : _stream(stream) {}
 
   WinCoreAudioDevice::~WinCoreAudioDevice()
   {
@@ -13,9 +13,9 @@ namespace Coil
     _thread.join();
   }
 
-  WinCoreAudioDevice& WinCoreAudioDevice::Init(Book& book, std::unique_ptr<AudioStream>&& stream)
+  WinCoreAudioDevice& WinCoreAudioDevice::Init(Book& book, AudioStream& stream)
   {
-    WinCoreAudioDevice& device = book.Allocate<WinCoreAudioDevice>(std::move(stream));
+    WinCoreAudioDevice& device = book.Allocate<WinCoreAudioDevice>(stream);
 
     device.Init();
 
@@ -116,7 +116,7 @@ namespace Coil
       if(!_currentBuffer)
       {
         // read packet
-        _currentBuffer = _stream->Read(deviceBufferSize / _frameSize);
+        _currentBuffer = _stream.Read(deviceBufferSize / _frameSize);
       }
 
       // get data from current buffer

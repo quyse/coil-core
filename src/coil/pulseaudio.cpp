@@ -138,7 +138,7 @@ namespace Coil
         if(!_currentBuffer)
         {
           // read packet
-          _currentBuffer = _device._stream->Read(deviceBufferSize / _frameSize);
+          _currentBuffer = _device._stream.Read(deviceBufferSize / _frameSize);
         }
 
         // get data from current buffer
@@ -177,8 +177,8 @@ namespace Coil
     static constexpr size_t const _frameSize = _channelsCount * sizeof(AudioSample);
   };
 
-  PulseAudioDevice::PulseAudioDevice(std::unique_ptr<AudioStream>&& stream)
-  : _stream(std::move(stream)), _impl(std::make_unique<Impl>(*this)) {}
+  PulseAudioDevice::PulseAudioDevice(AudioStream& stream)
+  : _stream(stream), _impl(std::make_unique<Impl>(*this)) {}
 
   PulseAudioDevice::~PulseAudioDevice()
   {
@@ -186,9 +186,9 @@ namespace Coil
     // destructor definition is required to keep Impl out of header
   }
 
-  PulseAudioDevice& PulseAudioDevice::Init(Book& book, std::unique_ptr<AudioStream>&& stream)
+  PulseAudioDevice& PulseAudioDevice::Init(Book& book, AudioStream& stream)
   {
-    PulseAudioDevice& device = book.Allocate<PulseAudioDevice>(std::move(stream));
+    PulseAudioDevice& device = book.Allocate<PulseAudioDevice>(stream);
     device.Init();
     return device;
   }

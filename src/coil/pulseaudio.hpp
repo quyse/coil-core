@@ -8,10 +8,10 @@ namespace Coil
   class PulseAudioDevice : public AudioDevice
   {
   public:
-    PulseAudioDevice(std::unique_ptr<AudioStream>&& stream);
+    PulseAudioDevice(AudioStream& stream);
     ~PulseAudioDevice();
 
-    static PulseAudioDevice& Init(Book& book, std::unique_ptr<AudioStream>&& stream);
+    static PulseAudioDevice& Init(Book& book, AudioStream& stream);
 
     void SetPlaying(bool playing) override;
 
@@ -21,7 +21,7 @@ namespace Coil
     void Init();
     void ThreadFunc();
 
-    std::unique_ptr<AudioStream> _stream;
+    AudioStream& _stream;
     std::unique_ptr<Impl> _impl;
   };
 }

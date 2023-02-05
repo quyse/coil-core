@@ -3,12 +3,12 @@
 
 namespace Coil
 {
-  Book::Book(Book&& book)
+  Book::Book(Book&& book) noexcept
   {
     *this = std::move(book);
   }
 
-  Book& Book::operator=(Book&& book)
+  Book& Book::operator=(Book&& book) noexcept
   {
     std::swap(_lastChunk, book._lastChunk);
     std::swap(_lastChunkAllocated, book._lastChunkAllocated);

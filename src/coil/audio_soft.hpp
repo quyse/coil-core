@@ -13,7 +13,7 @@ namespace Coil
   class AudioPausingStream : public AudioStream
   {
   public:
-    AudioPausingStream(std::unique_ptr<AudioStream>&& stream, bool playing = true);
+    AudioPausingStream(AudioStream& stream, bool playing = true);
 
     void SetPlaying(bool playing);
 
@@ -21,7 +21,7 @@ namespace Coil
     Buffer Read(int32_t framesCount) override;
 
   private:
-    std::unique_ptr<AudioStream> _stream;
+    AudioStream& _stream;
     std::atomic<bool> _playing = false;
     AudioFormat _format;
   };
@@ -30,7 +30,7 @@ namespace Coil
   class AudioVolumeStream : public AudioStream
   {
   public:
-    AudioVolumeStream(std::unique_ptr<AudioStream>&& stream);
+    AudioVolumeStream(AudioStream& stream);
 
     void SetVolume(float volume);
 
@@ -38,7 +38,7 @@ namespace Coil
     Buffer Read(int32_t framesCount) override;
 
   private:
-    std::unique_ptr<AudioStream> _stream;
+    AudioStream& _stream;
     AudioFormat _format;
     float _volume = 1.0f;
     std::vector<uint8_t> _buffer;
@@ -53,14 +53,15 @@ namespace Coil
     class Player
     {
     public:
-      Player(std::unique_ptr<AudioStream>&& stream);
+      Player(Book&& book, AudioStream& stream);
 
       // stop and remove player from mixer
       // if player is already removed or simply reached end, do nothing
       void Stop();
 
     private:
-      std::unique_ptr<AudioStream> _stream;
+      Book _book;
+      AudioStream& _stream;
       std::atomic<bool> _playing = true;
       // access synchronized by mutex in AudioMixerStream
       Buffer _buffer;
@@ -71,7 +72,7 @@ namespace Coil
     AudioMixerStream(AudioFormat const& format);
 
     // play input stream from the current moment
-    std::shared_ptr<Player> Play(std::unique_ptr<AudioStream>&& stream);
+    std::shared_ptr<Player> Play(Book&& book, AudioStream& stream);
 
     AudioFormat GetFormat() const override;
     Buffer Read(int32_t framesCount) override;

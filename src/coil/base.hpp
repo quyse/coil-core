@@ -29,11 +29,11 @@ namespace Coil
   public:
     Book() = default;
     Book(Book const&) = delete;
-    Book(Book&&);
+    Book(Book&&) noexcept;
     ~Book();
 
     Book& operator=(Book const&) = delete;
-    Book& operator=(Book&&);
+    Book& operator=(Book&&) noexcept;
 
     // Allocate new object in pool.
     template <typename T, typename... Args>

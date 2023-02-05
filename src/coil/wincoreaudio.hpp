@@ -2,7 +2,6 @@
 
 #include "audio.hpp"
 #include "windows.hpp"
-#include <memory>
 #include <mutex>
 #include <queue>
 #include <thread>
@@ -15,10 +14,10 @@ namespace Coil
   class WinCoreAudioDevice : public AudioDevice
   {
   public:
-    WinCoreAudioDevice(std::unique_ptr<AudioStream>&& stream);
+    WinCoreAudioDevice(AudioStream& stream);
     ~WinCoreAudioDevice();
 
-    static WinCoreAudioDevice& Init(Book& book, std::unique_ptr<AudioStream>&& stream);
+    static WinCoreAudioDevice& Init(Book& book, AudioStream& stream);
 
     void SetPlaying(bool playing) override;
 
@@ -35,7 +34,7 @@ namespace Coil
     void Fill();
     void OnShutdown();
 
-    std::unique_ptr<AudioStream> _stream;
+    AudioStream& _stream;
     std::thread _thread;
     bool _playing = true;
     // the following members are accessed only in the audio thread
