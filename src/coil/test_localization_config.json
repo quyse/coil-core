@@ -1,11 +1,11 @@
 {
   "langs": {
     "en": {
-      "lang": "En",
+      "lang": "English",
       "file": "test_localization_en.json"
     },
     "ru": {
-      "lang": "Ru",
+      "lang": "Russian",
       "file": "test_localization_ru.json",
       "fallback": "en"
     }

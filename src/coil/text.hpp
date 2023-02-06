@@ -93,6 +93,18 @@ namespace Coil
     return l;
   }
 
+  // compile-time multicharacter literal
+  // (simple 'abcd' has implementation-defined value and produces compile warnings)
+  template <Literal l>
+  consteval auto operator ""_c()
+  {
+    uint32_t r = 0;
+    for(size_t i = 0; i < l.n; ++i)
+      r = (r << 8) | l.s[i];
+    return r;
+  }
+  static_assert("ABCD"_c == 0x41424344);
+
   // compile-time text literal
   template <Literal l>
   struct LiteralText

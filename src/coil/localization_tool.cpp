@@ -310,7 +310,7 @@ public:
           if(methodName.substr(0, 6) == "plural")
           {
             if(methodName.length() != 7) throw Exception("wrong format for pluralN method");
-            _typeStream << "Localization::" << *_pLang << "::Plural<" << (methodName[6] - '0');
+            _typeStream << "Localization<Language::" << *_pLang << ">::template Plural<" << (methodName[6] - '0');
             _initStream << "{ ";
             firstInTypeStream = false;
           }
@@ -593,6 +593,7 @@ namespace Localized
     OutputCppString(outStream, langsIds[langIndex]);
     outStream << R"(,
     .phrases = T,
+    .info = Coil::Localization<Coil::Language::)" << langsConfigs[langIndex].lang << R"(>::info,
   };
 }
 )";
@@ -617,6 +618,7 @@ namespace Localized
   {
     char const* const name;
     void const* const* const phrases;
+    LanguageInfo const info;
     static Set const* Current;
   };
 
