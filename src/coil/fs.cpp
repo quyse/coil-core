@@ -337,6 +337,20 @@ namespace Coil
     return book.Allocate<FileInputStream>(File::OpenRead(book, name));
   }
 
+  FileOutputStream::FileOutputStream(File& file, uint64_t offset)
+  : _file(file), _offset(offset) {}
+
+  void FileOutputStream::Write(Buffer const& buffer)
+  {
+    _file.Write(_offset, buffer);
+    _offset += buffer.size;
+  }
+
+  FileOutputStream& FileOutputStream::Open(Book& book, std::string const& name)
+  {
+    return book.Allocate<FileOutputStream>(File::OpenWrite(book, name));
+  }
+
   std::string GetFsPathName(std::string const& path)
   {
     size_t i;

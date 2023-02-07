@@ -79,6 +79,20 @@ namespace Coil
     uint64_t _size;
   };
 
+  class FileOutputStream : public OutputStream
+  {
+  public:
+    FileOutputStream(File& file, uint64_t offset = 0);
+
+    void Write(Buffer const& buffer) override;
+
+    static FileOutputStream& Open(Book& book, std::string const& name);
+
+  private:
+    File& _file;
+    uint64_t _offset;
+  };
+
   constexpr char const FsPathSeparator =
 #if defined(___COIL_PLATFORM_WINDOWS)
     '\\'
