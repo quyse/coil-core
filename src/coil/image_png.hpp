@@ -4,5 +4,6 @@
 
 namespace Coil
 {
-  void LoadPngImage(Buffer const& file, GraphicsImageFormat& format, std::vector<uint8_t>& data);
+  void LoadPngImage(InputStream& stream, GraphicsImageFormat& format, std::vector<uint8_t>& data);
+  void SavePngImage(OutputStream& stream, GraphicsImageFormat const& format, Buffer const& buffer);
 }

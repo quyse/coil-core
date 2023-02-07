@@ -113,7 +113,7 @@ namespace Coil
 
     RawImage(RawImage&& image)
     {
-      swap(*this, image);
+      *this = std::move(image);
     }
 
     RawImage& operator=(RawImage&& image)

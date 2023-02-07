@@ -3,62 +3,68 @@
 #include <cstring>
 #include <png.h>
 
+namespace
+{
+  struct Helper
+  {
+    static void Error(png_structp png, png_const_charp errorMsg)
+    {
+      auto& helper = *(Helper*)png_get_error_ptr(png);
+      helper.errorStream << "ERROR: " << errorMsg;
+    }
+
+    static void Warning(png_structp png, png_const_charp warningMsg)
+    {
+      auto& helper = *(Helper*)png_get_error_ptr(png);
+      helper.errorStream << "WARNING: " << warningMsg;
+    }
+
+    std::ostringstream errorStream;
+  };
+}
+
 namespace Coil
 {
-  void LoadPngImage(Buffer const& file, GraphicsImageFormat& format, std::vector<uint8_t>& data)
+  void LoadPngImage(InputStream& stream, GraphicsImageFormat& format, std::vector<uint8_t>& data)
   {
-    struct Loader
+    class LoadHelper : public Helper
     {
-      static void Error(png_structp png, png_const_charp errorMsg)
-      {
-        std::ostringstream& errorStream = *(std::ostringstream*)png_get_error_ptr(png);
-        errorStream << "ERROR: " << errorMsg;
-      }
-
-      static void Warning(png_structp png, png_const_charp warningMsg)
-      {
-        std::ostringstream& errorStream = *(std::ostringstream*)png_get_error_ptr(png);
-        errorStream << "WARNING: " << warningMsg;
-      }
+    public:
+      LoadHelper(InputStream& stream)
+      : _stream(stream) {}
 
       static void Read(png_structp png, png_bytep data, png_size_t length)
       {
-        Loader& loader = *(Loader*)png_get_io_ptr(png);
-        if(loader.position + length > loader.size)
+        LoadHelper& helper = *(LoadHelper*)png_get_io_ptr(png);
+        if(helper._stream.Read(Buffer(data, length)) < length)
         {
           png_error(png, "not enough data to read");
           return;
         }
-        memcpy(data, loader.data + loader.position, length);
-        loader.position += length;
       }
 
-      uint8_t const* data;
-      size_t size;
-      size_t position;
+    private:
+      InputStream& _stream;
     };
 
     // check signature
-    if(file.size < 8 || png_sig_cmp((png_const_bytep)file.data, 0, 8) != 0)
-      throw Exception("wrong PNG signature");
-
-    std::ostringstream errorStream;
-    Loader loader =
     {
-      .data = (uint8_t const*)file.data,
-      .size = file.size,
-      .position = 8,
-    };
+      uint8_t signature[8];
+      if(stream.Read(Buffer(signature, sizeof(signature))) != sizeof(signature) || png_sig_cmp(signature, 0, 8) != 0)
+        throw Exception("wrong PNG signature");
+    }
+
+    LoadHelper helper(stream);
 
     // create read struct
-    png_structp pngPtr = png_create_read_struct(PNG_LIBPNG_VER_STRING, &errorStream, &Loader::Error, &Loader::Warning);
+    png_structp pngPtr = png_create_read_struct(PNG_LIBPNG_VER_STRING, &helper, &LoadHelper::Error, &LoadHelper::Warning);
     if(!pngPtr)
       throw Exception("failed to create PNG read struct");
     // create info struct
     png_infop infoPtr = png_create_info_struct(pngPtr);
     if(!infoPtr)
     {
-      png_destroy_read_struct(&pngPtr, (png_infopp)NULL, (png_infopp)NULL);
+      png_destroy_read_struct(&pngPtr, nullptr, nullptr);
       throw Exception("failed to create PNG info struct");
     }
 
@@ -66,12 +72,12 @@ namespace Coil
     if(setjmp(png_jmpbuf(pngPtr)))
     {
       // control gets here in case of error
-      png_destroy_read_struct(&pngPtr, &infoPtr, (png_infopp)NULL);
-      throw Exception("failed to read PNG: ") << errorStream.str();
+      png_destroy_read_struct(&pngPtr, &infoPtr, nullptr);
+      throw Exception("failed to read PNG: ") << helper.errorStream.str();
     }
 
     // set read function
-    png_set_read_fn(pngPtr, &loader, &Loader::Read);
+    png_set_read_fn(pngPtr, &helper, &LoadHelper::Read);
     png_set_sig_bytes(pngPtr, 8);
 
     // get image info
@@ -133,6 +139,109 @@ namespace Coil
       png_read_image(pngPtr, imageRows.data());
     }
     // free struct
-    png_destroy_read_struct(&pngPtr, &infoPtr, (png_infopp)NULL);
+    png_destroy_read_struct(&pngPtr, &infoPtr, nullptr);
+  }
+
+  void SavePngImage(OutputStream& stream, GraphicsImageFormat const& format, Buffer const& buffer)
+  {
+    class SaveHelper : public Helper
+    {
+    public:
+      SaveHelper(OutputStream& stream)
+      : _stream(stream) {}
+
+      static void Write(png_structp png, png_bytep data, png_size_t length)
+      {
+        auto& helper = *(SaveHelper*)png_get_io_ptr(png);
+        helper._stream.Write(Buffer(data, length));
+      }
+
+      static void Flush(png_structp png)
+      {
+      }
+
+    private:
+      OutputStream& _stream;
+    };
+
+    SaveHelper helper(stream);
+
+    // create write struct
+    png_structp pngPtr = png_create_write_struct(PNG_LIBPNG_VER_STRING, &helper, &SaveHelper::Error, &SaveHelper::Warning);
+    if(!pngPtr)
+      throw Exception("failed to create PNG write struct");
+    // create info struct
+    png_infop infoPtr = png_create_info_struct(pngPtr);
+    if(!infoPtr)
+    {
+      png_destroy_write_struct(&pngPtr, nullptr);
+      throw Exception("failed to create PNG info struct");
+    }
+
+    // set error block
+    if(setjmp(png_jmpbuf(pngPtr)))
+    {
+      // control gets here in case of error
+      png_destroy_write_struct(&pngPtr, &infoPtr);
+      throw Exception("failed to write PNG: ") << helper.errorStream.str();
+    }
+
+    // set write function
+    png_set_write_fn(pngPtr, &helper, &SaveHelper::Write, &SaveHelper::Flush);
+
+    GraphicsImageMetrics metrics = format.GetMetrics();
+
+    uint8_t componentsCount = 0;
+    png_byte colorType;
+    switch(format.format.components)
+    {
+    case PixelFormat::Components::R:
+      componentsCount = 1;
+      colorType = PNG_COLOR_TYPE_GRAY;
+      break;
+    case PixelFormat::Components::RG:
+      componentsCount = 2;
+      colorType = PNG_COLOR_TYPE_RGB;
+      break;
+    case PixelFormat::Components::RGB:
+      componentsCount = 3;
+      colorType = PNG_COLOR_TYPE_RGB;
+      break;
+    case PixelFormat::Components::RGBA:
+      componentsCount = 4;
+      colorType = PNG_COLOR_TYPE_RGB_ALPHA;
+      break;
+    }
+    size_t pixelBitSize = metrics.pixelSize * 8;
+    size_t bitDepth = 0;
+    if(componentsCount && pixelBitSize % componentsCount == 0)
+    {
+      bitDepth = pixelBitSize / componentsCount;
+    }
+
+    png_set_IHDR(pngPtr, infoPtr,
+      format.width,
+      format.height,
+      bitDepth,
+      colorType,
+      PNG_INTERLACE_NONE,
+      PNG_COMPRESSION_TYPE_DEFAULT,
+      PNG_FILTER_TYPE_DEFAULT
+    );
+    png_write_info(pngPtr, infoPtr);
+
+    // write image data
+    {
+      std::vector<png_bytep> imageRows(format.height);
+      // get row pitch
+      int32_t pitch = format.width * metrics.pixelSize;
+      for(int32_t i = 0; i < format.height; ++i)
+        imageRows[i] = (uint8_t*)buffer.data + i * pitch;
+      png_write_image(pngPtr, imageRows.data());
+    }
+
+    png_write_end(pngPtr, nullptr);
+
+    png_destroy_write_struct(&pngPtr, &infoPtr);
   }
 }
