@@ -59,7 +59,12 @@ namespace Coil
   // decoder for various types from json
   // struct so we can use partial specialization
   template <typename T>
-  struct JsonDecoder : public JsonDecoderBase<T>
+  struct JsonDecoder;
+
+  // specialization for types already implemented in nlohmann library
+  template <typename T>
+  requires requires(json const& j) { j.get<T>(); }
+  struct JsonDecoder<T> : public JsonDecoderBase<T>
   {
     static T Decode(json const& j)
     {
@@ -72,7 +77,12 @@ namespace Coil
   // encoder for various types to json
   // struct so we can use partial specialization
   template <typename T>
-  struct JsonEncoder
+  struct JsonEncoder;
+
+  // specialization for types already implemented in nlohmann library
+  template <typename T>
+  requires std::constructible_from<json, T const&>
+  struct JsonEncoder<T>
   {
     static json Encode(T const& v)
     {
