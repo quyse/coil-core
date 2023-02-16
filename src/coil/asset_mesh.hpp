@@ -1,6 +1,7 @@
 #pragma once
 
 #include "math.hpp"
+#include <algorithm>
 
 namespace Coil
 {
