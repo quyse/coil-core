@@ -74,6 +74,11 @@ rec {
     };
     zstd = mkCmakePkg {
       inherit (pkgs.zstd) pname version src;
+      postPatch = ''
+        # remove unsupported option
+        grep -Fv -- '-z noexecstack' < build/cmake/CMakeModules/AddZstdCompilationFlags.cmake > build/cmake/CMakeModules/AddZstdCompilationFlags.cmake.new
+        mv build/cmake/CMakeModules/AddZstdCompilationFlags.cmake{.new,}
+      '';
       cmakeFlags = "-DZSTD_MULTITHREAD_SUPPORT=OFF -DZSTD_BUILD_PROGRAMS=OFF -DZSTD_BUILD_TESTS=OFF";
       sourceDir = "build/cmake";
     };
