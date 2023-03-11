@@ -86,6 +86,14 @@ namespace Coil
     return value;
   }
 
+  std::string StreamReader::ReadString()
+  {
+    uint64_t length = ReadNumber();
+    std::string value(length, '\0');
+    Read(value.data(), length);
+    return std::move(value);
+  }
+
   void StreamReader::ReadEnd()
   {
     uint8_t u;
