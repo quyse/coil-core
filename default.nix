@@ -8,12 +8,13 @@
 rec {
   # NixOS build
   coil-core = (pkgs.callPackage ./coil-core.nix {
-    steam = toolchain-steam.sdk;
+    steam = if toolchain-steam != null then toolchain-steam.sdk else null;
   }).overrideAttrs (attrs: {
     # force clang
     cmakeFlags = (attrs.cmakeFlags or []) ++ [
       "-DCMAKE_CXX_COMPILER=clang++"
       "-DCMAKE_C_COMPILER=clang"
+      "-DCOIL_CORE_DONT_REQUIRE_LIBS=${dontRequireLibsList}"
     ];
     nativeBuildInputs = attrs.nativeBuildInputs ++ [
       pkgs.clang_14
@@ -166,11 +167,11 @@ rec {
         "-DOPUS_X86_MAY_HAVE_AVX=OFF"
       ];
     };
-    steam = toolchain-steam.sdk.overrideAttrs (attrs: {
+    steam = if toolchain-steam != null then toolchain-steam.sdk.overrideAttrs (attrs: {
       installPhase = (attrs.installPhase or "") + (finalizePkg {
         buildInputs = [];
       });
-    });
+    }) else null;
     coil-core = mkCmakePkg {
       name = "coil-core";
       inherit (coil-core-nix) src;
@@ -187,11 +188,18 @@ rec {
         harfbuzz
         ogg
         opus
-        steam
+      ] ++ lib.optional (steam != null) steam;
+      cmakeFlags = [
+        "-DCOIL_CORE_DONT_REQUIRE_LIBS=${dontRequireLibsList}"
       ];
     };
   });
   coil-core-windows = windows-pkgs.coil-core;
+
+  # list of libs to not require if dependencies not available
+  dontRequireLibsList = lib.concatStringsSep ";" (lib.concatLists [
+    (lib.optional (toolchain-steam == null) "steam")
+  ]);
 
   touch = {
     inherit coil-core coil-core-ubuntu coil-core-windows;

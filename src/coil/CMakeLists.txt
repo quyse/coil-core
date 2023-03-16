@@ -834,9 +834,10 @@ if(BUILD_TESTING)
 endif() # BUILD_TESTING
 
 set(COIL_CORE_REQUIRE_LIBS ${coil_core_all_libraries} CACHE STRING "list of libs required to build")
+set(COIL_CORE_DONT_REQUIRE_LIBS "" CACHE STRING "list of libs not required to build (overrides COIL_CORE_REQUIRE_LIBS)")
 
 foreach(library ${COIL_CORE_REQUIRE_LIBS})
-  if(NOT TARGET coil_core_${library})
+  if((NOT TARGET coil_core_${library}) AND (NOT (library IN_LIST COIL_CORE_DONT_REQUIRE_LIBS)))
     message(SEND_ERROR "required library coil_core_${library} is not set up")
   endif()
 endforeach()
