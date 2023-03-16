@@ -57,7 +57,9 @@ rec {
 
     nlohmann_json = mkCmakePkg {
       inherit (pkgs.nlohmann_json) pname version src;
-      cmakeFlags = "-DJSON_BuildTests=OFF";
+      cmakeFlags = [
+        "-DJSON_BuildTests=OFF"
+      ];
     };
     vulkan-headers = mkCmakePkg {
       inherit (pkgs.vulkan-headers) pname version src;
@@ -67,7 +69,9 @@ rec {
       buildInputs = [
         vulkan-headers
       ];
-      cmakeFlags = "-DENABLE_WERROR=OFF";
+      cmakeFlags = [
+        "-DENABLE_WERROR=OFF"
+      ];
     };
     spirv-headers = mkCmakePkg {
       inherit (pkgs.spirv-headers) pname version src;
@@ -79,12 +83,18 @@ rec {
         grep -Fv -- '-z noexecstack' < build/cmake/CMakeModules/AddZstdCompilationFlags.cmake > build/cmake/CMakeModules/AddZstdCompilationFlags.cmake.new
         mv build/cmake/CMakeModules/AddZstdCompilationFlags.cmake{.new,}
       '';
-      cmakeFlags = "-DZSTD_MULTITHREAD_SUPPORT=OFF -DZSTD_BUILD_PROGRAMS=OFF -DZSTD_BUILD_TESTS=OFF";
+      cmakeFlags = [
+        "-DZSTD_MULTITHREAD_SUPPORT=OFF"
+        "-DZSTD_BUILD_PROGRAMS=OFF"
+        "-DZSTD_BUILD_TESTS=OFF"
+      ];
       sourceDir = "build/cmake";
     };
     SDL2 = mkCmakePkg {
       inherit (pkgs.SDL2) pname version src;
-      cmakeFlags = "-DBUILD_SHARED_LIBS=ON";
+      cmakeFlags = [
+        "-DBUILD_SHARED_LIBS=ON"
+      ];
     };
     zlib = mkCmakePkg {
       inherit (pkgs.zlib) pname version src;
@@ -94,7 +104,11 @@ rec {
       buildInputs = [
         zlib
       ];
-      cmakeFlags = "-DPNG_STATIC=OFF -DPNG_EXECUTABLES=OFF -DPNG_TESTS=OFF";
+      cmakeFlags = [
+        "-DPNG_STATIC=OFF"
+        "-DPNG_EXECUTABLES=OFF"
+        "-DPNG_TESTS=OFF"
+      ];
     };
     sqlite = mkCmakePkg {
       inherit (pkgs.sqlite) pname version src;
@@ -117,18 +131,25 @@ rec {
       buildInputs = [
         libpng
       ];
-      cmakeFlags = "-DBUILD_SHARED_LIBS=ON";
+      cmakeFlags = [
+        "-DBUILD_SHARED_LIBS=ON"
+      ];
     };
     harfbuzz = mkCmakePkg rec {
       inherit (pkgs.harfbuzz) pname version src;
       buildInputs = [
         freetype
       ];
-      cmakeFlags = "-DBUILD_SHARED_LIBS=ON -DHB_HAVE_FREETYPE=ON";
+      cmakeFlags = [
+        "-DBUILD_SHARED_LIBS=ON"
+        "-DHB_HAVE_FREETYPE=ON"
+      ];
     };
     ogg = mkCmakePkg {
       inherit (pkgs.libogg) pname version src;
-      cmakeFlags = "-DBUILD_SHARED_LIBS=ON";
+      cmakeFlags = [
+        "-DBUILD_SHARED_LIBS=ON"
+      ];
     };
     opus = mkCmakePkg rec {
       pname = "opus";
@@ -139,7 +160,11 @@ rec {
         rev = "v${version}";
         hash = "sha256-DO9JAO6907VpOUgBiJ4WIZm9hTAYBM2Qabi+x1ibqN4=";
       };
-      cmakeFlags = "-DBUILD_SHARED_LIBS=ON -DOPUS_X86_MAY_HAVE_SSE4_1=OFF -DOPUS_X86_MAY_HAVE_AVX=OFF";
+      cmakeFlags = [
+        "-DBUILD_SHARED_LIBS=ON"
+        "-DOPUS_X86_MAY_HAVE_SSE4_1=OFF"
+        "-DOPUS_X86_MAY_HAVE_AVX=OFF"
+      ];
     };
     steam = toolchain-steam.sdk.overrideAttrs (attrs: {
       installPhase = (attrs.installPhase or "") + (finalizePkg {
