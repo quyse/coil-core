@@ -1153,6 +1153,36 @@ namespace Coil
     return book.Allocate<VulkanPipeline>(pipeline, pipelineLayout);
   }
 
+  VulkanPipeline& VulkanDevice::CreatePipeline(Book& book, GraphicsPipelineLayout& graphicsPipelineLayout, GraphicsShader& graphicsShader)
+  {
+    VulkanPipelineLayout& pipelineLayout = static_cast<VulkanPipelineLayout&>(graphicsPipelineLayout);
+    VulkanShader& shader = static_cast<VulkanShader&>(graphicsShader);
+
+    VkComputePipelineCreateInfo info =
+    {
+      .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
+      .stage =
+      {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = VK_SHADER_STAGE_COMPUTE_BIT,
+        .module = shader._shaderModule,
+        .pName = "mainCompute",
+        .pSpecializationInfo = nullptr,
+      },
+      .layout = pipelineLayout._pipelineLayout,
+      .basePipelineHandle = nullptr,
+      .basePipelineIndex = -1,
+    };
+
+    VkPipeline pipeline;
+    CheckSuccess(vkCreateComputePipelines(_device, nullptr, 1, &info, nullptr, &pipeline), "creating Vulkan compute pipeline failed");
+    AllocateVulkanObject(book, _device, pipeline);
+    return book.Allocate<VulkanPipeline>(pipeline, pipelineLayout);
+  }
+
   VulkanFramebuffer& VulkanDevice::CreateFramebuffer(Book& book, GraphicsPass& graphicsPass, std::span<GraphicsImage*> const& pImages, ivec2 const& size)
   {
     VulkanPass& pass = static_cast<VulkanPass&>(graphicsPass);
@@ -1441,6 +1471,27 @@ namespace Coil
         .buffer = buf.buffer.buffer,
         .offset = buf.bufferOffset,
         .range = buffer.size,
+      },
+    };
+    descriptorSet.descriptorSet = nullptr;
+  }
+
+  void VulkanContext::BindStorageBuffer(GraphicsSlotSetId slotSet, GraphicsSlotId slot, uint32_t size)
+  {
+    // allocate buffer
+    auto buf = AllocateBuffer(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, size);
+
+    // set buffer to descriptor set
+    if(_descriptorSets.size() <= slotSet)
+      _descriptorSets.resize(slotSet + 1);
+    auto& descriptorSet = _descriptorSets[slotSet];
+    descriptorSet.bindings[slot] = BindingStorageBuffer
+    {
+      .info =
+      {
+        .buffer = buf.buffer.buffer,
+        .offset = buf.bufferOffset,
+        .range = size,
       },
     };
     descriptorSet.descriptorSet = nullptr;
@@ -1741,6 +1792,22 @@ namespace Coil
               .dstArrayElement = 0,
               .descriptorCount = 1,
               .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+              .pImageInfo = nullptr,
+              .pBufferInfo = &binding.info,
+              .pTexelBufferView = nullptr,
+            });
+          }
+          if constexpr(std::is_same_v<T, BindingStorageBuffer>)
+          {
+            _bufWriteDescriptorSets.push_back(
+            {
+              .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+              .pNext = nullptr,
+              .dstSet = descriptorSet.descriptorSet,
+              .dstBinding = bindingIt.first,
+              .dstArrayElement = 0,
+              .descriptorCount = 1,
+              .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
               .pImageInfo = nullptr,
               .pBufferInfo = &binding.info,
               .pTexelBufferView = nullptr,

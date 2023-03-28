@@ -357,6 +357,7 @@ namespace Coil
     virtual GraphicsShader& CreateShader(Book& book, GraphicsShaderRoots const& exprs) = 0;
     virtual GraphicsPipelineLayout& CreatePipelineLayout(Book& book, std::span<GraphicsShader*> const& shaders) = 0;
     virtual GraphicsPipeline& CreatePipeline(Book& book, GraphicsPipelineConfig const& config, GraphicsPipelineLayout& graphicsPipelineLayout, GraphicsPass& pass, GraphicsSubPassId subPassId, GraphicsShader& shader) = 0;
+    virtual GraphicsPipeline& CreatePipeline(Book& book, GraphicsPipelineLayout& graphicsPipelineLayout, GraphicsShader& shader) = 0;
     virtual GraphicsFramebuffer& CreateFramebuffer(Book& book, GraphicsPass& pass, std::span<GraphicsImage*> const& pImages, ivec2 const& size) = 0;
     virtual GraphicsImage& CreateTexture(Book& book, GraphicsPool& pool, GraphicsImageFormat const& format, GraphicsSampler* pSampler = nullptr) = 0;
     virtual GraphicsSampler& CreateSampler(Book& book, GraphicsSamplerConfig const& config) = 0;
@@ -388,6 +389,7 @@ namespace Coil
     virtual void BindDynamicVertexBuffer(uint32_t slot, Buffer const& buffer) = 0;
     virtual void BindIndexBuffer(GraphicsIndexBuffer* pIndexBuffer) = 0;
     virtual void BindUniformBuffer(GraphicsSlotSetId slotSet, GraphicsSlotId slot, Buffer const& buffer) = 0;
+    virtual void BindStorageBuffer(GraphicsSlotSetId slotSet, GraphicsSlotId slot, uint32_t size) = 0;
     virtual void BindImage(GraphicsSlotSetId slotSet, GraphicsSlotId slot, GraphicsImage& image) = 0;
     virtual void BindPipeline(GraphicsPipeline& pipeline) = 0;
     virtual void Draw(uint32_t indicesCount, uint32_t instancesCount = 1) = 0;

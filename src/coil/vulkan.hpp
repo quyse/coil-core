@@ -52,6 +52,7 @@ namespace Coil
     void BindDynamicVertexBuffer(uint32_t slot, Buffer const& buffer) override;
     void BindIndexBuffer(GraphicsIndexBuffer* pIndexBuffer) override;
     void BindUniformBuffer(GraphicsSlotSetId slotSet, GraphicsSlotId slot, Buffer const& buffer) override;
+    void BindStorageBuffer(GraphicsSlotSetId slotSet, GraphicsSlotId slot, uint32_t size) override;
     void BindImage(GraphicsSlotSetId slotSet, GraphicsSlotId slot, GraphicsImage& image) override;
     void BindPipeline(GraphicsPipeline& pipeline) override;
     void Draw(uint32_t indicesCount, uint32_t instancesCount) override;
@@ -87,11 +88,15 @@ namespace Coil
     {
       VkDescriptorBufferInfo info;
     };
+    struct BindingStorageBuffer
+    {
+      VkDescriptorBufferInfo info;
+    };
     struct BindingImage
     {
       VkDescriptorImageInfo info;
     };
-    using Binding = std::variant<BindingUniformBuffer, BindingImage>;
+    using Binding = std::variant<BindingUniformBuffer, BindingStorageBuffer, BindingImage>;
     struct DescriptorSet
     {
       std::map<GraphicsSlotId, Binding> bindings;
@@ -331,6 +336,7 @@ namespace Coil
     VulkanShader& CreateShader(Book& book, GraphicsShaderRoots const& roots) override;
     VulkanPipelineLayout& CreatePipelineLayout(Book& book, std::span<GraphicsShader*> const& shaders) override;
     VulkanPipeline& CreatePipeline(Book& book, GraphicsPipelineConfig const& config, GraphicsPipelineLayout& pipelineLayout, GraphicsPass& pass, GraphicsSubPassId subPassId, GraphicsShader& shader) override;
+    VulkanPipeline& CreatePipeline(Book& book, GraphicsPipelineLayout& pipelineLayout, GraphicsShader& shader) override;
     VulkanFramebuffer& CreateFramebuffer(Book& book, GraphicsPass& pass, std::span<GraphicsImage*> const& pImages, ivec2 const& size) override;
     VulkanImage& CreateTexture(Book& book, GraphicsPool& pool, GraphicsImageFormat const& format, GraphicsSampler* pSampler = nullptr) override;
     VulkanSampler& CreateSampler(Book& book, GraphicsSamplerConfig const& config) override;
