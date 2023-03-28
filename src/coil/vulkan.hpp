@@ -361,6 +361,7 @@ namespace Coil
   public:
     VulkanSystem(VkInstance instance);
 
+    static VulkanSystem& Create(Book& book);
     static VulkanSystem& Create(Book& book, Window& window);
 
     VulkanDevice& CreateDefaultDevice(Book& book) override;
@@ -379,6 +380,8 @@ namespace Coil
     static VkBlendOp GetBlendOp(GraphicsBlendOp op);
 
   private:
+    static VulkanSystem& Create(Book& book, Window* window);
+
     VkInstance _instance;
 
     static std::vector<InstanceExtensionsHandler> _instanceExtensionsHandlers;

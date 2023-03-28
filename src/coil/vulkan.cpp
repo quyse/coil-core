@@ -54,7 +54,17 @@ namespace Coil
   VulkanSystem::VulkanSystem(VkInstance instance)
   : _instance(instance) {}
 
+  VulkanSystem& VulkanSystem::Create(Book& book)
+  {
+    return Create(book, nullptr);
+  }
+
   VulkanSystem& VulkanSystem::Create(Book& book, Window& window)
+  {
+    return Create(book, &window);
+  }
+
+  VulkanSystem& VulkanSystem::Create(Book& book, Window* window)
   {
     // get instance version
     {
@@ -69,8 +79,11 @@ namespace Coil
     {
       // get instance extensions
       std::vector<char const*> extensions;
-      for(auto const& handler : _instanceExtensionsHandlers)
-        handler(window, extensions);
+      if(window)
+      {
+        for(auto const& handler : _instanceExtensionsHandlers)
+          handler(*window, extensions);
+      }
 
       VkApplicationInfo appInfo =
       {
