@@ -17,7 +17,7 @@ rec {
       "-DCOIL_CORE_DONT_REQUIRE_LIBS=${dontRequireLibsList}"
     ];
     nativeBuildInputs = attrs.nativeBuildInputs ++ [
-      pkgs.clang_14
+      pkgs.clang_15
     ];
   });
 
