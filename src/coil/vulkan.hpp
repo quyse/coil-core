@@ -365,10 +365,10 @@ namespace Coil
   class VulkanSystem final : public GraphicsSystem
   {
   public:
-    VulkanSystem(VkInstance instance);
+    VulkanSystem(VkInstance instance, bool renderCapable, bool computeCapable);
 
     static VulkanSystem& Create(Book& book);
-    static VulkanSystem& Create(Book& book, Window& window);
+    static VulkanSystem& Create(Book& book, Window& window, bool computeCapable = false);
 
     VulkanDevice& CreateDefaultDevice(Book& book) override;
 
@@ -386,9 +386,12 @@ namespace Coil
     static VkBlendOp GetBlendOp(GraphicsBlendOp op);
 
   private:
-    static VulkanSystem& Create(Book& book, Window* window);
+    static VulkanSystem& Create(Book& book, Window* window, bool renderCapable, bool computeCapable);
 
     VkInstance _instance;
+
+    bool _renderCapable;
+    bool _computeCapable;
 
     static std::vector<InstanceExtensionsHandler> _instanceExtensionsHandlers;
     static std::vector<DeviceSurfaceHandler> _deviceSurfaceHandlers;

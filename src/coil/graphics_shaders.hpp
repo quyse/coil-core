@@ -24,6 +24,10 @@ namespace Coil
   {
     ShaderDataType(ShaderDataType const&) = delete;
     ShaderDataType(ShaderDataType&&) = delete;
+    ShaderDataType& operator=(ShaderDataType const&) = delete;
+    ShaderDataType& operator=(ShaderDataType&&) = delete;
+
+    virtual ~ShaderDataType() {};
 
     virtual ShaderDataKind GetKind() const = 0;
     virtual uint32_t GetSize() const = 0;
@@ -235,8 +239,6 @@ namespace Coil
     Expression,
     // statements don't have value type
     Statement,
-    // uniform buffer
-    UniformBuffer,
     // variables have value type and can be written to
     Variable,
     // sampled image
@@ -249,8 +251,6 @@ namespace Coil
     Operation,
     // reads variable
     Read,
-    // reads uniform buffer member
-    Uniform,
     // samples sampled image
     Sample,
   };
@@ -305,6 +305,8 @@ namespace Coil
 
   enum class ShaderVariableType
   {
+    Buffer,
+    StructMember,
     Attribute,
     Interpolant,
     Fragment,
@@ -573,21 +575,6 @@ namespace Coil
     return std::make_shared<ShaderStatementSequenceNode>(a.node, b.node);
   }
 
-  struct ShaderUniformBufferNode : public ShaderNode
-  {
-    ShaderUniformBufferNode(ShaderDataStructType const& dataType, uint32_t slotSet, uint32_t slot)
-    : dataType(dataType), slotSet(slotSet), slot(slot) {}
-
-    ShaderDataStructType const& dataType;
-    uint32_t slotSet;
-    uint32_t slot;
-
-    ShaderNodeType GetNodeType() const
-    {
-      return ShaderNodeType::Variable;
-    }
-  };
-
   struct ShaderVariableNode : public ShaderNode
   {
     ShaderNodeType GetNodeType() const
@@ -597,6 +584,54 @@ namespace Coil
 
     virtual ShaderVariableType GetVariableType() const = 0;
     virtual ShaderDataType const& GetDataType() const = 0;
+  };
+
+  // buffer type
+  enum class ShaderBufferType
+  {
+    Uniform,
+    Storage,
+  };
+
+  struct ShaderBufferVariableNode : public ShaderVariableNode
+  {
+    ShaderBufferVariableNode(ShaderDataType const& dataType, uint32_t slotSet, uint32_t slot, ShaderBufferType bufferType)
+    : dataType(dataType), slotSet(slotSet), slot(slot), bufferType(bufferType) {}
+
+    ShaderDataType const& dataType;
+    uint32_t slotSet;
+    uint32_t slot;
+    ShaderBufferType bufferType;
+
+    ShaderVariableType GetVariableType() const override
+    {
+      return ShaderVariableType::Buffer;
+    }
+
+    ShaderDataType const& GetDataType() const override
+    {
+      return dataType;
+    }
+  };
+
+  struct ShaderStructMemberVariableNode : public ShaderVariableNode
+  {
+    ShaderStructMemberVariableNode(std::shared_ptr<ShaderVariableNode> structNode, ShaderDataType const& dataType, uint32_t index)
+    : structNode(std::move(structNode)), dataType(dataType), index(index) {}
+
+    std::shared_ptr<ShaderVariableNode> structNode;
+    ShaderDataType const& dataType;
+    uint32_t index;
+
+    ShaderVariableType GetVariableType() const override
+    {
+      return ShaderVariableType::StructMember;
+    }
+
+    ShaderDataType const& GetDataType() const override
+    {
+      return dataType;
+    }
   };
 
   struct ShaderSampledImageNode : public ShaderNode
@@ -676,26 +711,6 @@ namespace Coil
     ShaderExpressionType GetExpressionType() const override
     {
       return ShaderExpressionType::Read;
-    }
-  };
-
-  struct ShaderUniformNode : public ShaderExpressionNode
-  {
-    ShaderUniformNode(std::shared_ptr<ShaderUniformBufferNode> uniformBufferNode, ShaderDataType const& dataType, uint32_t index)
-    : uniformBufferNode(std::move(uniformBufferNode)), dataType(dataType), index(index) {}
-
-    std::shared_ptr<ShaderUniformBufferNode> uniformBufferNode;
-    ShaderDataType const& dataType;
-    uint32_t index;
-
-    ShaderExpressionType GetExpressionType() const override
-    {
-      return ShaderExpressionType::Uniform;
-    }
-
-    ShaderDataType const& GetDataType() const override
-    {
-      return dataType;
     }
   };
 
@@ -858,49 +873,6 @@ namespace Coil
   using ShaderDataIdentityStruct = T<std::type_identity_t>;
 
 
-  // struct establishing slot for uniform buffer
-  template <template <template <typename> typename> typename T, uint32_t slotSet, uint32_t slot>
-  struct ShaderDataUniformStructSlotInitializer
-  {
-    std::shared_ptr<ShaderUniformBufferNode> node =
-      std::make_shared<ShaderUniformBufferNode>(ShaderDataStructTypeOf<T>(), slotSet, slot);
-
-    // counter for member initialization
-    uint32_t nextMember = 0;
-  };
-
-  // initializer object for uniform struct slots
-  // It would be nicer to make it local static variable of GetShaderDataUniformStruct,
-  // as C++ >=17 allows to reference local variable in template argument,
-  // but in practice it hits linker debug info bugs.
-  // So, a template variable instead.
-  template <template <template <typename> typename> typename T, uint32_t slotSet, uint32_t slot>
-  ShaderDataUniformStructSlotInitializer<T, slotSet, slot> shaderDataUniformStructSlotInitializer;
-
-  template <auto& initializer>
-  struct ShaderDataUniformStructHelper
-  {
-    template <typename T>
-    struct Member : public ShaderExpression<T>
-    {
-      Member()
-      : ShaderExpression<T>(std::make_shared<ShaderUniformNode>(
-          initializer.node,
-          ShaderDataTypeOf<T>(),
-          initializer.nextMember++
-        )) {}
-    };
-  };
-
-  template <template <template <typename> typename> typename T, uint32_t slotSet, uint32_t slot>
-  auto const& GetShaderDataUniformStruct()
-  {
-    static T<ShaderDataUniformStructHelper<shaderDataUniformStructSlotInitializer<T, slotSet, slot>>::template Member> const uniformStruct;
-
-    return uniformStruct;
-  }
-
-
   template <typename T>
   struct ShaderVariable
   {
@@ -915,11 +887,55 @@ namespace Coil
       return ShaderExpression<T>(std::make_shared<ShaderReadNodeImpl<T>>(node));
     }
 
-    ShaderStatement Write(ShaderExpression<T> expression)
+    ShaderStatement Write(ShaderExpression<T> expression) const
     {
       return ShaderStatement(std::make_shared<ShaderStatementWriteNode>(node, expression.node));
     }
   };
+
+
+  // struct establishing slot for struct buffer
+  template <template <template <typename> typename> typename T, uint32_t slotSet, uint32_t slot, ShaderBufferType bufferType>
+  struct ShaderDataStructBufferSlotInitializer
+  {
+    std::shared_ptr<ShaderBufferVariableNode> node =
+      std::make_shared<ShaderBufferVariableNode>(ShaderDataStructTypeOf<T>(), slotSet, slot, bufferType);
+
+    // counter for member initialization
+    uint32_t nextMember = 0;
+  };
+
+  // initializer object for struct buffer slots
+  // It would be nicer to make it local static variable of GetShaderDataStructBuffer,
+  // as C++ >=17 allows to reference local variable in template argument,
+  // but in practice it hits linker debug info bugs.
+  // So, a template variable instead.
+  template <template <template <typename> typename> typename T, uint32_t slotSet, uint32_t slot, ShaderBufferType bufferType>
+  ShaderDataStructBufferSlotInitializer<T, slotSet, slot, bufferType> shaderDataStructBufferSlotInitializer;
+
+  template <auto& initializer>
+  struct ShaderDataStructBufferHelper
+  {
+    template <typename T>
+    struct Member : public ShaderVariable<T>
+    {
+      Member()
+      : ShaderVariable<T>(std::make_shared<ShaderStructMemberVariableNode>(
+          initializer.node,
+          ShaderDataTypeOf<T>(),
+          initializer.nextMember++
+        )) {}
+    };
+  };
+
+  template <template <template <typename> typename> typename T, uint32_t slotSet, uint32_t slot, ShaderBufferType bufferType>
+  auto const& GetShaderDataStructBuffer()
+  {
+    static T<ShaderDataStructBufferHelper<shaderDataStructBufferSlotInitializer<T, slotSet, slot, bufferType>>::template Member> const structBuffer;
+
+    return structBuffer;
+  }
+
 
   template <typename T>
   ShaderVariable<T> ShaderAttribute(uint32_t location)

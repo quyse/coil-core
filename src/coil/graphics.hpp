@@ -238,6 +238,8 @@ namespace Coil
   {
     std::shared_ptr<ShaderStatementNode> vertex;
     std::shared_ptr<ShaderStatementNode> fragment;
+    std::shared_ptr<ShaderStatementNode> compute;
+    ivec3 computeSize;
   };
 
   class GraphicsPipelineLayout

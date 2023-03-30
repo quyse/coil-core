@@ -51,20 +51,20 @@ namespace
 
 namespace Coil
 {
-  VulkanSystem::VulkanSystem(VkInstance instance)
-  : _instance(instance) {}
+  VulkanSystem::VulkanSystem(VkInstance instance, bool renderCapable, bool computeCapable)
+  : _instance(instance), _renderCapable(renderCapable), _computeCapable(computeCapable) {}
 
   VulkanSystem& VulkanSystem::Create(Book& book)
   {
-    return Create(book, nullptr);
+    return Create(book, nullptr, false, true);
   }
 
-  VulkanSystem& VulkanSystem::Create(Book& book, Window& window)
+  VulkanSystem& VulkanSystem::Create(Book& book, Window& window, bool computeCapable)
   {
-    return Create(book, &window);
+    return Create(book, &window, true, computeCapable);
   }
 
-  VulkanSystem& VulkanSystem::Create(Book& book, Window* window)
+  VulkanSystem& VulkanSystem::Create(Book& book, Window* window, bool renderCapable, bool computeCapable)
   {
     // get instance version
     {
@@ -83,6 +83,10 @@ namespace Coil
       {
         for(auto const& handler : _instanceExtensionsHandlers)
           handler(*window, extensions);
+      }
+      else if(renderCapable)
+      {
+        extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
       }
 
       VkApplicationInfo appInfo =
@@ -112,7 +116,7 @@ namespace Coil
       AllocateVulkanObject(book, instance);
     }
 
-    return book.Allocate<VulkanSystem>(instance);
+    return book.Allocate<VulkanSystem>(instance, renderCapable, computeCapable);
   }
 
   VulkanDevice& VulkanSystem::CreateDefaultDevice(Book& book)
@@ -179,10 +183,11 @@ namespace Coil
         .pQueuePriorities = &queuePriority,
       };
 
-      std::vector<char const*> enabledExtensionNames =
-      {
-        VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-      };
+      std::vector<char const*> enabledExtensionNames;
+      if(_renderCapable)
+        enabledExtensionNames.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+      if(_computeCapable)
+        enabledExtensionNames.push_back(VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME);
       if(enablePortabilitySubsetExtension)
         enabledExtensionNames.push_back("VK_KHR_portability_subset");
       VkDeviceCreateInfo info =
@@ -823,6 +828,7 @@ namespace Coil
       VkShaderStageFlags stagesMask = 0;
       if(roots.vertex) stagesMask |= VK_SHADER_STAGE_VERTEX_BIT;
       if(roots.fragment) stagesMask |= VK_SHADER_STAGE_FRAGMENT_BIT;
+      if(roots.compute) stagesMask |= VK_SHADER_STAGE_COMPUTE_BIT;
 
       AllocateVulkanObject(book, _device, shaderModule);
       return book.Allocate<VulkanShader>(shaderModule, stagesMask, std::move(module.descriptorSetLayouts));
@@ -891,6 +897,9 @@ namespace Coil
           case SpirvDescriptorType::UniformBuffer:
             descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
             break;
+          case SpirvDescriptorType::StorageBuffer:
+            descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+            break;
           case SpirvDescriptorType::SampledImage:
             descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
             break;
@@ -901,6 +910,7 @@ namespace Coil
           VkShaderStageFlags stageFlags = 0;
           if(mergedBinding.stageFlags & (uint32_t)SpirvStageFlag::Vertex) stageFlags |= VK_SHADER_STAGE_VERTEX_BIT;
           if(mergedBinding.stageFlags & (uint32_t)SpirvStageFlag::Fragment) stageFlags |= VK_SHADER_STAGE_FRAGMENT_BIT;
+          if(mergedBinding.stageFlags & (uint32_t)SpirvStageFlag::Compute) stageFlags |= VK_SHADER_STAGE_COMPUTE_BIT;
 
           bindings.push_back(
           {
@@ -1167,7 +1177,8 @@ namespace Coil
       {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
         .pNext = nullptr,
-        .flags = VK_SHADER_STAGE_COMPUTE_BIT,
+        .flags = 0,
+        .stage = VK_SHADER_STAGE_COMPUTE_BIT,
         .module = shader._shaderModule,
         .pName = "mainCompute",
         .pSpecializationInfo = nullptr,

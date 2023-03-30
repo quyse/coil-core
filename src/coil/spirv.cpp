@@ -1,7 +1,9 @@
 #include "spirv.hpp"
 #include <set>
 #include <map>
+#include <memory>
 #include <optional>
+#include <cstring>
 #include <spirv/unified1/spirv.hpp11>
 #include <spirv/unified1/GLSL.std.450.h>
 
@@ -36,6 +38,17 @@ namespace Coil
       };
       TraverseStatement(function, node);
       _functions.insert({ std::move(name), std::move(function) });
+
+      switch(executionModel)
+      {
+      case spv::ExecutionModel::Vertex:
+      case spv::ExecutionModel::Fragment:
+      case spv::ExecutionModel::GLCompute:
+        _capabilities.insert(spv::Capability::Shader);
+        break;
+      default:
+        break;
+      }
     }
 
     SpirvModule Finalize()
@@ -50,6 +63,14 @@ namespace Coil
       }
 
       // emit extensions
+      for(auto extension : _extensions)
+      {
+        EmitOp(_codeModule, spv::Op::OpExtension, [&]()
+        {
+          EmitString(_codeModule, extension);
+        });
+      }
+      // emit instruction extensions
       auto emitExtension = [&](char const* name, ResultId resultId)
       {
         EmitOp(_codeModule, spv::Op::OpExtInstImport, [&]()
@@ -83,13 +104,27 @@ namespace Coil
       // emit extra entry point declarations
       for(auto const& function : _functions)
       {
-        if(function.second.executionModel == spv::ExecutionModel::Fragment)
+        switch(function.second.executionModel)
         {
+        case spv::ExecutionModel::Fragment:
           EmitOp(_codeModule, spv::Op::OpExecutionMode, [&]()
           {
             Emit(_codeModule, function.second.resultId);
             Emit(_codeModule, spv::ExecutionMode::OriginUpperLeft); // upper-left is actually required by Vulkan spec
           });
+          break;
+        case spv::ExecutionModel::GLCompute:
+          EmitOp(_codeModule, spv::Op::OpExecutionMode, [&]()
+          {
+            Emit(_codeModule, function.second.resultId);
+            Emit(_codeModule, spv::ExecutionMode::LocalSize);
+            Emit(_codeModule, _computeSize.x());
+            Emit(_codeModule, _computeSize.y());
+            Emit(_codeModule, _computeSize.z());
+          });
+          break;
+        default:
+          break;
         }
       }
 
@@ -168,6 +203,11 @@ namespace Coil
       }
 
       return std::move(module);
+    }
+
+    void SetComputeSize(ivec3 computeSize)
+    {
+      _computeSize = computeSize;
     }
 
   private:
@@ -539,39 +579,13 @@ namespace Coil
       case ShaderExpressionType::Read:
         {
           ShaderReadNode* readNode = static_cast<ShaderReadNode*>(node);
-          ResultId variableResultId = TraverseVariable(function, readNode->node.get());
+          ResultId variableResultId = TraverseVariable(function, readNode->node.get()).first;
           EmitOp(function.code, spv::Op::OpLoad, [&]()
           {
             Emit(function.code, typeResultId);
             resultId = EmitResultId(function.code);
             Emit(function.code, variableResultId);
           });
-        }
-        break;
-      case ShaderExpressionType::Uniform:
-        {
-          ShaderUniformNode* uniformNode = static_cast<ShaderUniformNode*>(node);
-          ResultId typeResultId = TraverseType(uniformNode->dataType);
-          ResultId ptrTypeResultId = TraversePointerType(typeResultId, spv::StorageClass::Uniform);
-          ShaderUniformBufferNode* uniformBufferNode = uniformNode->uniformBufferNode.get();
-          ResultId uniformBufferResultId = TraverseUniformBuffer(uniformBufferNode);
-          ResultId indexResultId = TraverseConst(uniformNode->index);
-          ResultId ptrResultId;
-          EmitOp(function.code, spv::Op::OpAccessChain, [&]()
-          {
-            Emit(function.code, ptrTypeResultId);
-            ptrResultId = EmitResultId(function.code);
-            Emit(function.code, uniformBufferResultId);
-            Emit(function.code, indexResultId);
-          });
-          EmitOp(function.code, spv::Op::OpLoad, [&]()
-          {
-            Emit(function.code, typeResultId);
-            resultId = EmitResultId(function.code);
-            Emit(function.code, ptrResultId);
-          });
-
-          _bindings[uniformBufferNode->slotSet][uniformBufferNode->slot].stageFlags |= (uint32_t)function.stage;
         }
         break;
       case ShaderExpressionType::Sample:
@@ -666,7 +680,7 @@ namespace Coil
       case ShaderStatementType::Write:
         {
           ShaderStatementWriteNode* writeNode = static_cast<ShaderStatementWriteNode*>(node);
-          ResultId variableResultId = TraverseVariable(function, writeNode->variableNode.get());
+          ResultId variableResultId = TraverseVariable(function, writeNode->variableNode.get()).first;
           ResultId expressionResultId = TraverseExpression(function, writeNode->expressionNode.get());
           EmitOp(function.code, spv::Op::OpStore, [&]()
           {
@@ -680,14 +694,48 @@ namespace Coil
       }
     }
 
-    ResultId TraverseVariable(Function& function, ShaderVariableNode* node)
+    std::pair<ResultId, spv::StorageClass> TraverseVariable(Function& function, ShaderVariableNode* node)
     {
       spv::StorageClass storageClass;
-      uint32_t location;
+      std::optional<uint32_t> location;
       std::optional<spv::BuiltIn> builtin;
+      std::optional<std::tuple<uint32_t, uint32_t, SpirvDescriptorType>> descriptor;
+      std::optional<std::tuple<ResultId, ResultId>> accessChain;
 
       switch(node->GetVariableType())
       {
+      case ShaderVariableType::Buffer:
+        {
+          ShaderBufferVariableNode* bufferNode = static_cast<ShaderBufferVariableNode*>(node);
+
+          SpirvDescriptorType descriptorType = SpirvDescriptorType::Unused;
+          switch(bufferNode->bufferType)
+          {
+          case ShaderBufferType::Uniform:
+            descriptorType = SpirvDescriptorType::UniformBuffer;
+            storageClass = spv::StorageClass::Uniform;
+            break;
+          case ShaderBufferType::Storage:
+            descriptorType = SpirvDescriptorType::StorageBuffer;
+            storageClass = spv::StorageClass::StorageBuffer;
+            _extensions.insert("SPV_KHR_storage_buffer_storage_class");
+            break;
+          default:
+            throw Exception("unsupported SPIR-V buffer type");
+          }
+
+          descriptor = { bufferNode->slotSet, bufferNode->slot, descriptorType };
+        }
+        break;
+      case ShaderVariableType::StructMember:
+        {
+          ShaderStructMemberVariableNode* memberNode = static_cast<ShaderStructMemberVariableNode*>(node);
+          auto structVariable = TraverseVariable(function, memberNode->structNode.get());
+          storageClass = structVariable.second;
+          ResultId indexResultId = TraverseConst(memberNode->index);
+          accessChain = { structVariable.first, indexResultId };
+        }
+        break;
       case ShaderVariableType::Attribute:
         {
           ShaderVariableAttributeNode* attributeNode = static_cast<ShaderVariableAttributeNode*>(node);
@@ -777,19 +825,33 @@ namespace Coil
       }
 
       auto it = function.variablesResultIds.find({ node, storageClass });
-      if(it != function.variablesResultIds.end()) return it->second;
+      if(it != function.variablesResultIds.end()) return { it->second, storageClass };
       it = function.variablesResultIds.insert({ { node, storageClass }, 0 }).first;
 
       ShaderDataType const& dataType = node->GetDataType();
       ResultId typeResultId = TraversePointerType(TraverseType(dataType), storageClass);
       ResultId resultId;
 
-      EmitOp(_codeDecls, spv::Op::OpVariable, [&]()
+      if(accessChain.has_value())
       {
-        Emit(_codeDecls, typeResultId);
-        resultId = EmitResultId(_codeDecls);
-        Emit(_codeDecls, storageClass);
-      });
+        auto [structResultId, indexResultId] = accessChain.value();
+        EmitOp(function.code, spv::Op::OpAccessChain, [&, structResultId = structResultId, indexResultId = indexResultId]()
+        {
+          Emit(function.code, typeResultId);
+          resultId = EmitResultId(function.code);
+          Emit(function.code, structResultId);
+          Emit(function.code, indexResultId);
+        });
+      }
+      else
+      {
+        EmitOp(_codeDecls, spv::Op::OpVariable, [&]()
+        {
+          Emit(_codeDecls, typeResultId);
+          resultId = EmitResultId(_codeDecls);
+          Emit(_codeDecls, storageClass);
+        });
+      }
 
       it->second = resultId;
 
@@ -802,19 +864,55 @@ namespace Coil
           Emit(_codeAnnotations, builtin.value());
         });
       }
-      else
+      else if(location.has_value())
       {
         EmitOp(_codeAnnotations, spv::Op::OpDecorate, [&]()
         {
           Emit(_codeAnnotations, resultId);
           Emit(_codeAnnotations, spv::Decoration::Location);
-          Emit(_codeAnnotations, location);
+          Emit(_codeAnnotations, location.value());
         });
       }
 
-      function.interfaceVariablesResultIds.insert(resultId);
+      if(descriptor.has_value())
+      {
+        auto [slotSet, slot, descriptorType] = descriptor.value();
 
-      return resultId;
+        EmitOp(_codeAnnotations, spv::Op::OpDecorate, [&, slotSet = slotSet]()
+        {
+          Emit(_codeAnnotations, resultId);
+          Emit(_codeAnnotations, spv::Decoration::DescriptorSet);
+          Emit(_codeAnnotations, slotSet);
+        });
+        EmitOp(_codeAnnotations, spv::Op::OpDecorate, [&, slot = slot]()
+        {
+          Emit(_codeAnnotations, resultId);
+          Emit(_codeAnnotations, spv::Decoration::Binding);
+          Emit(_codeAnnotations, slot);
+        });
+
+        SpirvDescriptorSetLayoutBinding& binding = _bindings[slotSet][slot];
+        if(binding.descriptorType != descriptorType)
+        {
+          if(binding.descriptorType != SpirvDescriptorType::Unused)
+            throw Exception("conflicting SPIR-V descriptor");
+          binding.descriptorType = descriptorType;
+          binding.descriptorCount = std::max<uint32_t>(binding.descriptorCount, 1);
+        }
+        binding.stageFlags |= (uint32_t)function.stage;
+      }
+
+      switch(storageClass)
+      {
+      case spv::StorageClass::Input:
+      case spv::StorageClass::Output:
+        function.interfaceVariablesResultIds.insert(resultId);
+        break;
+      default:
+        break;
+      }
+
+      return { resultId, storageClass };
     }
 
     ResultId TraverseType(ShaderDataType const& dataType)
@@ -872,14 +970,16 @@ namespace Coil
       case ShaderDataKind::Matrix:
         {
           ShaderDataMatrixType const& dataMatrixType = static_cast<ShaderDataMatrixType const&>(dataType);
-          resultId = TraverseCompositeType(spv::Op::OpTypeMatrix,
-            ShaderDataVectorType(
-              dataMatrixType.baseType,
-              dataMatrixType.n,
-              // does not account for alignment, but column's size is not used anywhere
-              dataMatrixType.n * dataMatrixType.baseType.GetSize()
-            ),
-            dataMatrixType.m);
+          // SPIR-V needs vector type of column
+          std::unique_ptr<ShaderDataType const> columnTypePtr = std::make_unique<ShaderDataVectorType>(
+            dataMatrixType.baseType,
+            dataMatrixType.n,
+            // does not account for alignment, but column's size is not used anywhere
+            dataMatrixType.n * dataMatrixType.baseType.GetSize()
+          );
+          ShaderDataType const& columnType = *columnTypePtr;
+          _tempTypes.push_back(std::move(columnTypePtr));
+          resultId = TraverseCompositeType(spv::Op::OpTypeMatrix, columnType, dataMatrixType.m);
         }
         break;
       case ShaderDataKind::Array:
@@ -1116,48 +1216,6 @@ namespace Coil
       return resultId;
     }
 
-    ResultId TraverseUniformBuffer(ShaderUniformBufferNode* node)
-    {
-      auto it = _uniformBufferResultIds.find(node);
-      if(it != _uniformBufferResultIds.end()) return it->second;
-
-      ResultId typeResultId = TraversePointerType(TraverseType(node->dataType), spv::StorageClass::Uniform);
-
-      ResultId resultId;
-      EmitOp(_codeDecls, spv::Op::OpVariable, [&]()
-      {
-        Emit(_codeDecls, typeResultId);
-        resultId = EmitResultId(_codeDecls);
-        Emit(_codeDecls, spv::StorageClass::Uniform);
-      });
-
-      EmitOp(_codeAnnotations, spv::Op::OpDecorate, [&]()
-      {
-        Emit(_codeAnnotations, resultId);
-        Emit(_codeAnnotations, spv::Decoration::DescriptorSet);
-        Emit(_codeAnnotations, node->slotSet);
-      });
-      EmitOp(_codeAnnotations, spv::Op::OpDecorate, [&]()
-      {
-        Emit(_codeAnnotations, resultId);
-        Emit(_codeAnnotations, spv::Decoration::Binding);
-        Emit(_codeAnnotations, node->slot);
-      });
-
-      _uniformBufferResultIds.insert({ node, resultId });
-
-      SpirvDescriptorSetLayoutBinding& binding = _bindings[node->slotSet][node->slot];
-      if(binding.descriptorType != SpirvDescriptorType::UniformBuffer)
-      {
-        if(binding.descriptorType != SpirvDescriptorType::Unused)
-          throw Exception("conflicting SPIR-V descriptor for uniform buffer");
-        binding.descriptorType = SpirvDescriptorType::UniformBuffer;
-        binding.descriptorCount = std::max<uint32_t>(binding.descriptorCount, 1);
-      }
-
-      return resultId;
-    }
-
     ResultId TraverseSampledImage(ShaderSampledImageNode* node)
     {
       auto it = _sampledImageResultIds.find(node);
@@ -1312,25 +1370,37 @@ namespace Coil
       }
     };
 
+    // comparator for C strings
+    struct CStringComparator
+    {
+      bool operator()(char const* a, char const* b) const
+      {
+        return strcmp(a, b) < 0;
+      }
+    };
+
     SpirvCode _codeAnnotations; // annotations
     SpirvCode _codeDecls; // types, constants, global variables
     SpirvCode _codeModule; // module code
     std::map<std::string, Function> _functions; // entry points
     std::map<ShaderDataType const*, ResultId, ShaderDataTypePtrComparator> _typeResultIds;
+    std::vector<std::unique_ptr<ShaderDataType const>> _tempTypes; // temporary created types, stored on heap for references to stay valid
     std::map<std::pair<ResultId, spv::StorageClass>, ResultId> _pointerTypeResultIds;
     std::map<float, ResultId> _floatConstResultIds;
     std::map<uint32_t, ResultId> _uintConstResultIds;
     std::map<int32_t, ResultId> _intConstResultIds;
     std::map<bool, ResultId> _boolConstResultIds; // yeah, stupid
-    std::map<ShaderUniformBufferNode*, ResultId> _uniformBufferResultIds;
+    std::map<ShaderBufferVariableNode*, ResultId> _structBufferResultIds;
     std::map<ShaderSampledImageNode*, ResultId> _sampledImageResultIds;
     std::map<ResultId, ResultId> _sampledImageTypeResultIds;
     std::map<std::pair<ResultId, size_t>, ResultId> _imageTypeResultIds;
 
     std::set<spv::Capability> _capabilities =
     {
-      spv::Capability::Shader, // enables Matrix as well
+      spv::Capability::Matrix,
     };
+    std::set<char const*, CStringComparator> _extensions;
+    ivec3 _computeSize;
     ResultId _nextResultId = 1;
     uint32_t _upperBoundResultIdOffset = 0;
     ResultId _glslInstSetResultId = 0;
@@ -1345,6 +1415,11 @@ namespace Coil
       compiler.TraverseEntryPoint("mainVertex", SpirvStageFlag::Vertex, spv::ExecutionModel::Vertex, roots.vertex.get());
     if(roots.fragment)
       compiler.TraverseEntryPoint("mainFragment", SpirvStageFlag::Fragment, spv::ExecutionModel::Fragment, roots.fragment.get());
+    if(roots.compute)
+    {
+      compiler.SetComputeSize(roots.computeSize);
+      compiler.TraverseEntryPoint("mainCompute", SpirvStageFlag::Compute, spv::ExecutionModel::GLCompute, roots.compute.get());
+    }
 
     return compiler.Finalize();
   }

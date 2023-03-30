@@ -10,6 +10,7 @@ namespace Coil
   {
     Unused,
     UniformBuffer,
+    StorageBuffer,
     SampledImage,
   };
 
@@ -17,6 +18,7 @@ namespace Coil
   {
     Vertex = 1,
     Fragment = 2,
+    Compute = 4,
   };
 
   struct SpirvDescriptorSetLayoutBinding
