@@ -65,14 +65,14 @@ namespace Coil
       return t[i];
     }
 
-    constexpr T x() const { return t[0]; }
-    constexpr T y() const { return t[1]; }
-    constexpr T z() const { return t[2]; }
-    constexpr T w() const { return t[3]; }
-    constexpr T& x() { return t[0]; }
-    constexpr T& y() { return t[1]; }
-    constexpr T& z() { return t[2]; }
-    constexpr T& w() { return t[3]; }
+    constexpr T x() const                  { return t[0]; }
+    constexpr T y() const requires (1 < n) { return t[1]; }
+    constexpr T z() const requires (2 < n) { return t[2]; }
+    constexpr T w() const requires (3 < n) { return t[3]; }
+    constexpr T& x()                  { return t[0]; }
+    constexpr T& y() requires (1 < n) { return t[1]; }
+    constexpr T& z() requires (2 < n) { return t[2]; }
+    constexpr T& w() requires (3 < n) { return t[3]; }
 
     friend auto operator<=>(xvec const&, xvec const&) = default;
   };
