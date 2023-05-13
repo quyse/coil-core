@@ -20,7 +20,7 @@
 , pulseaudio
 , libogg
 , libopus
-, steam
+, steam-sdk
 }:
 
 stdenv.mkDerivation {
@@ -45,7 +45,7 @@ stdenv.mkDerivation {
     harfbuzz
     libogg
     libopus
-    steam
+    steam-sdk
   ] ++ lib.optionals stdenv.hostPlatform.isLinux [
     wayland
     wayland-protocols

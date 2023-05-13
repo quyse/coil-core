@@ -8,7 +8,7 @@
 rec {
   # NixOS build
   coil-core = (pkgs.callPackage ./coil-core.nix {
-    steam = if toolchain-steam != null then toolchain-steam.sdk else null;
+    steam-sdk = if toolchain-steam != null then toolchain-steam.sdk else null;
   }).overrideAttrs (attrs: {
     # force clang
     cmakeFlags = (attrs.cmakeFlags or []) ++ [
