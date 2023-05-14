@@ -173,6 +173,26 @@ if(TRUE)
 endif()
 list(APPEND coil_core_all_libraries math)
 
+if(TRUE)
+  add_library(coil_core_math_determ STATIC
+    math_determ.cpp
+  )
+  set_property(TARGET coil_core_math_determ PROPERTY PUBLIC_HEADER
+    math_determ.hpp
+    math_determ_debug.hpp
+  )
+  target_compile_options(coil_core_math_determ
+    PRIVATE
+      "$<IF:$<BOOL:${MSVC}>,/fp:strict,-ffp-model=strict>"
+  )
+  target_link_libraries(coil_core_math_determ
+    PUBLIC
+      coil_core_math
+  )
+  list(APPEND coil_core_libraries math_determ)
+endif()
+list(APPEND coil_core_all_libraries math_determ)
+
 if(TARGET nlohmann_json::nlohmann_json)
   add_library(coil_core_json STATIC
     json.cpp
@@ -757,6 +777,17 @@ install(DIRECTORY
 
 # tests
 if(BUILD_TESTING)
+
+  if(TARGET coil_core_math_determ)
+    add_executable(test_math_determ
+      test_math_determ.cpp
+    )
+    target_link_libraries(test_math_determ
+      coil_core_entrypoint_console
+      coil_core_math_determ
+    )
+    add_test(NAME test_math_determ COMMAND test_math_determ)
+  endif()
 
   if(TARGET coil_core_json)
     add_executable(test_json

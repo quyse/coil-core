@@ -43,7 +43,7 @@ namespace Coil
 
     template <typename... Args>
     constexpr xvec(Args const... args)
-    requires (std::is_convertible_v<Args, T> && ...)
+    requires (sizeof...(Args) == n && (std::is_convertible_v<Args, T> && ...))
     : xvec({ static_cast<T>(args)... }) {}
 
     constexpr xvec(std::initializer_list<T> const& list)
@@ -75,6 +75,14 @@ namespace Coil
     constexpr T& w() requires (3 < n) { return t[3]; }
 
     friend auto operator<=>(xvec const&, xvec const&) = default;
+
+    constexpr xvec operator-() const
+    {
+      xvec r;
+      for(size_t i = 0; i < n; ++i)
+        r(i) = -(*this)(i);
+      return r;
+    }
 
     constexpr xvec& operator+=(xvec const& b)
     {
@@ -272,6 +280,9 @@ namespace Coil
     // tolerate another options when copying
     template <MathOptions o2>
     constexpr xquat(xquat<T, o2> const& other)
+    : xvec<T, 4, o>(other) {}
+    template <MathOptions o2>
+    explicit constexpr xquat(xvec<T, 4, o2> const& other)
     : xvec<T, 4, o>(other) {}
     template <MathOptions o2>
     constexpr xquat& operator=(xquat<T, o2> const& other)
