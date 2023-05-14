@@ -56,7 +56,7 @@ namespace Coil
     void BindImage(GraphicsSlotSetId slotSet, GraphicsSlotId slot, GraphicsImage& image) override;
     void BindPipeline(GraphicsPipeline& pipeline) override;
     void Draw(uint32_t indicesCount, uint32_t instancesCount) override;
-    void SetTextureData(GraphicsImage& image, GraphicsRawImage const& rawImage) override;
+    void SetTextureData(GraphicsImage& image, ImageBuffer const& imageBuffer) override;
 
   private:
     struct CachedBuffer
@@ -338,7 +338,7 @@ namespace Coil
     VulkanPipeline& CreatePipeline(Book& book, GraphicsPipelineConfig const& config, GraphicsPipelineLayout& pipelineLayout, GraphicsPass& pass, GraphicsSubPassId subPassId, GraphicsShader& shader) override;
     VulkanPipeline& CreatePipeline(Book& book, GraphicsPipelineLayout& pipelineLayout, GraphicsShader& shader) override;
     VulkanFramebuffer& CreateFramebuffer(Book& book, GraphicsPass& pass, std::span<GraphicsImage*> const& pImages, ivec2 const& size) override;
-    VulkanImage& CreateTexture(Book& book, GraphicsPool& pool, GraphicsImageFormat const& format, GraphicsSampler* pSampler = nullptr) override;
+    VulkanImage& CreateTexture(Book& book, GraphicsPool& pool, ImageFormat const& format, GraphicsSampler* pSampler = nullptr) override;
     VulkanSampler& CreateSampler(Book& book, GraphicsSamplerConfig const& config) override;
 
   private:

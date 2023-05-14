@@ -88,27 +88,6 @@ namespace Coil
     };
   }
 
-  GraphicsImageMetrics GraphicsImageFormat::GetMetrics() const
-  {
-    GraphicsImageMetrics metrics;
-    metrics.pixelSize = PixelFormat::GetPixelSize(format.size);
-    metrics.mips.resize(mips);
-    uint32_t mipOffset = 0;
-    for(int32_t i = 0; i < mips; ++i)
-    {
-      auto& mip = metrics.mips[i];
-      mip.width = std::max(width >> i, 1);
-      mip.height = std::max(height >> i, 1);
-      mip.depth = std::max(depth >> i, 1);
-      mip.size = mip.width * mip.height * mip.depth * metrics.pixelSize;
-      mip.offset = mipOffset;
-
-      mipOffset += mip.size;
-    }
-    metrics.imageSize = mipOffset;
-    return metrics;
-  }
-
   GraphicsMesh::GraphicsMesh(GraphicsVertexBuffer& vertexBuffer, uint32_t verticesCount)
   : _vertexBuffer(vertexBuffer), _count(verticesCount) {}
 

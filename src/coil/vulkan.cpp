@@ -1221,7 +1221,7 @@ namespace Coil
     return book.Allocate<VulkanFramebuffer>(framebuffer, size);
   }
 
-  VulkanImage& VulkanDevice::CreateTexture(Book& book, GraphicsPool& graphicsPool, GraphicsImageFormat const& format, GraphicsSampler* pGraphicsSampler)
+  VulkanImage& VulkanDevice::CreateTexture(Book& book, GraphicsPool& graphicsPool, ImageFormat const& format, GraphicsSampler* pGraphicsSampler)
   {
     VulkanPool& pool = static_cast<VulkanPool&>(graphicsPool);
     VulkanSampler* pSampler = static_cast<VulkanSampler*>(pGraphicsSampler);
@@ -1547,17 +1547,17 @@ namespace Coil
     }
   }
 
-  void VulkanContext::SetTextureData(GraphicsImage& graphicsImage, GraphicsRawImage const& rawImage)
+  void VulkanContext::SetTextureData(GraphicsImage& graphicsImage, ImageBuffer const& imageBuffer)
   {
     VulkanImage& image = static_cast<VulkanImage&>(graphicsImage);
 
-    auto metrics = rawImage.format.GetMetrics();
+    auto metrics = imageBuffer.format.GetMetrics();
 
     std::vector<VkBufferImageCopy> regions;
-    int32_t count = rawImage.format.count ? rawImage.format.count : 1;
+    int32_t count = imageBuffer.format.count ? imageBuffer.format.count : 1;
 
     uint32_t textureSize = metrics.imageSize * count;
-    if(textureSize > rawImage.buffer.size)
+    if(textureSize > imageBuffer.buffer.size)
       throw Exception("texture data buffer is too small");
 
     for(int32_t i = 0; i < count; ++i)
@@ -1597,8 +1597,8 @@ namespace Coil
     // upload data to buffer
     {
       void* data;
-      CheckSuccess(vkMapMemory(_device._device, buf.buffer.memory, buf.buffer.memoryOffset + buf.bufferOffset, rawImage.buffer.size, 0, &data), "mapping Vulkan texture staging buffer memory failed");
-      memcpy(data, rawImage.buffer.data, textureSize);
+      CheckSuccess(vkMapMemory(_device._device, buf.buffer.memory, buf.buffer.memoryOffset + buf.bufferOffset, imageBuffer.buffer.size, 0, &data), "mapping Vulkan texture staging buffer memory failed");
+      memcpy(data, imageBuffer.buffer.data, textureSize);
       vkUnmapMemory(_device._device, buf.buffer.memory);
     }
 

@@ -2,6 +2,7 @@
 
 #include "platform.hpp"
 #include "graphics_shaders.hpp"
+#include "image_format.hpp"
 #include <vector>
 #include <map>
 #include <optional>
@@ -109,48 +110,6 @@ namespace Coil
 
     std::vector<Attachment> attachments;
     std::vector<SubPass> subPasses;
-  };
-
-  struct GraphicsImageMetrics
-  {
-    uint32_t pixelSize;
-    struct Mip
-    {
-      int32_t width;
-      int32_t height;
-      int32_t depth;
-      uint32_t size;
-      uint32_t offset;
-    };
-    std::vector<Mip> mips;
-    uint32_t imageSize;
-  };
-
-  struct GraphicsImageFormat
-  {
-    PixelFormat format;
-    // acceptable sizes:
-    // width height depth
-    // W     0      0      1D texture
-    // W     1      0      2D texture Wx1
-    // W     H      0      2D texture WxH
-    // W     H      1      3D texture WxHx1
-    // W     H      D      3D texture WxHxD
-    int32_t width;
-    int32_t height;
-    int32_t depth;
-    // must be >= 1
-    int32_t mips;
-    // zero means non-array
-    int32_t count;
-
-    GraphicsImageMetrics GetMetrics() const;
-  };
-
-  struct GraphicsRawImage
-  {
-    GraphicsImageFormat format;
-    Buffer buffer;
   };
 
   class GraphicsDevice;
@@ -361,7 +320,7 @@ namespace Coil
     virtual GraphicsPipeline& CreatePipeline(Book& book, GraphicsPipelineConfig const& config, GraphicsPipelineLayout& graphicsPipelineLayout, GraphicsPass& pass, GraphicsSubPassId subPassId, GraphicsShader& shader) = 0;
     virtual GraphicsPipeline& CreatePipeline(Book& book, GraphicsPipelineLayout& graphicsPipelineLayout, GraphicsShader& shader) = 0;
     virtual GraphicsFramebuffer& CreateFramebuffer(Book& book, GraphicsPass& pass, std::span<GraphicsImage*> const& pImages, ivec2 const& size) = 0;
-    virtual GraphicsImage& CreateTexture(Book& book, GraphicsPool& pool, GraphicsImageFormat const& format, GraphicsSampler* pSampler = nullptr) = 0;
+    virtual GraphicsImage& CreateTexture(Book& book, GraphicsPool& pool, ImageFormat const& format, GraphicsSampler* pSampler = nullptr) = 0;
     virtual GraphicsSampler& CreateSampler(Book& book, GraphicsSamplerConfig const& config) = 0;
   };
 
@@ -395,7 +354,7 @@ namespace Coil
     virtual void BindImage(GraphicsSlotSetId slotSet, GraphicsSlotId slot, GraphicsImage& image) = 0;
     virtual void BindPipeline(GraphicsPipeline& pipeline) = 0;
     virtual void Draw(uint32_t indicesCount, uint32_t instancesCount = 1) = 0;
-    virtual void SetTextureData(GraphicsImage& image, GraphicsRawImage const& rawImage) = 0;
+    virtual void SetTextureData(GraphicsImage& image, ImageBuffer const& imageBuffer) = 0;
 
     void BindMesh(GraphicsMesh const& mesh);
   };

@@ -1,4 +1,4 @@
-#include "graphics_format.hpp"
+#include "image_format.hpp"
 
 namespace Coil
 {
@@ -196,7 +196,6 @@ namespace Coil
     }
   }
 
-
   PixelFormat const PixelFormats::uintR8(
     PixelFormat::Components::R,
     PixelFormat::Format::Uint,
@@ -235,4 +234,25 @@ namespace Coil
     PixelFormat::Components::RGBA,
     PixelFormat::Format::Float,
     PixelFormat::Size::_64bit);
+
+  ImageMetrics ImageFormat::GetMetrics() const
+  {
+    ImageMetrics metrics;
+    metrics.pixelSize = PixelFormat::GetPixelSize(format.size);
+    metrics.mips.resize(mips);
+    uint32_t mipOffset = 0;
+    for(int32_t i = 0; i < mips; ++i)
+    {
+      auto& mip = metrics.mips[i];
+      mip.width = std::max(width >> i, 1);
+      mip.height = std::max(height >> i, 1);
+      mip.depth = std::max(depth >> i, 1);
+      mip.size = mip.width * mip.height * mip.depth * metrics.pixelSize;
+      mip.offset = mipOffset;
+
+      mipOffset += mip.size;
+    }
+    metrics.imageSize = mipOffset;
+    return metrics;
+  }
 }

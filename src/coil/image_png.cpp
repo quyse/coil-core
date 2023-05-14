@@ -25,7 +25,7 @@ namespace
 
 namespace Coil
 {
-  void LoadPngImage(InputStream& stream, GraphicsImageFormat& format, std::vector<uint8_t>& data)
+  ImageBuffer LoadPngImage(Book& book, InputStream& stream)
   {
     class LoadHelper : public Helper
     {
@@ -88,14 +88,17 @@ namespace Coil
     png_byte colorType = png_get_color_type(pngPtr, infoPtr);
 
     // set format
-    format =
+    ImageBuffer imageBuffer =
     {
-      .format = PixelFormats::uintRGB24S,
-      .width = (int32_t)width,
-      .height = (int32_t)height,
-      .depth = 0,
-      .mips = 1,
-      .count = 0,
+      .format =
+      {
+        .format = PixelFormats::uintRGB24S,
+        .width = (int32_t)width,
+        .height = (int32_t)height,
+        .depth = 0,
+        .mips = 1,
+        .count = 0,
+      },
     };
 
     // set transformation options
@@ -117,7 +120,7 @@ namespace Coil
     case PNG_COLOR_TYPE_GRAY_ALPHA:
     case PNG_COLOR_TYPE_RGB_ALPHA:
       // set format
-      format.format = PixelFormats::uintRGBA32S;
+      imageBuffer.format.format = PixelFormats::uintRGBA32S;
       // set sRGB alpha mode
       png_set_alpha_mode(pngPtr, PNG_ALPHA_PNG, PNG_DEFAULT_sRGB);
       break;
@@ -126,23 +129,25 @@ namespace Coil
     // update info to account for conversions
     png_read_update_info(pngPtr, infoPtr);
 
-    GraphicsImageMetrics metrics = format.GetMetrics();
+    auto metrics = imageBuffer.format.GetMetrics();
     // allocate memory
-    data.resize(format.width * format.height * metrics.pixelSize);
+    imageBuffer.buffer = book.Allocate<std::vector<uint8_t>>(imageBuffer.format.width * imageBuffer.format.height * metrics.pixelSize);
     // get image data
     {
       std::vector<png_bytep> imageRows(height);
       // get row pitch
-      size_t pitch = format.width * metrics.pixelSize;
+      size_t pitch = imageBuffer.format.width * metrics.pixelSize;
       for(png_uint_32 i = 0; i < height; ++i)
-        imageRows[i] = (png_bytep)data.data() + i * pitch;
+        imageRows[i] = (png_bytep)imageBuffer.buffer.data + i * pitch;
       png_read_image(pngPtr, imageRows.data());
     }
     // free struct
     png_destroy_read_struct(&pngPtr, &infoPtr, nullptr);
+
+    return std::move(imageBuffer);
   }
 
-  void SavePngImage(OutputStream& stream, GraphicsImageFormat const& format, Buffer const& buffer)
+  void SavePngImage(OutputStream& stream, ImageBuffer const& imageBuffer)
   {
     class SaveHelper : public Helper
     {
@@ -189,11 +194,11 @@ namespace Coil
     // set write function
     png_set_write_fn(pngPtr, &helper, &SaveHelper::Write, &SaveHelper::Flush);
 
-    GraphicsImageMetrics metrics = format.GetMetrics();
+    auto metrics = imageBuffer.format.GetMetrics();
 
     uint8_t componentsCount = 0;
     png_byte colorType;
-    switch(format.format.components)
+    switch(imageBuffer.format.format.components)
     {
     case PixelFormat::Components::R:
       componentsCount = 1;
@@ -220,8 +225,8 @@ namespace Coil
     }
 
     png_set_IHDR(pngPtr, infoPtr,
-      format.width,
-      format.height,
+      imageBuffer.format.width,
+      imageBuffer.format.height,
       bitDepth,
       colorType,
       PNG_INTERLACE_NONE,
@@ -232,11 +237,11 @@ namespace Coil
 
     // write image data
     {
-      std::vector<png_bytep> imageRows(format.height);
+      std::vector<png_bytep> imageRows(imageBuffer.format.height);
       // get row pitch
-      int32_t pitch = format.width * metrics.pixelSize;
-      for(int32_t i = 0; i < format.height; ++i)
-        imageRows[i] = (uint8_t*)buffer.data + i * pitch;
+      int32_t pitch = imageBuffer.format.width * metrics.pixelSize;
+      for(int32_t i = 0; i < imageBuffer.format.height; ++i)
+        imageRows[i] = (uint8_t*)imageBuffer.buffer.data + i * pitch;
       png_write_image(pngPtr, imageRows.data());
     }
 

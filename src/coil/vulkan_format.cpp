@@ -285,16 +285,12 @@ namespace Coil
 #define R(r) VK_FORMAT_##r
     switch(format.type)
     {
-    case T(Unknown):
-      return R(UNDEFINED);
     case T(Uncompressed):
       switch(format.components)
       {
       case C(R):
         switch(format.format)
         {
-        case F(Untyped):
-          break;
         case F(Uint):
           switch(format.size)
           {
@@ -316,8 +312,6 @@ namespace Coil
       case C(RG):
         switch(format.format)
         {
-        case F(Untyped):
-          break;
         case F(Uint):
           switch(format.size)
           {
@@ -339,8 +333,6 @@ namespace Coil
       case C(RGB):
         switch(format.format)
         {
-        case F(Untyped):
-          break;
         case F(Uint):
           switch(format.size)
           {
@@ -362,8 +354,6 @@ namespace Coil
       case C(RGBA):
         switch(format.format)
         {
-        case F(Untyped):
-          break;
         case F(Uint):
           switch(format.size)
           {

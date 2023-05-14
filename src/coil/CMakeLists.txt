@@ -273,7 +273,6 @@ list(APPEND coil_core_all_libraries platform)
 if(TRUE)
   add_library(coil_core_graphics STATIC
     graphics.cpp
-    graphics_format.cpp
     graphics_shaders.cpp
   )
   set_property(TARGET coil_core_graphics PROPERTY PUBLIC_HEADER
@@ -283,6 +282,7 @@ if(TRUE)
   )
   target_link_libraries(coil_core_graphics
     PUBLIC
+      coil_core_image
       coil_core_platform
       coil_core_util
   )
@@ -293,9 +293,11 @@ list(APPEND coil_core_all_libraries graphics)
 if(TRUE)
   add_library(coil_core_image STATIC
     image.cpp
+    image_format.cpp
   )
   set_property(TARGET coil_core_image PROPERTY PUBLIC_HEADER
     image.hpp
+    image_format.hpp
   )
   target_link_libraries(coil_core_image
     PUBLIC
