@@ -108,10 +108,14 @@ namespace Coil
   // Piece of allocated or mapped memory.
   struct Buffer
   {
-    Buffer(void* data = nullptr, size_t size = 0)
+    Buffer()
+    : data(nullptr), size(0) {}
+    Buffer(void* data, size_t size)
     : data(data), size(size) {}
     Buffer(void const* data, size_t size)
     : data(const_cast<void*>(data)), size(size) {}
+    Buffer(size_t size)
+    : data(nullptr), size(size) {}
 
     template <typename T>
     Buffer(std::vector<T>& v)
