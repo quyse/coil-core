@@ -285,52 +285,20 @@ namespace Coil
     return presenter;
   }
 
+  VulkanComputer& VulkanDevice::CreateComputer(Book& book, GraphicsPool& graphicsPool)
+  {
+    VulkanPool& pool = static_cast<VulkanPool&>(graphicsPool);
+
+    VkCommandBuffer commandBuffer = VulkanCommandBuffers::Create(book, _device, _commandPool, 1, true)[0];
+    VkFence fenceComputeFinished = CreateFence(book, true);
+    return book.Allocate<VulkanComputer>(book.Allocate<Book>(), *this, pool, commandBuffer, fenceComputeFinished);
+  }
+
   VulkanVertexBuffer& VulkanDevice::CreateVertexBuffer(Book& book, GraphicsPool& graphicsPool, Buffer const& buffer)
   {
     VulkanPool& pool = static_cast<VulkanPool&>(graphicsPool);
 
-    // create buffer
-    VkBuffer vertexBuffer;
-    {
-      VkBufferCreateInfo info =
-      {
-        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-        .pNext = nullptr,
-        .flags = 0,
-        .size = buffer.size,
-        .usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-        .queueFamilyIndexCount = 0,
-        .pQueueFamilyIndices = nullptr,
-      };
-      CheckSuccess(vkCreateBuffer(_device, &info, nullptr, &vertexBuffer), "creating Vulkan vertex buffer failed");
-      AllocateVulkanObject(book, _device, vertexBuffer);
-    }
-
-    // get memory requirements
-    VkMemoryRequirements memoryRequirements;
-    vkGetBufferMemoryRequirements(_device, vertexBuffer, &memoryRequirements);
-
-    // allocate memory
-    // temporary, for simplicity we use host coherent memory
-    // Vulkan spec guarantees that buffer's memory requirements allow such memory, and it exists on device
-    std::pair<VkDeviceMemory, VkDeviceSize> memory = AllocateMemory(pool, memoryRequirements, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-    // copy data
-    {
-      // map memory
-      void* data;
-      CheckSuccess(vkMapMemory(_device, memory.first, memory.second, memoryRequirements.size, 0, &data), "mapping Vulkan memory failed");
-
-      // copy data
-      memcpy(data, buffer.data, buffer.size);
-
-      // unmap memory
-      vkUnmapMemory(_device, memory.first);
-    }
-
-    // bind it to buffer
-    CheckSuccess(vkBindBufferMemory(_device, vertexBuffer, memory.first, memory.second), "binding Vulkan memory to vertex buffer failed");
+    VkBuffer vertexBuffer = std::get<VkBuffer>(CreateBuffer(book, pool, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, buffer));
 
     return book.Allocate<VulkanVertexBuffer>(vertexBuffer);
   }
@@ -339,50 +307,90 @@ namespace Coil
   {
     VulkanPool& pool = static_cast<VulkanPool&>(graphicsPool);
 
-    // create buffer
-    VkBuffer indexBuffer;
+    VkBuffer indexBuffer = std::get<VkBuffer>(CreateBuffer(book, pool, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, buffer));
+
+    return book.Allocate<VulkanIndexBuffer>(indexBuffer, is32Bit);
+  }
+
+  VulkanStorageBuffer& VulkanDevice::CreateStorageBuffer(Book& book, GraphicsPool& graphicsPool, Buffer const& buffer)
+  {
+    VulkanPool& pool = static_cast<VulkanPool&>(graphicsPool);
+
+    auto [storageBuffer, memory, offset, size] = CreateBuffer(book, pool, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, buffer);
+
+    return book.Allocate<VulkanStorageBuffer>(storageBuffer, memory, offset, size);
+  }
+
+  VulkanImage& VulkanDevice::CreateRenderImage(Book& book, GraphicsPool& graphicsPool, PixelFormat const& pixelFormat, ivec2 const& size, GraphicsSampler* pGraphicsSampler)
+  {
+    VulkanPool& pool = static_cast<VulkanPool&>(graphicsPool);
+    VulkanSampler* pSampler = static_cast<VulkanSampler*>(pGraphicsSampler);
+    VkFormat format = VulkanSystem::GetPixelFormat(pixelFormat);
+
+    // create image
+    VkImage image;
     {
-      VkBufferCreateInfo info =
+      VkImageCreateInfo info =
       {
-        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
         .pNext = nullptr,
         .flags = 0,
-        .size = buffer.size,
-        .usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+        .imageType = VK_IMAGE_TYPE_2D,
+        .format = format,
+        .extent =
+        {
+          .width = (uint32_t)size.x(),
+          .height = (uint32_t)size.y(),
+          .depth = 1,
+        },
+        .mipLevels = 1,
+        .arrayLayers = 1,
+        .samples = VK_SAMPLE_COUNT_1_BIT,
+        .tiling = VK_IMAGE_TILING_OPTIMAL,
+        .usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
         .queueFamilyIndexCount = 0,
         .pQueueFamilyIndices = nullptr,
+        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
       };
-      CheckSuccess(vkCreateBuffer(_device, &info, nullptr, &indexBuffer), "creating Vulkan index buffer failed");
-      AllocateVulkanObject(book, _device, indexBuffer);
+      CheckSuccess(vkCreateImage(_device, &info, nullptr, &image), "creating Vulkan render image failed");
+      AllocateVulkanObject(book, _device, image);
     }
 
     // get memory requirements
     VkMemoryRequirements memoryRequirements;
-    vkGetBufferMemoryRequirements(_device, indexBuffer, &memoryRequirements);
-
+    vkGetImageMemoryRequirements(_device, image, &memoryRequirements);
     // allocate memory
-    // temporary, for simplicity we use host coherent memory
-    // Vulkan spec guarantees that buffer's memory requirements allow such memory, and it exists on device
-    std::pair<VkDeviceMemory, VkDeviceSize> memory = AllocateMemory(pool, memoryRequirements, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    std::pair<VkDeviceMemory, VkDeviceSize> memory = AllocateMemory(pool, memoryRequirements, 0);
+    // bind memory
+    CheckSuccess(vkBindImageMemory(_device, image, memory.first, memory.second), "binding Vulkan memory to render image failed");
 
-    // copy data
+    // create image view
+    VkImageView imageView;
     {
-      // map memory
-      void* data;
-      CheckSuccess(vkMapMemory(_device, memory.first, memory.second, memoryRequirements.size, 0, &data), "mapping Vulkan memory failed");
-
-      // copy data
-      memcpy(data, buffer.data, buffer.size);
-
-      // unmap memory
-      vkUnmapMemory(_device, memory.first);
+      VkImageViewCreateInfo info =
+      {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+        .image = image,
+        .viewType = VK_IMAGE_VIEW_TYPE_2D,
+        .format = format,
+        .components = {},
+        .subresourceRange =
+        {
+          .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+          .baseMipLevel = 0,
+          .levelCount = 1,
+          .baseArrayLayer = 0,
+          .layerCount = 1,
+        },
+      };
+      CheckSuccess(vkCreateImageView(_device, &info, nullptr, &imageView), "creating Vulkan render image view failed");
+      AllocateVulkanObject(book, _device, imageView);
     }
 
-    // bind it to buffer
-    CheckSuccess(vkBindBufferMemory(_device, indexBuffer, memory.first, memory.second), "binding Vulkan memory to index buffer failed");
-
-    return book.Allocate<VulkanIndexBuffer>(indexBuffer, is32Bit);
+    return book.Allocate<VulkanImage>(image, imageView, pSampler ? pSampler->_sampler : nullptr);
   }
 
   VulkanImage& VulkanDevice::CreateDepthStencilImage(Book& book, GraphicsPool& graphicsPool, ivec2 const& size)
@@ -1160,7 +1168,7 @@ namespace Coil
     VkPipeline pipeline;
     CheckSuccess(vkCreateGraphicsPipelines(_device, nullptr, 1, &info, nullptr, &pipeline), "creating Vulkan graphics pipeline failed");
     AllocateVulkanObject(book, _device, pipeline);
-    return book.Allocate<VulkanPipeline>(pipeline, pipelineLayout);
+    return book.Allocate<VulkanPipeline>(pipeline, pipelineLayout, VK_PIPELINE_BIND_POINT_GRAPHICS);
   }
 
   VulkanPipeline& VulkanDevice::CreatePipeline(Book& book, GraphicsPipelineLayout& graphicsPipelineLayout, GraphicsShader& graphicsShader)
@@ -1191,7 +1199,7 @@ namespace Coil
     VkPipeline pipeline;
     CheckSuccess(vkCreateComputePipelines(_device, nullptr, 1, &info, nullptr, &pipeline), "creating Vulkan compute pipeline failed");
     AllocateVulkanObject(book, _device, pipeline);
-    return book.Allocate<VulkanPipeline>(pipeline, pipelineLayout);
+    return book.Allocate<VulkanPipeline>(pipeline, pipelineLayout, VK_PIPELINE_BIND_POINT_COMPUTE);
   }
 
   VulkanFramebuffer& VulkanDevice::CreateFramebuffer(Book& book, GraphicsPass& graphicsPass, std::span<GraphicsImage*> const& pImages, ivec2 const& size)
@@ -1378,6 +1386,39 @@ namespace Coil
     return book.Allocate<VulkanSampler>(sampler);
   }
 
+  void VulkanDevice::SetStorageBufferData(GraphicsStorageBuffer& graphicsStorageBuffer, Buffer const& buffer)
+  {
+    VulkanStorageBuffer& storageBuffer = static_cast<VulkanStorageBuffer&>(graphicsStorageBuffer);
+
+    if(buffer.size > storageBuffer._size)
+      throw Exception("overflow while setting storage buffer data");
+
+    // map memory
+    void* data;
+    CheckSuccess(vkMapMemory(_device, storageBuffer._memory, storageBuffer._offset, storageBuffer._size, 0, &data), "mapping Vulkan memory failed");
+
+    // copy data
+    memcpy(data, buffer.data, buffer.size);
+
+    // unmap memory
+    vkUnmapMemory(_device, storageBuffer._memory);
+  }
+
+  void VulkanDevice::GetStorageBufferData(GraphicsStorageBuffer& graphicsStorageBuffer, Buffer const& buffer)
+  {
+    VulkanStorageBuffer& storageBuffer = static_cast<VulkanStorageBuffer&>(graphicsStorageBuffer);
+
+    // map memory
+    void* data;
+    CheckSuccess(vkMapMemory(_device, storageBuffer._memory, storageBuffer._offset, storageBuffer._size, 0, &data), "mapping Vulkan memory failed");
+
+    // copy data
+    memcpy(buffer.data, data, std::min(buffer.size, storageBuffer._size));
+
+    // unmap memory
+    vkUnmapMemory(_device, storageBuffer._memory);
+  }
+
   std::pair<VkDeviceMemory, VkDeviceSize> VulkanDevice::AllocateMemory(VulkanPool& pool, VkMemoryRequirements const& memoryRequirements, VkMemoryPropertyFlags requireFlags)
   {
     // find suitable memory type
@@ -1390,6 +1431,56 @@ namespace Coil
     }
 
     throw Exception("no suitable Vulkan memory found");
+  }
+
+  std::tuple<VkBuffer, VkDeviceMemory, VkDeviceSize, VkDeviceSize> VulkanDevice::CreateBuffer(Book& book, VulkanPool& pool, VkBufferUsageFlags usage, Buffer const& initialData)
+  {
+    // create buffer
+    VkBuffer buffer;
+    {
+      VkBufferCreateInfo info =
+      {
+        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+        .size = initialData.size,
+        .usage = usage,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .queueFamilyIndexCount = 0,
+        .pQueueFamilyIndices = nullptr,
+      };
+      CheckSuccess(vkCreateBuffer(_device, &info, nullptr, &buffer), "creating Vulkan buffer failed");
+      AllocateVulkanObject(book, _device, buffer);
+    }
+
+    // get memory requirements
+    VkMemoryRequirements memoryRequirements;
+    vkGetBufferMemoryRequirements(_device, buffer, &memoryRequirements);
+
+    // allocate memory
+    // temporary, for simplicity we use host coherent memory
+    // Vulkan spec guarantees that buffer's memory requirements allow such memory, and it exists on device
+    std::pair<VkDeviceMemory, VkDeviceSize> memory = AllocateMemory(pool, memoryRequirements, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+    // copy data
+
+    if(initialData.data)
+    {
+      // map memory
+      void* data;
+      CheckSuccess(vkMapMemory(_device, memory.first, memory.second, memoryRequirements.size, 0, &data), "mapping Vulkan memory failed");
+
+      // copy data
+      memcpy(data, initialData.data, initialData.size);
+
+      // unmap memory
+      vkUnmapMemory(_device, memory.first);
+    }
+
+    // bind it to buffer
+    CheckSuccess(vkBindBufferMemory(_device, buffer, memory.first, memory.second), "binding Vulkan memory to buffer failed");
+
+    return { buffer, memory.first, memory.second, memoryRequirements.size };
   }
 
   VkFence VulkanDevice::CreateFence(Book& book, bool signaled)
@@ -1487,12 +1578,10 @@ namespace Coil
     descriptorSet.descriptorSet = nullptr;
   }
 
-  void VulkanContext::BindStorageBuffer(GraphicsSlotSetId slotSet, GraphicsSlotId slot, uint32_t size)
+  void VulkanContext::BindStorageBuffer(GraphicsSlotSetId slotSet, GraphicsSlotId slot, GraphicsStorageBuffer& graphicsStorageBuffer)
   {
-    // allocate buffer
-    auto buf = AllocateBuffer(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, size);
+    VulkanStorageBuffer& storageBuffer = static_cast<VulkanStorageBuffer&>(graphicsStorageBuffer);
 
-    // set buffer to descriptor set
     if(_descriptorSets.size() <= slotSet)
       _descriptorSets.resize(slotSet + 1);
     auto& descriptorSet = _descriptorSets[slotSet];
@@ -1500,9 +1589,9 @@ namespace Coil
     {
       .info =
       {
-        .buffer = buf.buffer.buffer,
-        .offset = buf.bufferOffset,
-        .range = size,
+        .buffer = storageBuffer._buffer,
+        .offset = 0,
+        .range = storageBuffer._size,
       },
     };
     descriptorSet.descriptorSet = nullptr;
@@ -1536,7 +1625,7 @@ namespace Coil
 
   void VulkanContext::Draw(uint32_t indicesCount, uint32_t instancesCount)
   {
-    PrepareDraw();
+    Prepare();
     if(_hasBoundIndexBuffer)
     {
       vkCmdDrawIndexed(_commandBuffer, indicesCount, instancesCount, 0, 0, 0);
@@ -1545,6 +1634,12 @@ namespace Coil
     {
       vkCmdDraw(_commandBuffer, indicesCount, instancesCount, 0, 0);
     }
+  }
+
+  void VulkanContext::Dispatch(ivec3 size)
+  {
+    Prepare();
+    vkCmdDispatch(_commandBuffer, size.x(), size.y(), size.z());
   }
 
   void VulkanContext::SetTextureData(GraphicsImage& graphicsImage, ImageBuffer const& imageBuffer)
@@ -1766,7 +1861,7 @@ namespace Coil
     return { cache.buffers[cache.nextBuffer], offset };
   }
 
-  void VulkanContext::PrepareDraw()
+  void VulkanContext::Prepare()
   {
     if(!_pPipeline) throw Exception("no Vulkan pipeline bound to context");
 
@@ -1874,7 +1969,7 @@ namespace Coil
         _bufDescriptorSets[i] = _descriptorSets[i].descriptorSet;
 
       vkCmdBindDescriptorSets(_commandBuffer,
-        VK_PIPELINE_BIND_POINT_GRAPHICS,
+        _pPipeline->_bindPoint,
         _pPipeline->_pipelineLayout._pipelineLayout,
         0, // first set
         _bufDescriptorSets.size(),
@@ -1889,7 +1984,7 @@ namespace Coil
     // bind pipeline if needed
     if(_pPipeline->_pipeline != _pBoundPipeline)
     {
-      vkCmdBindPipeline(_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _pPipeline->_pipeline);
+      vkCmdBindPipeline(_commandBuffer, _pPipeline->_bindPoint, _pPipeline->_pipeline);
       _pBoundPipeline = _pPipeline->_pipeline;
     }
   }
@@ -2058,6 +2153,80 @@ namespace Coil
     Init(size);
   }
 
+  VulkanComputer::VulkanComputer(Book& book, VulkanDevice& device, VulkanPool& pool, VkCommandBuffer const commandBuffer, VkFence fenceComputeFinished)
+  : _book(book),
+    _device(device),
+    _commandBuffer(commandBuffer),
+    _context(_device, pool, _book, _commandBuffer),
+    _fenceComputeFinished(fenceComputeFinished)
+  {
+  }
+
+  void VulkanComputer::Compute(std::function<void(GraphicsContext&)> const& func)
+  {
+    // reset context caches
+    _context.BeginFrame();
+
+    // start command buffer
+    {
+      VkCommandBufferBeginInfo info =
+      {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+        .pNext = nullptr,
+        .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+        .pInheritanceInfo = nullptr,
+      };
+      CheckSuccess(vkBeginCommandBuffer(_commandBuffer, &info), "beginning Vulkan command buffer failed");
+    }
+
+    // send commands
+    func(_context);
+
+    // global memory barrier for reading results on host
+    {
+      VkMemoryBarrier memoryBarrier =
+      {
+        .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+        .pNext = nullptr,
+        .srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT,
+        .dstAccessMask = VK_ACCESS_HOST_READ_BIT,
+      };
+      vkCmdPipelineBarrier(_commandBuffer,
+        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, // srcStageMask
+        VK_PIPELINE_STAGE_HOST_BIT, // dstStageMask
+        0, // flags
+        1, &memoryBarrier, // memory barriers
+        0, nullptr, // buffer memory barriers
+        0, nullptr // image memory barriers
+      );
+    }
+
+    // end command buffer
+    CheckSuccess(vkEndCommandBuffer(_commandBuffer), "ending Vulkan command buffer failed");
+
+    // reset fence
+    CheckSuccess(vkResetFences(_device._device, 1, &_fenceComputeFinished), "resetting Vulkan fence failed");
+    // queue command buffer
+    {
+      VkSubmitInfo info =
+      {
+        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+        .pNext = nullptr,
+        .waitSemaphoreCount = 0,
+        .pWaitSemaphores = nullptr,
+        .pWaitDstStageMask = nullptr,
+        .commandBufferCount = 1,
+        .pCommandBuffers = &_commandBuffer,
+        .signalSemaphoreCount = 0,
+        .pSignalSemaphores = nullptr,
+      };
+      CheckSuccess(vkQueueSubmit(_device._graphicsQueue, 1, &info, _fenceComputeFinished), "queueing Vulkan command buffer failed");
+    }
+
+    // wait until compute is done
+    CheckSuccess(vkWaitForFences(_device._device, 1, &_fenceComputeFinished, VK_TRUE, std::numeric_limits<uint64_t>::max()), "waiting for Vulkan compute finished failed");
+  }
+
   VulkanPool::VulkanPool(VulkanDevice& device, VkDeviceSize chunkSize)
   : _device(device), _chunkSize(chunkSize) {}
 
@@ -2146,6 +2315,10 @@ namespace Coil
       {
         {
           .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+          .descriptorCount = 4096,
+        },
+        {
+          .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
           .descriptorCount = 4096,
         },
         {
@@ -2402,6 +2575,9 @@ namespace Coil
   VulkanIndexBuffer::VulkanIndexBuffer(VkBuffer buffer, bool is32Bit)
   : _buffer(buffer), _is32Bit(is32Bit) {}
 
+  VulkanStorageBuffer::VulkanStorageBuffer(VkBuffer buffer, VkDeviceMemory memory, VkDeviceSize offset, VkDeviceSize size)
+  : _buffer(buffer), _memory(memory), _offset(offset), _size(size) {}
+
   VulkanImage::VulkanImage(VkImage image, VkImageView imageView, VkSampler sampler)
   : _image(image), _imageView(imageView), _sampler(sampler) {}
 
@@ -2414,8 +2590,8 @@ namespace Coil
   VulkanPipelineLayout::VulkanPipelineLayout(VkPipelineLayout pipelineLayout, std::vector<VkDescriptorSetLayout>&& descriptorSetLayouts)
   : _pipelineLayout(pipelineLayout), _descriptorSetLayouts(std::move(descriptorSetLayouts)) {}
 
-  VulkanPipeline::VulkanPipeline(VkPipeline pipeline, VulkanPipelineLayout& pipelineLayout)
-  : _pipeline(pipeline), _pipelineLayout(pipelineLayout) {}
+  VulkanPipeline::VulkanPipeline(VkPipeline pipeline, VulkanPipelineLayout& pipelineLayout, VkPipelineBindPoint bindPoint)
+  : _pipeline(pipeline), _pipelineLayout(pipelineLayout), _bindPoint(bindPoint) {}
 
   VulkanFramebuffer::VulkanFramebuffer(VkFramebuffer framebuffer, ivec2 const& size)
   : _framebuffer(framebuffer), _size(size) {}

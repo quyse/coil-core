@@ -10,6 +10,7 @@ namespace Coil
 {
   class VulkanDevice;
   class VulkanPresenter;
+  class VulkanComputer;
   class VulkanFrame;
   class VulkanPipeline;
   class VulkanImage;
@@ -52,10 +53,11 @@ namespace Coil
     void BindDynamicVertexBuffer(uint32_t slot, Buffer const& buffer) override;
     void BindIndexBuffer(GraphicsIndexBuffer* pIndexBuffer) override;
     void BindUniformBuffer(GraphicsSlotSetId slotSet, GraphicsSlotId slot, Buffer const& buffer) override;
-    void BindStorageBuffer(GraphicsSlotSetId slotSet, GraphicsSlotId slot, uint32_t size) override;
+    void BindStorageBuffer(GraphicsSlotSetId slotSet, GraphicsSlotId slot, GraphicsStorageBuffer& storageBuffer) override;
     void BindImage(GraphicsSlotSetId slotSet, GraphicsSlotId slot, GraphicsImage& image) override;
     void BindPipeline(GraphicsPipeline& pipeline) override;
     void Draw(uint32_t indicesCount, uint32_t instancesCount) override;
+    void Dispatch(ivec3 size) override;
     void SetTextureData(GraphicsImage& image, ImageBuffer const& imageBuffer) override;
 
   private:
@@ -75,7 +77,7 @@ namespace Coil
     void Reset();
     VkDescriptorSet AllocateDescriptorSet(VkDescriptorSetLayout descriptorSetLayout);
     AllocatedBuffer AllocateBuffer(VkBufferUsageFlagBits usage, uint32_t size);
-    void PrepareDraw();
+    void Prepare();
 
     VulkanDevice& _device;
     VulkanPool& _pool;
@@ -133,6 +135,7 @@ namespace Coil
     static constexpr uint32_t _maxBufferSize = 0x100000;
 
     friend class VulkanFrame;
+    friend class VulkanComputer;
   };
 
   class VulkanFrame final : public GraphicsFrame
@@ -206,6 +209,21 @@ namespace Coil
     friend class VulkanFrame;
   };
 
+  class VulkanComputer final : public GraphicsComputer
+  {
+  public:
+    VulkanComputer(Book& book, VulkanDevice& device, VulkanPool& pool, VkCommandBuffer const commandBuffer, VkFence fenceComputeFinished);
+
+    void Compute(std::function<void(GraphicsContext&)> const& func) override;
+
+  private:
+    Book& _book;
+    VulkanDevice& _device;
+    VkCommandBuffer const _commandBuffer;
+    VulkanContext _context;
+    VkFence const _fenceComputeFinished;
+  };
+
   class VulkanPass final : public GraphicsPass
   {
   public:
@@ -227,7 +245,7 @@ namespace Coil
     VulkanVertexBuffer(VkBuffer buffer);
 
   private:
-    VkBuffer _buffer;
+    VkBuffer const _buffer;
 
     friend class VulkanContext;
   };
@@ -238,9 +256,24 @@ namespace Coil
     VulkanIndexBuffer(VkBuffer buffer, bool is32Bit);
 
   private:
-    VkBuffer _buffer;
+    VkBuffer const _buffer;
     bool _is32Bit;
 
+    friend class VulkanContext;
+  };
+
+  class VulkanStorageBuffer final : public GraphicsStorageBuffer
+  {
+  public:
+    VulkanStorageBuffer(VkBuffer buffer, VkDeviceMemory memory, VkDeviceSize offset, VkDeviceSize size);
+
+  private:
+    VkBuffer const _buffer;
+    VkDeviceMemory _memory;
+    VkDeviceSize _offset;
+    VkDeviceSize _size;
+
+    friend class VulkanDevice;
     friend class VulkanContext;
   };
 
@@ -299,11 +332,12 @@ namespace Coil
   class VulkanPipeline final : public GraphicsPipeline
   {
   public:
-    VulkanPipeline(VkPipeline pipeline, VulkanPipelineLayout& pipelineLayout);
+    VulkanPipeline(VkPipeline pipeline, VulkanPipelineLayout& pipelineLayout, VkPipelineBindPoint bindPoint);
 
   private:
     VkPipeline _pipeline;
     VulkanPipelineLayout& _pipelineLayout;
+    VkPipelineBindPoint _bindPoint;
 
     friend class VulkanDevice;
     friend class VulkanContext;
@@ -329,8 +363,11 @@ namespace Coil
     Book& GetBook() override;
     VulkanPool& CreatePool(Book& book, size_t chunkSize) override;
     VulkanPresenter& CreateWindowPresenter(Book& book, GraphicsPool& pool, Window& window, std::function<GraphicsRecreatePresentFunc>&& recreatePresent, std::function<GraphicsRecreatePresentPerImageFunc>&& recreatePresentPerImage) override;
+    VulkanComputer& CreateComputer(Book& book, GraphicsPool& pool) override;
     VulkanVertexBuffer& CreateVertexBuffer(Book& book, GraphicsPool& pool, Buffer const& buffer) override;
     VulkanIndexBuffer& CreateIndexBuffer(Book& book, GraphicsPool& pool, Buffer const& buffer, bool is32Bit) override;
+    VulkanStorageBuffer& CreateStorageBuffer(Book& book, GraphicsPool& pool, Buffer const& buffer) override;
+    VulkanImage& CreateRenderImage(Book& book, GraphicsPool& pool, PixelFormat const& pixelFormat, ivec2 const& size, GraphicsSampler* pSampler = nullptr) override;
     VulkanImage& CreateDepthStencilImage(Book& book, GraphicsPool& pool, ivec2 const& size) override;
     VulkanPass& CreatePass(Book& book, GraphicsPassConfig const& config) override;
     VulkanShader& CreateShader(Book& book, GraphicsShaderRoots const& roots) override;
@@ -340,9 +377,12 @@ namespace Coil
     VulkanFramebuffer& CreateFramebuffer(Book& book, GraphicsPass& pass, std::span<GraphicsImage*> const& pImages, ivec2 const& size) override;
     VulkanImage& CreateTexture(Book& book, GraphicsPool& pool, ImageFormat const& format, GraphicsSampler* pSampler = nullptr) override;
     VulkanSampler& CreateSampler(Book& book, GraphicsSamplerConfig const& config) override;
+    void SetStorageBufferData(GraphicsStorageBuffer& storageBuffer, Buffer const& buffer) override;
+    void GetStorageBufferData(GraphicsStorageBuffer& storageBuffer, Buffer const& buffer) override;
 
   private:
     std::pair<VkDeviceMemory, VkDeviceSize> AllocateMemory(VulkanPool& pool, VkMemoryRequirements const& memoryRequirements, VkMemoryPropertyFlags requireFlags);
+    std::tuple<VkBuffer, VkDeviceMemory, VkDeviceSize, VkDeviceSize> CreateBuffer(Book& book, VulkanPool& pool, VkBufferUsageFlags usage, Buffer const& initialData);
     VkFence CreateFence(Book& book, bool signaled = false);
     VkSemaphore CreateSemaphore(Book& book);
 
@@ -358,6 +398,7 @@ namespace Coil
 
     friend class VulkanContext;
     friend class VulkanPresenter;
+    friend class VulkanComputer;
     friend class VulkanFrame;
     friend class VulkanPool;
   };

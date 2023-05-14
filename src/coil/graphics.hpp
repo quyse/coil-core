@@ -144,6 +144,12 @@ namespace Coil
     virtual GraphicsFrame& StartFrame() = 0;
   };
 
+  class GraphicsComputer
+  {
+  public:
+    virtual void Compute(std::function<void(GraphicsContext&)> const& func) = 0;
+  };
+
   class GraphicsPass
   {
   public:
@@ -154,6 +160,10 @@ namespace Coil
   };
 
   class GraphicsIndexBuffer
+  {
+  };
+
+  class GraphicsStorageBuffer
   {
   };
 
@@ -198,7 +208,7 @@ namespace Coil
     std::shared_ptr<ShaderStatementNode> vertex;
     std::shared_ptr<ShaderStatementNode> fragment;
     std::shared_ptr<ShaderStatementNode> compute;
-    ivec3 computeSize;
+    ivec3 computeSize = { 1, 1, 1 };
   };
 
   class GraphicsPipelineLayout
@@ -311,8 +321,11 @@ namespace Coil
     virtual Book& GetBook() = 0;
     virtual GraphicsPool& CreatePool(Book& book, size_t chunkSize) = 0;
     virtual GraphicsPresenter& CreateWindowPresenter(Book& book, GraphicsPool& pool, Window& window, std::function<GraphicsRecreatePresentFunc>&& recreatePresent, std::function<GraphicsRecreatePresentPerImageFunc>&& recreatePresentPerImage) = 0;
+    virtual GraphicsComputer& CreateComputer(Book& book, GraphicsPool& pool) = 0;
     virtual GraphicsVertexBuffer& CreateVertexBuffer(Book& book, GraphicsPool& pool, Buffer const& buffer) = 0;
     virtual GraphicsIndexBuffer& CreateIndexBuffer(Book& book, GraphicsPool& pool, Buffer const& buffer, bool is32Bit) = 0;
+    virtual GraphicsStorageBuffer& CreateStorageBuffer(Book& book, GraphicsPool& pool, Buffer const& data) = 0;
+    virtual GraphicsImage& CreateRenderImage(Book& book, GraphicsPool& pool, PixelFormat const& pixelFormat, ivec2 const& size, GraphicsSampler* pSampler = nullptr) = 0;
     virtual GraphicsImage& CreateDepthStencilImage(Book& book, GraphicsPool& pool, ivec2 const& size) = 0;
     virtual GraphicsPass& CreatePass(Book& book, GraphicsPassConfig const& config) = 0;
     virtual GraphicsShader& CreateShader(Book& book, GraphicsShaderRoots const& exprs) = 0;
@@ -322,6 +335,8 @@ namespace Coil
     virtual GraphicsFramebuffer& CreateFramebuffer(Book& book, GraphicsPass& pass, std::span<GraphicsImage*> const& pImages, ivec2 const& size) = 0;
     virtual GraphicsImage& CreateTexture(Book& book, GraphicsPool& pool, ImageFormat const& format, GraphicsSampler* pSampler = nullptr) = 0;
     virtual GraphicsSampler& CreateSampler(Book& book, GraphicsSamplerConfig const& config) = 0;
+    virtual void SetStorageBufferData(GraphicsStorageBuffer& storageBuffer, Buffer const& buffer) = 0;
+    virtual void GetStorageBufferData(GraphicsStorageBuffer& storageBuffer, Buffer const& buffer) = 0;
   };
 
   class GraphicsMesh
@@ -350,10 +365,11 @@ namespace Coil
     virtual void BindDynamicVertexBuffer(uint32_t slot, Buffer const& buffer) = 0;
     virtual void BindIndexBuffer(GraphicsIndexBuffer* pIndexBuffer) = 0;
     virtual void BindUniformBuffer(GraphicsSlotSetId slotSet, GraphicsSlotId slot, Buffer const& buffer) = 0;
-    virtual void BindStorageBuffer(GraphicsSlotSetId slotSet, GraphicsSlotId slot, uint32_t size) = 0;
+    virtual void BindStorageBuffer(GraphicsSlotSetId slotSet, GraphicsSlotId slot, GraphicsStorageBuffer& storageBuffer) = 0;
     virtual void BindImage(GraphicsSlotSetId slotSet, GraphicsSlotId slot, GraphicsImage& image) = 0;
     virtual void BindPipeline(GraphicsPipeline& pipeline) = 0;
     virtual void Draw(uint32_t indicesCount, uint32_t instancesCount = 1) = 0;
+    virtual void Dispatch(ivec3 size) = 0;
     virtual void SetTextureData(GraphicsImage& image, ImageBuffer const& imageBuffer) = 0;
 
     void BindMesh(GraphicsMesh const& mesh);
