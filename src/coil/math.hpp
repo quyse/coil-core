@@ -28,16 +28,16 @@ namespace Coil
 
     // tolerate another options when copying
     template <MathOptions o2>
-    constexpr xvec(xvec<T, n, o2> const& value)
+    constexpr xvec(xvec<T, n, o2> const& other)
     {
       for(size_t i = 0; i < n; ++i)
-        t[i] = value.t[i];
+        t[i] = other.t[i];
     }
     template <MathOptions o2>
-    constexpr xvec& operator=(xvec<T, n, o2> const& value)
+    constexpr xvec& operator=(xvec<T, n, o2> const& other)
     {
       for(size_t i = 0; i < n; ++i)
-        t[i] = value.t[i];
+        t[i] = other.t[i];
       return *this;
     }
 
@@ -75,6 +75,47 @@ namespace Coil
     constexpr T& w() requires (3 < n) { return t[3]; }
 
     friend auto operator<=>(xvec const&, xvec const&) = default;
+
+    constexpr xvec& operator+=(xvec const& b)
+    {
+      for(size_t i = 0; i < n; ++i)
+        (*this)(i) += b(i);
+      return *this;
+    }
+    constexpr xvec& operator-=(xvec const& b)
+    {
+      for(size_t i = 0; i < n; ++i)
+        (*this)(i) -= b(i);
+      return *this;
+    }
+    // elementwise multiplication
+    constexpr xvec& operator*=(xvec const& b)
+    {
+      for(size_t i = 0; i < n; ++i)
+        (*this)(i) *= b(i);
+      return *this;
+    }
+    // vector-scalar multiplication
+    constexpr xvec& operator*=(T b)
+    {
+      for(size_t i = 0; i < n; ++i)
+        (*this)(i) *= b;
+      return *this;
+    }
+    // elementwise division
+    constexpr xvec& operator/=(xvec const& b)
+    {
+      for(size_t i = 0; i < n; ++i)
+        (*this)(i) /= b(i);
+      return *this;
+    }
+    // vector-scalar division
+    constexpr xvec& operator/=(T b)
+    {
+      for(size_t i = 0; i < n; ++i)
+        (*this)(i) /= b;
+      return *this;
+    }
   };
 
   template <typename T, size_t n, size_t m, MathOptions o = (MathOptions)MathOption::Aligned>
@@ -99,18 +140,18 @@ namespace Coil
 
     // tolerate another options when copying
     template <MathOptions o2>
-    constexpr xmat(xmat<T, n, m, o2> const& value)
+    constexpr xmat(xmat<T, n, m, o2> const& other)
     {
       for(size_t i = 0; i < n; ++i)
         for(size_t j = 0; j < m; ++j)
-          t[i].t[j] = value.t[i].t[j];
+          t[i].t[j] = other.t[i].t[j];
     }
     template <MathOptions o2>
-    constexpr xmat& operator=(xmat<T, n, m, o2> const& value)
+    constexpr xmat& operator=(xmat<T, n, m, o2> const& other)
     {
       for(size_t i = 0; i < n; ++i)
         for(size_t j = 0; j < m; ++j)
-          t[i].t[j] = value.t[i].t[j];
+          t[i].t[j] = other.t[i].t[j];
       return *this;
     }
 
@@ -135,6 +176,22 @@ namespace Coil
     }
 
     friend auto operator<=>(xmat const&, xmat const&) = default;
+
+    constexpr xmat& operator+=(xmat const& b)
+    {
+      for(size_t i = 0; i < n; ++i)
+        for(size_t j = 0; j < m; ++j)
+          (*this)(i, j) += b(i, j);
+      return *this;
+    }
+
+    constexpr xmat& operator-=(xmat const& b)
+    {
+      for(size_t i = 0; i < n; ++i)
+        for(size_t j = 0; j < m; ++j)
+          (*this)(i, j) -= b(i, j);
+      return *this;
+    }
   };
 
   template <typename T, size_t n>
@@ -214,12 +271,12 @@ namespace Coil
 
     // tolerate another options when copying
     template <MathOptions o2>
-    constexpr xquat(xquat<T, o2> const& value)
-    : xvec<T, 4, o>(value) {}
+    constexpr xquat(xquat<T, o2> const& other)
+    : xvec<T, 4, o>(other) {}
     template <MathOptions o2>
-    constexpr xquat& operator=(xquat<T, o2> const& value)
+    constexpr xquat& operator=(xquat<T, o2> const& other)
     {
-      static_cast<xvec<T, 4, o>&>(*this) = value;
+      static_cast<xvec<T, 4, o>&>(*this) = other;
       return *this;
     }
 
@@ -232,31 +289,28 @@ namespace Coil
 
   // vector addition
   template <typename T, size_t n>
-  constexpr xvec<T, n> operator+(xvec<T, n> const& a, xvec<T, n> const& b)
+  constexpr xvec<T, n> operator+(xvec<T, n> a, xvec<T, n> const& b)
   {
-    xvec<T, n> r;
-    for(size_t i = 0; i < n; ++i)
-      r(i) = a(i) + b(i);
-    return r;
+    return a += b;
   }
   // vector subtraction
   template <typename T, size_t n>
-  constexpr xvec<T, n> operator-(xvec<T, n> const& a, xvec<T, n> const& b)
+  constexpr xvec<T, n> operator-(xvec<T, n> a, xvec<T, n> const& b)
   {
-    xvec<T, n> r;
-    for(size_t i = 0; i < n; ++i)
-      r(i) = a(i) - b(i);
-    return r;
+    return a -= b;
   }
 
+  // vector-vector elementwise multiplication
+  template <typename T, size_t n>
+  constexpr xvec<T, n> operator*(xvec<T, n> a, xvec<T, n> const& b)
+  {
+    return a *= b;
+  }
   // vector-scalar multiplication
   template <typename T, size_t n>
-  constexpr xvec<T, n> operator*(xvec<T, n> const& a, T b)
+  constexpr xvec<T, n> operator*(xvec<T, n> a, T b)
   {
-    xvec<T, n> r;
-    for(size_t i = 0; i < n; ++i)
-      r(i) = a(i) * b;
-    return r;
+    return a *= b;
   }
   // scalar-vector multiplication
   template <typename T, size_t n>
@@ -268,25 +322,39 @@ namespace Coil
     return r;
   }
 
+  // vector-vector elementwise division
+  template <typename T, size_t n>
+  constexpr xvec<T, n> operator/(xvec<T, n> a, xvec<T, n> const& b)
+  {
+    return a /= b;
+  }
+  // vector-scalar division
+  template <typename T, size_t n>
+  constexpr xvec<T, n> operator/(xvec<T, n> a, T b)
+  {
+    return a /= b;
+  }
+  // scalar-vector division
+  template <typename T, size_t n>
+  constexpr xvec<T, n> operator/(T a, xvec<T, n> const& b)
+  {
+    xvec<T, n> r;
+    for(size_t i = 0; i < n; ++i)
+      r(i) = a / b(i);
+    return r;
+  }
+
   // matrix addition
   template <typename T, size_t n, size_t m>
-  constexpr xmat<T, n, m> operator+(xmat<T, n, m> const& a, xmat<T, n, m> const& b)
+  constexpr xmat<T, n, m> operator+(xmat<T, n, m> a, xmat<T, n, m> const& b)
   {
-    xmat<T, n, m> r;
-    for(size_t i = 0; i < n; ++i)
-      for(size_t j = 0; j < m; ++j)
-        r(i, j) = a(i, j) + b(i, j);
-    return r;
+    return a += b;
   }
   // matrix subtraction
   template <typename T, size_t n, size_t m>
-  constexpr xmat<T, n, m> operator-(xmat<T, n, m> const& a, xmat<T, n, m> const& b)
+  constexpr xmat<T, n, m> operator-(xmat<T, n, m> a, xmat<T, n, m> const& b)
   {
-    xmat<T, n, m> r;
-    for(size_t i = 0; i < n; ++i)
-      for(size_t j = 0; j < m; ++j)
-        r(i, j) = a(i, j) - b(i, j);
-    return r;
+    return a -= b;
   }
 
   // matrix-matrix multiplication
