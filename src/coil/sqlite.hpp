@@ -108,12 +108,13 @@ namespace Coil
       Statement(Statement&& stmt);
       ~Statement();
 
-      template <IsSqliteValueBindable... Args>
+      template <typename... Args>
+      requires (IsSqliteValueBindable<std::decay_t<Args>> && ... && true)
       Query operator()(Args&&... args)
       {
         ([&]<int... indices>(std::integer_sequence<int, indices...> seq)
         {
-          (SqliteValue<Args>::Bind(_stmt, indices + 1, std::forward<Args>(args)) , ...);
+          (SqliteValue<std::decay_t<Args>>::Bind(_stmt, indices + 1, std::forward<Args>(args)) , ...);
         })(std::make_integer_sequence<int, sizeof...(Args)>());
         return _stmt;
       }
