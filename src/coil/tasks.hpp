@@ -11,11 +11,15 @@
 #include <condition_variable>
 #include <variant>
 #include <latch>
+#include <type_traits>
 
 namespace Coil
 {
   template <typename R>
-  struct Task;
+  class Task;
+
+  template <typename R>
+  class TaskPromise;
 
   // singleton class, controls thread pool
   class TaskEngine
@@ -44,7 +48,8 @@ namespace Coil
     std::vector<std::jthread> _threads;
   };
 
-  class TaskPromiseBase
+  // coroutine promise first base class
+  class TaskPromiseBase1
   {
   protected:
     // initial awaiter class
@@ -96,18 +101,19 @@ namespace Coil
     };
   };
 
-  // coroutine promise class
+  // coroutine promise second base class
+  // implements everything except void/non-void distinction
   template <typename R>
-  class TaskPromise : public TaskPromiseBase
+  class TaskPromiseBase2 : public TaskPromiseBase1
   {
   public:
     InitialAwaiter initial_suspend()
     {
-      return { std::coroutine_handle<TaskPromise<R>>::from_promise(*this) };
+      return { std::coroutine_handle<TaskPromise<R>>::from_promise(static_cast<TaskPromise<R>&>(*this)) };
     }
     FinalAwaiter final_suspend() noexcept
     {
-      return { std::coroutine_handle<TaskPromise<R>>::from_promise(*this) };
+      return { std::coroutine_handle<TaskPromise<R>>::from_promise(static_cast<TaskPromise<R>&>(*this)) };
     }
 
     Task<R> get_return_object()
@@ -120,12 +126,10 @@ namespace Coil
       _pResult->SetException();
     }
 
-    void return_value(R&& value)
-    {
-      _pResult->SetValue(std::move(value));
-    }
+  protected:
+    struct Void {};
+    using Value = std::conditional_t<std::same_as<R, void>, Void, R>;
 
-  private:
     // storage class
     // stores result so promise can be destroyed separately
     class Result
@@ -133,7 +137,7 @@ namespace Coil
     public:
       Result() : _latch(1) {}
 
-      void SetValue(R&& value)
+      void SetValue(Value&& value)
       {
         SetResult([&]()
         {
@@ -188,11 +192,14 @@ namespace Coil
         // return value or rethrow exception
         return std::visit([&](auto const& result) -> R
         {
-          if constexpr(std::same_as<std::decay_t<decltype(result)>, R>)
+          if constexpr(std::same_as<std::decay_t<decltype(result)>, Value>)
           {
-            return result;
+            if constexpr(!std::same_as<R, void>)
+            {
+              return result;
+            }
           }
-          if constexpr(std::same_as<std::decay_t<decltype(result)>, std::exception_ptr>)
+          else
           {
             std::rethrow_exception(result);
           }
@@ -209,7 +216,7 @@ namespace Coil
     private:
       std::latch _latch;
       mutable std::mutex _mutex;
-      std::optional<std::variant<R, std::exception_ptr>> _result;
+      std::optional<std::variant<Value, std::exception_ptr>> _result;
       std::vector<std::coroutine_handle<>> _listeners;
     };
 
@@ -245,6 +252,27 @@ namespace Coil
     friend class Task<R>;
   };
 
+  // non-void task promise class
+  template <typename R>
+  class TaskPromise : public TaskPromiseBase2<R>
+  {
+  public:
+    void return_value(R&& value)
+    {
+      this->_pResult->SetValue(std::move(value));
+    }
+  };
+  // void task promise class
+  template <>
+  class TaskPromise<void> : public TaskPromiseBase2<void>
+  {
+  public:
+    void return_void()
+    {
+      this->_pResult->SetValue({});
+    }
+  };
+
   // task class
   // just wraps shared_ptr to result class
   template <typename R>
@@ -272,6 +300,6 @@ namespace Coil
 
     std::shared_ptr<typename TaskPromise<R>::Result> _pResult;
 
-    friend class TaskPromise<R>;
+    friend class TaskPromiseBase2<R>;
   };
 }

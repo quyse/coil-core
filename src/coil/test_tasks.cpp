@@ -11,6 +11,29 @@ public:
   {
     // register tests
 
+    // void result
+    {
+      uint32_t const n = 10;
+      struct Test
+      {
+        static Task<void> f(uint32_t i, uint32_t& r)
+        {
+          if(i < n)
+          {
+            ++r;
+            co_await f(i + 1, r);
+          }
+        }
+      };
+
+      AddTest([]() -> Task<bool>
+      {
+        uint32_t r = 0;
+        co_await Test::f(0, r);
+        co_return r == n;
+      }());
+    }
+
     // simple recursion
     {
       uint64_t const n = 1 << 16;
