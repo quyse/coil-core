@@ -15,14 +15,17 @@ namespace Coil
 
     static FtHbFont& Load(Book& book, Buffer const& buffer, int32_t size);
 
-    GlyphsPacking PackGlyphs(CreateGlyphsConfig const& config) override;
+    void Shape(std::string const& text, LanguageInfo const& languageInfo, std::vector<OutGlyph>& outGlyphs) const override;
+    std::tuple<GlyphsPacking, RawImage2D<uint8_t>> PackGlyphs(CreateGlyphsConfig const& config) const override;
 
   private:
     static FT_Face LoadFace(Book& book, Buffer const& buffer, int32_t size);
 
-    FT_Face _ftFace;
-    hb_font_t* _hbFont;
-    hb_buffer_t* _hbBuffer;
-    int32_t _size;
+    FT_Face const _ftFace;
+    hb_font_t* const _hbFont;
+    hb_buffer_t* const _hbBuffer;
+    int32_t const _size;
+
+    mutable std::unordered_map<LanguageTag, hb_language_t> _languagesCache;
   };
 }

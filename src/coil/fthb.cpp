@@ -94,14 +94,76 @@ namespace Coil
     return book.Allocate<FtHbFont>(ftFace, hbFont, hbBuffer, size);
   }
 
-  Font::GlyphsPacking FtHbFont::PackGlyphs(CreateGlyphsConfig const& config)
+  void FtHbFont::Shape(std::string const& text, LanguageInfo const& languageInfo, std::vector<OutGlyph>& outGlyphs) const
+  {
+    // get language
+    hb_language_t language;
+    {
+      auto i = _languagesCache.find(languageInfo.tag);
+      if(i != _languagesCache.end()) [[likely]]
+      {
+        language = i->second;
+      }
+      else
+      {
+        char s[sizeof(languageInfo.tag)];
+        size_t j = 0;
+        for(size_t i = 0; i < sizeof(languageInfo.tag); ++i)
+        {
+          char c = (char)(((uint16_t)languageInfo.tag >> ((sizeof(languageInfo.tag) - i - 1) * 8)) & 0x7F);
+          if(c)
+            s[j++] = c;
+        }
+        language = hb_language_from_string(s, (int)j);
+        _languagesCache.insert({ languageInfo.tag, language });
+      }
+    }
+    hb_buffer_set_language(_hbBuffer, language);
+    hb_buffer_set_script(_hbBuffer, (hb_script_t)languageInfo.script);
+    switch(languageInfo.direction)
+    {
+    case LanguageDirection::LeftToRight:
+      hb_buffer_set_direction(_hbBuffer, HB_DIRECTION_LTR);
+      break;
+    case LanguageDirection::RightToLeft:
+      hb_buffer_set_direction(_hbBuffer, HB_DIRECTION_RTL);
+      break;
+    }
+    hb_buffer_add_utf8(_hbBuffer, text.c_str(), (int)text.length(), 0, (int)text.length());
+    hb_shape(_hbFont, _hbBuffer, nullptr, 0);
+    hb_buffer_normalize_glyphs(_hbBuffer);
+
+    unsigned int glyphCount;
+    hb_glyph_info_t* glyphInfos = hb_buffer_get_glyph_infos(_hbBuffer, &glyphCount);
+    hb_glyph_position_t* glyphPositions = hb_buffer_get_glyph_positions(_hbBuffer, &glyphCount);
+
+    vec2 position;
+    for(uint32_t i = 0; i < glyphCount; ++i)
+    {
+      vec2 advance(float(glyphPositions[i].x_advance) / 64, float(glyphPositions[i].y_advance) / 64);
+
+      outGlyphs.push_back(
+      {
+        .position = position + vec2(float(glyphPositions[i].x_offset) / 64, float(glyphPositions[i].y_offset) / 64),
+        .advance = advance,
+        .glyphIndex = glyphInfos[i].codepoint,
+        .characterIndex = glyphInfos[i].cluster,
+      });
+
+      position = position + advance;
+    }
+
+    hb_buffer_reset(_hbBuffer);
+  }
+
+  std::tuple<GlyphsPacking, RawImage2D<uint8_t>> FtHbFont::PackGlyphs(CreateGlyphsConfig const& config) const
   {
     try
     {
       ivec2 halfScale = config.halfScale;
       auto const& glyphsNeeded = config.glyphsNeeded;
 
-      FT_Long glyphsCount = glyphsNeeded.has_value() ? (FT_Long)glyphsNeeded.value().size() : _ftFace->num_glyphs;
+      FT_Long glyphsCount = glyphsNeeded.has_value() ? (FT_Long)glyphsNeeded->size() : _ftFace->num_glyphs;
 
       if(FT_Set_Pixel_Sizes(_ftFace, _size * (halfScale.x() * 2 + 1), _size * (halfScale.y() * 2 + 1)))
         throw Exception("setting pixel sizes failed");
@@ -109,9 +171,34 @@ namespace Coil
       std::vector<GlyphsPacking::GlyphInfo> glyphInfos(glyphsCount);
       std::vector<RawImage2D<uint8_t>> glyphImages(glyphsCount);
 
+      // reset transform if packing all glyphs
+      if(!glyphsNeeded.has_value())
+      {
+        FT_Set_Transform(_ftFace, nullptr, nullptr);
+      }
+
       for(FT_Long glyphIndex = 0; glyphIndex < glyphsCount; ++glyphIndex)
       {
-        if(FT_Load_Glyph(_ftFace, glyphsNeeded.has_value() ? glyphsNeeded.value()[glyphIndex] : glyphIndex, config.enableHinting ? FT_LOAD_DEFAULT : FT_LOAD_NO_HINTING))
+        // set transform if packing specific glyphs
+        if(glyphsNeeded.has_value())
+        {
+          auto const& glyph = glyphsNeeded.value()[glyphIndex];
+          FT_Matrix mat =
+          {
+            .xx = (1 << 16),
+            .xy = (1 << 14),
+            .yx = 0,
+            .yy = (1 << 16),
+          };
+          FT_Vector delta =
+          {
+            .x = (int32_t)glyph.offsetX * (1 << 6) / config.offsetPrecision.x(),
+            .y = (int32_t)glyph.offsetY * (1 << 6) / config.offsetPrecision.y(),
+          };
+          FT_Set_Transform(_ftFace, nullptr, &delta);
+        }
+
+        if(FT_Load_Glyph(_ftFace, glyphsNeeded.has_value() ? glyphsNeeded.value()[glyphIndex].index : glyphIndex, config.enableHinting ? FT_LOAD_DEFAULT : (FT_LOAD_NO_HINTING | FT_LOAD_NO_AUTOHINT)))
           throw Exception("loading glyph failed");
 
         if(FT_Render_Glyph(_ftFace->glyph, FT_RENDER_MODE_NORMAL))
@@ -217,14 +304,16 @@ namespace Coil
 
       return
       {
-        .size = resultSize,
-        .scale =
-        {
-          1 + halfScale.x() * 2,
-          1 + halfScale.y() * 2,
+        GlyphsPacking{
+          .size = resultSize,
+          .scale =
+          {
+            1 + halfScale.x() * 2,
+            1 + halfScale.y() * 2,
+          },
+          .glyphInfos = std::move(glyphInfos),
         },
-        .glyphInfos = std::move(glyphInfos),
-        .glyphsImage = std::move(glyphsImage),
+        std::move(glyphsImage),
       };
     }
     catch(Exception const& exception)

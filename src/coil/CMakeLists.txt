@@ -547,6 +547,7 @@ if(TRUE)
     INTERFACE
       coil_core_graphics
       coil_core_image
+      coil_core_localization
   )
   list(APPEND coil_core_libraries fonts)
 endif()
