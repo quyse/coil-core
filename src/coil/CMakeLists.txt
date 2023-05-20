@@ -193,6 +193,21 @@ if(TRUE)
 endif()
 list(APPEND coil_core_all_libraries math_determ)
 
+if(TRUE)
+  add_library(coil_core_tasks STATIC
+    tasks.cpp
+  )
+  set_property(TARGET coil_core_tasks PROPERTY PUBLIC_HEADER
+    tasks.hpp
+  )
+  target_link_libraries(coil_core_tasks
+    PUBLIC
+      coil_core_base
+  )
+  list(APPEND coil_core_libraries tasks)
+endif()
+list(APPEND coil_core_all_libraries tasks)
+
 if(TARGET nlohmann_json::nlohmann_json)
   add_library(coil_core_json STATIC
     json.cpp
@@ -787,6 +802,18 @@ if(BUILD_TESTING)
       coil_core_math_determ
     )
     add_test(NAME test_math_determ COMMAND test_math_determ)
+  endif()
+
+  if(TARGET coil_core_tasks)
+    add_executable(test_tasks
+      test_tasks.cpp
+    )
+    target_link_libraries(test_tasks
+      coil_core_entrypoint_console
+      coil_core_math
+      coil_core_tasks
+    )
+    add_test(NAME test_tasks COMMAND test_tasks)
   endif()
 
   if(TARGET coil_core_json)
