@@ -69,8 +69,8 @@ namespace Coil
       // cursor move event
       _lastCursor =
       {
-        (int32_t)(sdlEvent.motion.x * _scale.x()),
-        (int32_t)(sdlEvent.motion.y * _scale.y()),
+        (int32_t)((float)sdlEvent.motion.x * _scale.x()),
+        (int32_t)((float)sdlEvent.motion.y * _scale.y()),
       };
       AddEvent(InputMouseCursorMoveEvent
       {
@@ -381,7 +381,6 @@ namespace Coil
   : InputController(SDL_JoystickInstanceID(joystick))
   , _controller(controller)
   , _haptic(SDL_HapticOpenFromJoystick(joystick))
-  , _hapticEffectIndex(-1)
   {}
 
   SdlInputManager::SdlController::SdlController(SDL_GameController* controller)

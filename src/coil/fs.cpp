@@ -206,7 +206,7 @@ namespace Coil
 
       book.Allocate<FileMapping>(pMapping, size);
 
-      return Buffer(pMapping, size);
+      return { pMapping, size };
 #endif
     }
     catch(Exception const& exception)

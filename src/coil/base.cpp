@@ -59,7 +59,7 @@ namespace Coil
   {
     uint8_t* data = new uint8_t[size];
     book.Allocate<Memory>(data);
-    return Buffer(data, size);
+    return { data, size };
   }
 
 #if defined(__cpp_lib_source_location)

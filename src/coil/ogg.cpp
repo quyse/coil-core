@@ -26,7 +26,7 @@ namespace Coil
         // skip header packets (with zero granule)
         if(!packet.granulepos)
           continue;
-        return Buffer(packet.packet, packet.bytes);
+        return { packet.packet, (size_t)packet.bytes };
       }
 
       // loop until we get a page

@@ -16,7 +16,7 @@ namespace
     static int32_t Generate()
     {
       static std::mt19937 engine;
-      return engine();
+      return (int32_t)engine();
     }
   };
   template <>
@@ -25,7 +25,7 @@ namespace
     static uint32_t Generate()
     {
       static std::mt19937 engine;
-      return engine();
+      return (uint32_t)engine();
     }
   };
   template <>
@@ -34,7 +34,7 @@ namespace
     static int64_t Generate()
     {
       static std::mt19937_64 engine;
-      return engine();
+      return (int64_t)engine();
     }
   };
   template <>
@@ -43,7 +43,7 @@ namespace
     static uint64_t Generate()
     {
       static std::mt19937_64 engine;
-      return engine();
+      return (uint64_t)engine();
     }
   };
   template <>

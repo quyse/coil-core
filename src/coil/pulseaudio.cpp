@@ -50,22 +50,22 @@ namespace Coil
     {
       _mainloop = pa_mainloop_new();
       if(!_mainloop)
-        throw new Exception("creating PulseAudio mainloop failed");
+        throw Exception("creating PulseAudio mainloop failed");
 
       pa_mainloop_api* mainloop_api = pa_mainloop_get_api(_mainloop);
 
-      _context = pa_context_new(mainloop_api, AppIdentity::name.c_str());
+      _context = pa_context_new(mainloop_api, AppIdentity::GetInstance().Name().c_str());
       if(!_context)
-        throw new Exception("creating PulseAudio context failed");
+        throw Exception("creating PulseAudio context failed");
 
       if(pa_context_connect(_context, nullptr, PA_CONTEXT_NOFLAGS, nullptr) < 0)
-        throw new Exception("connecting to PulseAudio failed");
+        throw Exception("connecting to PulseAudio failed");
 
       LoopUntil([&]()
       {
         pa_context_state_t state = pa_context_get_state(_context);
         if(!PA_CONTEXT_IS_GOOD(state))
-          throw new Exception("connecting to PulseAudio failed");
+          throw Exception("connecting to PulseAudio failed");
 
         return state == PA_CONTEXT_READY;
       });
@@ -83,19 +83,19 @@ namespace Coil
 
         _stream = pa_stream_new(_context, "Playback", &sample_spec, &channel_map);
         if(!_stream)
-          throw new Exception("creating PulseAudio stream failed");
+          throw Exception("creating PulseAudio stream failed");
       }
 
       pa_stream_set_write_callback(_stream, &Impl::StaticStreamWriteCallback, this);
 
       if(pa_stream_connect_playback(_stream, nullptr, nullptr, PA_STREAM_NOFLAGS, nullptr, nullptr))
-        throw new Exception("connecting PulseAudio playback failed");
+        throw Exception("connecting PulseAudio playback failed");
 
       LoopUntil([&]()
       {
         pa_stream_state_t state = pa_stream_get_state(_stream);
         if(!PA_STREAM_IS_GOOD(state))
-          throw new Exception("connecting PulseAudio playback failed");
+          throw Exception("connecting PulseAudio playback failed");
 
         return state == PA_STREAM_READY;
       });
@@ -107,14 +107,13 @@ namespace Coil
       });
     }
 
-  private:
     template <typename F>
     void LoopUntil(F&& f)
     {
       for(;;)
       {
         if(pa_mainloop_iterate(_mainloop, 1, nullptr) < 0)
-          throw new Exception("iterating PulseAudio mainloop failed");
+          throw Exception("iterating PulseAudio mainloop failed");
 
         if(f()) break;
       }
@@ -180,11 +179,8 @@ namespace Coil
   PulseAudioDevice::PulseAudioDevice(AudioStream& stream)
   : _stream(stream), _impl(std::make_unique<Impl>(*this)) {}
 
-  PulseAudioDevice::~PulseAudioDevice()
-  {
-    // deliberately empty
-    // destructor definition is required to keep Impl out of header
-  }
+  // destructor definition is required to keep Impl out of header
+  PulseAudioDevice::~PulseAudioDevice() = default;
 
   PulseAudioDevice& PulseAudioDevice::Init(Book& book, AudioStream& stream)
   {

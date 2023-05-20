@@ -9,9 +9,8 @@ namespace
 namespace Coil
 {
   ZstdCompressStream::ZstdCompressStream(OutputStream& outputStream)
-  : _outputStream(outputStream)
+  : _outputStream(outputStream), _stream(ZSTD_createCStream())
   {
-    _stream = ZSTD_createCStream();
   }
 
   ZstdCompressStream::~ZstdCompressStream()
@@ -62,9 +61,8 @@ namespace Coil
   }
 
   ZstdDecompressStream::ZstdDecompressStream(InputStream& inputStream)
-  : _inputStream(inputStream)
+  : _inputStream(inputStream), _stream(ZSTD_createDStream())
   {
-    _stream = ZSTD_createDStream();
   }
 
   ZstdDecompressStream::~ZstdDecompressStream()

@@ -212,7 +212,7 @@ namespace Coil
   class VulkanComputer final : public GraphicsComputer
   {
   public:
-    VulkanComputer(Book& book, VulkanDevice& device, VulkanPool& pool, VkCommandBuffer const commandBuffer, VkFence fenceComputeFinished);
+    VulkanComputer(Book& book, VulkanDevice& device, VulkanPool& pool, VkCommandBuffer commandBuffer, VkFence fenceComputeFinished);
 
     void Compute(std::function<void(GraphicsContext&)> const& func) override;
 

@@ -49,7 +49,7 @@ namespace Coil
   }
   std::string SqliteValue<std::string>::Get(sqlite3_stmt* stmt, int index)
   {
-    return std::string((char const*)sqlite3_column_text(stmt, index), sqlite3_column_bytes(stmt, index));
+    return { (char const*)sqlite3_column_text(stmt, index), (size_t)sqlite3_column_bytes(stmt, index) };
   }
 
   void SqliteValue<char const*>::Bind(sqlite3_stmt* stmt, int index, char const* value)
@@ -67,7 +67,7 @@ namespace Coil
   }
   Buffer SqliteValue<Buffer>::Get(sqlite3_stmt* stmt, int index)
   {
-    return Buffer(sqlite3_column_blob(stmt, index), sqlite3_column_bytes(stmt, index));
+    return { sqlite3_column_blob(stmt, index), (size_t)sqlite3_column_bytes(stmt, index) };
   }
 
   SqliteDb::Result::Result(sqlite3_stmt* stmt)
@@ -99,7 +99,7 @@ namespace Coil
   SqliteDb::Statement::Statement(sqlite3_stmt* stmt)
   : _stmt(stmt) {}
 
-  SqliteDb::Statement::Statement(Statement&& stmt)
+  SqliteDb::Statement::Statement(Statement&& stmt) noexcept
   {
     std::swap(_stmt, stmt._stmt);
   }
@@ -151,7 +151,7 @@ namespace Coil
   , _stmtRollback(CreateStatement("ROLLBACK TO T"))
   {}
 
-  SqliteDb::SqliteDb(SqliteDb&& db)
+  SqliteDb::SqliteDb(SqliteDb&& db) noexcept
   : _stmtSavepoint(std::move(db._stmtSavepoint))
   , _stmtRelease(std::move(db._stmtRelease))
   , _stmtRollback(std::move(db._stmtRollback))

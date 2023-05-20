@@ -8,9 +8,17 @@ namespace Coil
   class AppIdentity
   {
   public:
+    AppIdentity();
+
+    std::string& Name();
+    uint32_t& Version();
+
+    static AppIdentity& GetInstance();
+
+  private:
     // app name
-    static std::string name;
+    std::string _name;
     // app version
-    static uint32_t version;
+    uint32_t _version;
   };
 }

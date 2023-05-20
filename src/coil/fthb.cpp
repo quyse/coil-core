@@ -119,8 +119,8 @@ namespace Coil
 
         const FT_Bitmap& bitmap = _ftFace->glyph->bitmap;
 
-        int32_t pixelsWidth = bitmap.width + halfScale.x() * 2;
-        int32_t pixelsHeight = bitmap.rows + halfScale.y() * 2;
+        int32_t pixelsWidth = (int32_t)bitmap.width + halfScale.x() * 2;
+        int32_t pixelsHeight = (int32_t)bitmap.rows + halfScale.y() * 2;
 
         if(bitmap.width > 0 && bitmap.rows > 0)
         {
@@ -147,7 +147,7 @@ namespace Coil
             };
 
             // calculate rectangular partial sums
-            int32_t pp = bitmap.width + 1;
+            int32_t pp = (int32_t)bitmap.width + 1;
             std::vector<uint32_t> ps((bitmap.rows + 1) * pp);
             {
               int32_t p = 0;
@@ -237,12 +237,12 @@ namespace Coil
   {
     FT_Face ftFace;
     if(FT_New_Memory_Face(FtEngine::GetLibrary(), (const FT_Byte*)buffer.data, (FT_Long)buffer.size, 0, &ftFace))
-      throw new Exception("creating FreeType font face failed");
+      throw Exception("creating FreeType font face failed");
 
     book.Allocate<FtFontFace>(ftFace);
 
     if(FT_Set_Pixel_Sizes(ftFace, size, size))
-      throw new Exception("setting FreeType font size failed");
+      throw Exception("setting FreeType font size failed");
 
     return ftFace;
   }

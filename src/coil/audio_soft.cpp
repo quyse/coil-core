@@ -27,7 +27,7 @@ namespace Coil
       static constexpr int32_t silenceSamplesCount = 0x1000;
       static constinit AudioSample const silence[silenceSamplesCount] = {};
       int32_t channelsCount = GetAudioFormatChannelsCount(_format.channels);
-      return Buffer(silence, std::min(framesCount, silenceSamplesCount / channelsCount) * channelsCount * sizeof(AudioSample));
+      return { silence, std::min(framesCount, silenceSamplesCount / channelsCount) * channelsCount * sizeof(AudioSample) };
     }
   }
 
@@ -90,7 +90,7 @@ namespace Coil
     size_t minimumSize = 0;
     for(auto i = _players.begin(); i != _players.end(); )
     {
-      auto& player = *i;
+      auto const& player = *i;
       // read from stream if it's not cancelled, and there's no existing data
       if(player->_playing && !player->_buffer.size)
       {
@@ -114,7 +114,7 @@ namespace Coil
 
     // sum up all samples up to the minimum
     _buffer.assign(minimumSize, 0);
-    for(auto& player : _players)
+    for(auto const& player : _players)
     {
       auto& playerBuffer = player->_buffer;
       for(size_t i = 0; i < minimumSize; i += sizeof(AudioSample))

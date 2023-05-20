@@ -121,7 +121,7 @@ namespace Coil
 
   void StdStreamOutputStream::Write(Buffer const& buffer)
   {
-    _stream.write((char const*)buffer.data, buffer.size);
+    _stream.write((char const*)buffer.data, (std::streamsize)buffer.size);
     if(_stream.fail()) throw Exception("failed to write to std stream");
   }
 
@@ -130,7 +130,7 @@ namespace Coil
 
   size_t StdStreamInputStream::Read(Buffer const& buffer)
   {
-    _stream.read((char*)buffer.data, buffer.size);
+    _stream.read((char*)buffer.data, (std::streamsize)buffer.size);
     if(_stream.fail()) throw Exception("failed to read from std stream");
     return _stream.gcount();
   }

@@ -93,8 +93,8 @@ namespace Coil
       {
         .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
         .pNext = nullptr,
-        .pApplicationName = AppIdentity::name.c_str(),
-        .applicationVersion = AppIdentity::version,
+        .pApplicationName = AppIdentity::GetInstance().Name().c_str(),
+        .applicationVersion = AppIdentity::GetInstance().Version(),
         .pEngineName = "Coil Core",
         .engineVersion = 0,
         .apiVersion = VK_API_VERSION_1_0,
@@ -646,7 +646,7 @@ namespace Coil
       // process dependencies in reverse order, so we can filter out dependencies
       // which are already transitively accounted for
       currentSubPassDependencies.assign(subPassesCount, {});
-      for(int32_t dependencySubPassId = subPassId - 1; dependencySubPassId >= 0; --dependencySubPassId)
+      for(int32_t dependencySubPassId = (int32_t)subPassId - 1; dependencySubPassId >= 0; --dependencySubPassId)
       {
         auto const& dependency = subPassInfo.dependencies[dependencySubPassId];
         auto& currentDependency = currentSubPassDependencies[dependencySubPassId];
@@ -2153,7 +2153,7 @@ namespace Coil
     Init(size);
   }
 
-  VulkanComputer::VulkanComputer(Book& book, VulkanDevice& device, VulkanPool& pool, VkCommandBuffer const commandBuffer, VkFence fenceComputeFinished)
+  VulkanComputer::VulkanComputer(Book& book, VulkanDevice& device, VulkanPool& pool, VkCommandBuffer commandBuffer, VkFence fenceComputeFinished)
   : _book(book),
     _device(device),
     _commandBuffer(commandBuffer),

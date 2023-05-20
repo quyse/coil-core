@@ -24,7 +24,7 @@ namespace Coil
 #endif
   }();
 
-  float const Time::secondsPerTick = 1.0f / Time::ticksPerSecond;
+  float const Time::secondsPerTick = 1.0f / (float)Time::ticksPerSecond;
 
   Time::Tick Time::GetTick()
   {
@@ -73,6 +73,6 @@ namespace Coil
     // remember current tick as last tick
     _lastTick = currentTick;
 
-    return ticks * Time::secondsPerTick;
+    return (float)ticks * Time::secondsPerTick;
   }
 }

@@ -69,7 +69,7 @@ namespace Coil
       uint32_t instancesPerStep = std::numeric_limits<uint32_t>::max();
       for(auto& i : _instanceData)
       {
-        if(i.second.data.size())
+        if(!i.second.data.empty())
         {
           i.second.stride = i.second.data.size() / _instancesCount;
           instancesPerStep = std::min(instancesPerStep, _maxBufferSize / i.second.stride);
@@ -82,7 +82,7 @@ namespace Coil
         uint32_t instancesToRender = std::min(_instancesCount - k, instancesPerStep);
         for(auto& i : _instanceData)
         {
-          if(i.second.data.size())
+          if(!i.second.data.empty())
           {
             _pContext->BindDynamicVertexBuffer(i.first,
               Buffer(

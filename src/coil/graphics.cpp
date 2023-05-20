@@ -51,14 +51,14 @@ namespace Coil
     {
       .config = config,
     });
-    return AttachmentRef(*this, attachmentId);
+    return { *this, attachmentId };
   }
 
   GraphicsPassConfig::SubPassRef GraphicsPassConfig::AddSubPass()
   {
     GraphicsSubPassId subPassId = (GraphicsSubPassId)subPasses.size();
     subPasses.push_back({});
-    return SubPassRef(*this, subPassId);
+    return { *this, subPassId };
   }
 
   void GraphicsPassConfig::SubPass::UseColorAttachment(AttachmentRef attachmentRef, uint32_t slot)

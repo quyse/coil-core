@@ -105,7 +105,7 @@ namespace Coil
     public:
       Statement(sqlite3_stmt* stmt);
       Statement(Statement const&) = delete;
-      Statement(Statement&& stmt);
+      Statement(Statement&& stmt) noexcept;
       ~Statement();
 
       template <typename... Args>
@@ -148,7 +148,7 @@ namespace Coil
     SqliteDb(sqlite3* db);
   public:
     SqliteDb(SqliteDb const&) = delete;
-    SqliteDb(SqliteDb&& db);
+    SqliteDb(SqliteDb&& db) noexcept;
     ~SqliteDb();
 
     static SqliteDb Open(char const* fileName, OpenFlags flags = (OpenFlags)OpenFlag::Write | (OpenFlags)OpenFlag::Create);

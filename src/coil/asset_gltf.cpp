@@ -276,7 +276,7 @@ namespace Coil
     if(reader.ReadLE<uint32_t>() != 2)
       throw Exception("glTF version must be 2");
     // total length
-    uint32_t totalLength = reader.ReadLE<uint32_t>();
+    uint32_t const totalLength = reader.ReadLE<uint32_t>();
 
     auto readChunk = [&](uint32_t chunkType) -> std::vector<uint8_t>
     {
