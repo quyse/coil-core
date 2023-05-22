@@ -175,7 +175,7 @@ namespace Coil
       return _key;
     }
 
-    void Apply()
+    void Apply(RenderContext& context) const
     {
       // nothing to do
     }
