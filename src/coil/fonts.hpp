@@ -24,9 +24,6 @@ namespace Coil
   {
     ivec2 size;
 
-    // glyphs scale if they are upscaled
-    ivec2 scale;
-
     struct GlyphInfo
     {
       // glyph size
@@ -45,11 +42,9 @@ namespace Coil
   public:
     struct CreateGlyphsConfig
     {
-      ivec2 halfScale;
-      std::optional<std::vector<GlyphWithOffset>> glyphsNeeded;
+      std::vector<GlyphWithOffset> glyphsNeeded;
       ivec2 maxSize = { 4096, 4096 };
       ivec2 offsetPrecision = { 1, 1 };
-      bool enableHinting = false;
     };
 
     struct Metrics
@@ -60,7 +55,7 @@ namespace Coil
       float capHeight = 0;
     };
 
-    struct OutGlyph
+    struct ShapedGlyph
     {
       vec2 position;
       vec2 advance;
@@ -69,7 +64,7 @@ namespace Coil
       uint32_t characterIndex;
     };
 
-    virtual void Shape(std::string const& text, LanguageInfo const& languageInfo, std::vector<OutGlyph>& outGlyphs) const = 0;
+    virtual void Shape(std::string const& text, LanguageInfo const& languageInfo, std::vector<ShapedGlyph>& shapedGlyphs) const = 0;
 
     virtual std::tuple<GlyphsPacking, RawImage2D<uint8_t>> PackGlyphs(CreateGlyphsConfig const& config) const = 0;
   };

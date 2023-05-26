@@ -1,6 +1,7 @@
 #pragma once
 
 #include "math.hpp"
+#include <tuple>
 
 namespace Coil
 {
@@ -21,42 +22,44 @@ namespace Coil
       return pixels[dot(c, pitch)];
     }
 
-    friend void swap(RawImageSlice& a, RawImageSlice& b)
+    friend void swap(RawImageSlice& a, RawImageSlice& b) noexcept
     {
       std::swap(a.pixels, b.pixels);
       std::swap(a.pitch, b.pitch);
       std::swap(a.size, b.size);
     }
 
-  private:
-    class BlitHelper
+  protected:
+    template <typename... Pitches>
+    class ProcessHelper
     {
     public:
-      BlitHelper(RawImageSlice& dstImage, RawImageSlice const& srcImage, ivec<n> const& size)
-      : _dstImage(dstImage), _srcImage(srcImage), _size(size) {}
+      ProcessHelper(ivec<n> const& size, Pitches const&... pitches)
+      : _size(size), _pitches(pitches...) {}
 
-      template <size_t i>
-      void Blit(int32_t dstOffset, int32_t srcOffset)
+      template <size_t i, typename F, typename... Offsets>
+      void Process(F const& f, Offsets... offsets)
       {
         for(int32_t c = 0; c < _size(i); ++c)
         {
           if constexpr(i > 0)
           {
-            Blit<i - 1>(dstOffset, srcOffset);
+            Process<i - 1, F, Offsets...>(f, offsets...);
           }
           else
           {
-            _dstImage.pixels[dstOffset] = _srcImage.pixels[srcOffset];
+            f(offsets...);
           }
-          dstOffset += _dstImage.pitch(i);
-          srcOffset += _srcImage.pitch(i);
+          std::apply([&](Pitches const&... pitches)
+          {
+            ((offsets += pitches(i)), ...);
+          }, _pitches);
         }
       }
 
     private:
-      RawImageSlice& _dstImage;
-      RawImageSlice const& _srcImage;
       ivec<n> const _size;
+      std::tuple<Pitches...> _pitches;
     };
 
   public:
@@ -80,7 +83,10 @@ namespace Coil
       }
 
       // perform blit
-      BlitHelper(*this, image, size).template Blit<n - 1>(dot(dst, pitch), dot(src, image.pitch));
+      ProcessHelper<ivec<n>, ivec<n>>(size, pitch, image.pitch).template Process<n - 1>([&](int32_t dstOffset, int32_t srcOffset)
+      {
+        pixels[dstOffset] = image.pixels[srcOffset];
+      }, dot(dst, pitch), dot(src, image.pitch));
     }
   };
 
@@ -105,27 +111,53 @@ namespace Coil
       this->pixels = _pixels.data();
     }
 
-    RawImage(RawImageSlice<T, n> const& slice)
+    explicit RawImage(RawImageSlice<T, n> const& slice)
     : RawImage(slice.size)
     {
       this->Blit(slice, {}, {}, this->size);
     }
 
+    RawImage(RawImage const&) = delete;
     RawImage(RawImage&& image)
     {
       *this = std::move(image);
     }
 
-    RawImage& operator=(RawImage&& image)
+    RawImage& operator=(RawImage const&) = delete;
+    RawImage& operator=(RawImage&& image) noexcept
     {
       swap(*this, image);
       return *this;
     }
 
-    friend void swap(RawImage& a, RawImage& b)
+    friend void swap(RawImage& a, RawImage& b) noexcept
     {
-      std::swap(a._pixels, b._pixels);
-      std::swap(static_cast<RawImageSlice<T, n>&>(a), static_cast<RawImageSlice<T, n>&>(b));
+      swap(static_cast<RawImageSlice<T, n>&>(a), static_cast<RawImageSlice<T, n>&>(b));
+      swap(a._pixels, b._pixels);
+    }
+
+    template <typename S>
+    RawImage DownSample(ivec<n> factor) const
+    {
+      ivec<n> newSize = this->size / factor;
+      RawImage newImage(newSize);
+
+      S factorVolume = 1;
+      for(size_t i = 0; i < n; ++i)
+        factorVolume *= factor(i);
+
+      typename RawImage::template ProcessHelper<ivec<n>> sumHelper(factor, this->pitch);
+      typename RawImage::template ProcessHelper<ivec<n>, ivec<n>>(newSize, newImage.pitch, this->pitch * factor).template Process<n - 1>([&](int32_t dstOffset, int32_t srcOffset)
+      {
+        S s = {};
+        sumHelper.template Process<n - 1>([&](int32_t offset)
+        {
+          s += this->pixels[offset];
+        }, srcOffset);
+        newImage.pixels[dstOffset] = (T)(s / factorVolume);
+      }, int32_t{}, int32_t{});
+
+      return std::move(newImage);
     }
 
   private:

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "base.hpp"
+#include <concepts>
 #include <cmath>
 
 namespace Coil
@@ -123,6 +124,15 @@ namespace Coil
       for(size_t i = 0; i < n; ++i)
         (*this)(i) /= b;
       return *this;
+    }
+
+    template <typename TT, MathOptions o2>
+    explicit constexpr operator xvec<TT, n, o2>() const
+    {
+      xvec<TT, n, o2> r;
+      for(size_t i = 0; i < n; ++i)
+        r(i) = (TT)(*this)(i);
+      return r;
     }
   };
 
@@ -465,6 +475,21 @@ namespace Coil
       a.z() * b.x() - a.x() * b.z(),
       a.x() * b.y() - a.y() * b.x(),
     };
+  }
+
+  // integer division rounding towards negative infinity
+  template <std::integral T>
+  constexpr T divFloor(T const& a, T const& b)
+  {
+    auto p = std::div(a, b);
+    return p.quot + (p.rem < 0 ? -1 : 0);
+  }
+  // integer division rounding towards positive infinity
+  template <std::integral T>
+  constexpr T divCeil(T const& a, T const& b)
+  {
+    auto p = std::div(a, b);
+    return p.quot + (p.rem > 0 ? 1 : 0);
   }
 
   // some vector traits
