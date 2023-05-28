@@ -4,7 +4,7 @@
 
 using namespace Coil;
 
-___COIL_ENTRY_POINT = [](std::vector<std::string>&& args) -> int
+int COIL_ENTRY_POINT(std::vector<std::string>&& args)
 {
   SqliteDb db = SqliteDb::Open(":memory:");
   auto stmt = db.CreateStatement("VALUES (?, ?, ?), (?, ?, ?)");
@@ -20,4 +20,4 @@ ___COIL_ENTRY_POINT = [](std::vector<std::string>&& args) -> int
   }
 
   return 0;
-};
+}

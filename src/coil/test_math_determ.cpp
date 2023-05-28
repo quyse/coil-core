@@ -131,7 +131,7 @@ void check_hash(char const* msg, uint32_t expected)
   g_hashSum = 0;
 }
 
-___COIL_ENTRY_POINT = [](std::vector<std::string>&& args) -> int
+int COIL_ENTRY_POINT(std::vector<std::string>&& args)
 {
   uint32_t okCount = 0, totalCount = 0;
 
@@ -405,4 +405,4 @@ ___COIL_ENTRY_POINT = [](std::vector<std::string>&& args) -> int
   check_hash("total", 4166856038);
 
   return (g_hashOk && okCount == totalCount) ? 0 : 1;
-};
+}

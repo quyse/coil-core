@@ -15,14 +15,14 @@ int wmain(int argc, wchar_t** argv)
     WideCharToMultiByte(CP_UTF8, 0, argv[i], -1, arg.data(), arg.size(), NULL, NULL);
   }
 
-  return Coil::g_entryPoint(std::move(args));
+  return COIL_ENTRY_POINT(std::move(args));
 }
 
 #else
 
 int main(int argc, char** argv)
 {
-  return Coil::g_entryPoint(std::vector<std::string>(argv, argv + argc));
+  return COIL_ENTRY_POINT(std::vector<std::string>(argv, argv + argc));
 }
 
 #endif

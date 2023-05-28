@@ -6,7 +6,7 @@
 
 using namespace Coil;
 
-___COIL_ENTRY_POINT = [](std::vector<std::string>&& args) -> int
+int COIL_ENTRY_POINT(std::vector<std::string>&& args)
 {
   Book book;
 
@@ -38,4 +38,4 @@ ___COIL_ENTRY_POINT = [](std::vector<std::string>&& args) -> int
     std::cout << "comparing: " << (c == 0 ? "OK" : "FAIL") << "\n";
     return c == 0 ? 0 : 1;
   }
-};
+}

@@ -159,7 +159,7 @@ private:
   std::vector<Task<bool>> _tests;
 };
 
-___COIL_ENTRY_POINT = [](std::vector<std::string>&& args) -> int
+int COIL_ENTRY_POINT(std::vector<std::string>&& args)
 {
   ivec2 counts;
 
@@ -181,4 +181,4 @@ ___COIL_ENTRY_POINT = [](std::vector<std::string>&& args) -> int
     std::cout << "FAILED tests: " << (counts.x() - counts.y()) << " out of " << counts.x() << "\n";
     return 1;
   }
-};
+}

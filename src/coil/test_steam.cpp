@@ -4,9 +4,9 @@
 
 using namespace Coil;
 
-___COIL_ENTRY_POINT = [](std::vector<std::string>&& args) -> int
+int COIL_ENTRY_POINT(std::vector<std::string>&& args)
 {
   auto& steam = Steam::Get();
 
   return 0;
-};
+}

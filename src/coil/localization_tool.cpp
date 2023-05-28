@@ -380,7 +380,7 @@ private:
   size_t _combinedStringsSize = 0;
 };
 
-___COIL_ENTRY_POINT = [](std::vector<std::string>&& args) -> int
+int COIL_ENTRY_POINT(std::vector<std::string>&& args)
 {
   std::string workingDir = ".";
   std::string localizationConfigFileName;
@@ -688,4 +688,4 @@ namespace Localized
   }
 
   return 0;
-};
+}

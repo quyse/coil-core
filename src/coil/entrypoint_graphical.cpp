@@ -21,14 +21,14 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
   }
   LocalFree(argsStrs);
 
-  return Coil::g_entryPoint(std::move(args));
+  return COIL_ENTRY_POINT(std::move(args));
 }
 
 #else
 
 int main(int argc, char** argv)
 {
-  return Coil::g_entryPoint(std::vector<std::string>(argv, argv + argc));
+  return COIL_ENTRY_POINT(std::vector<std::string>(argv, argv + argc));
 }
 
 #endif

@@ -6,7 +6,7 @@
 using namespace Coil;
 using namespace Localized;
 
-___COIL_ENTRY_POINT = [](std::vector<std::string>&& args) -> int
+int COIL_ENTRY_POINT(std::vector<std::string>&& args)
 {
   uint64_t p[] = { 0, 1, 2, 3, 4, 5, 10, 11, 15, 21, 22, 25 };
   for(size_t i = 0; i < sizeof(Localized::Sets) / sizeof(Localized::Sets[0]); ++i)
@@ -25,4 +25,4 @@ ___COIL_ENTRY_POINT = [](std::vector<std::string>&& args) -> int
   }
 
   return 0;
-};
+}
