@@ -56,11 +56,12 @@ struct LocalizedString
   std::optional<uint64_t> argMask;
 };
 
-void OutputCppString(std::ostream& stream, std::string const& str, size_t indent = 0)
+void OutputCppString(std::ostream& stream, std::string_view const& str, size_t indent = 0)
 {
   size_t const lineLimit = 120;
   size_t cnt = 0;
-  for(Unicode::Iterator<char, char32_t, char const*> i = str.c_str(); *i; ++i)
+  Unicode::Iterator<char, char32_t, std::string_view::const_iterator> const iend = str.end();
+  for(Unicode::Iterator<char, char32_t, std::string_view::const_iterator> i = str.begin(); i < iend; ++i)
   {
     if(indent)
     {
@@ -162,16 +163,6 @@ public:
     _initStream.str({});
   }
 
-  std::pair<size_t, size_t> AddStringToCombined(std::string_view sv)
-  {
-    std::pair<size_t, size_t> r;
-    r.first = _combinedStringsSize;
-    _combinedStringsStream << sv;
-    _combinedStringsSize += sv.length();
-    r.second = _combinedStringsSize;
-    return r;
-  }
-
   void SetLang(std::string const& lang)
   {
     _pLang = &lang;
@@ -254,7 +245,7 @@ public:
   void ParsePhrase()
   {
     _typeStream << "TextSequence<";
-    _initStream << "{ ";
+    _initStream << "{";
     bool first = true;
     auto comma = [&]()
     {
@@ -262,7 +253,7 @@ public:
       else
       {
         _typeStream << ", ";
-        _initStream << ", ";
+        _initStream << ",";
       }
     };
     bool ok = true;
@@ -273,9 +264,10 @@ public:
       case TokenType::String:
         {
           comma();
-          auto p = AddStringToCombined(_tokens[_tokenIndex].string);
           _typeStream << "StaticText";
-          _initStream << "{ G + " << p.first << ", " << (p.second - p.first) << " }";
+          _initStream << "{";
+          OutputCppString(_initStream, _tokens[_tokenIndex].string);
+          _initStream << "}";
           ++_tokenIndex;
         }
         break;
@@ -303,7 +295,7 @@ public:
             if(firstInTypeStream) firstInTypeStream = false;
             else _typeStream << ", ";
             if(firstInInitStream) firstInInitStream = false;
-            else _initStream << ", ";
+            else _initStream << ",";
           };
 
           auto methodName = _tokens[_tokenIndex].string;
@@ -311,7 +303,7 @@ public:
           {
             if(methodName.length() != 7) throw Exception("wrong format for pluralN method");
             _typeStream << "Localization<Language::" << *_pLang << ">::template Plural<" << (methodName[6] - '0');
-            _initStream << "{ ";
+            _initStream << "{";
             firstInTypeStream = false;
           }
           else throw Exception() << "unsupported phrase method: " << methodName;
@@ -337,7 +329,7 @@ public:
             }
           }
           _typeStream << ">";
-          _initStream << " }";
+          _initStream << "}";
         }
         break;
       default:
@@ -346,7 +338,7 @@ public:
       }
     }
     _typeStream << ">";
-    _initStream << " }";
+    _initStream << "}";
   }
 
   uint64_t GetArgMask() const
@@ -356,15 +348,8 @@ public:
 
   void OutputDef(std::ostream& stream, size_t index)
   {
-    stream << "  constinit Phrase<" << std::move(_typeStream).str() << "> const s" << index << " = { " << std::move(_initStream).str() << " };\n";
-  }
-
-  void OutputCombinedStrings(std::ostream& stream)
-  {
-    stream << R"(  constinit char const G[] =
-)";
-    OutputCppString(stream, std::move(_combinedStringsStream).str(), 4);
-    stream << R"(  ;
+    stream << "  constinit Phrase<" << std::move(_typeStream).str() << "> const s" << index << R"( =
+    {)" << std::move(_initStream).str() << R"(};
 )";
   }
 
@@ -375,9 +360,6 @@ private:
   uint64_t _argMask;
   std::ostringstream _typeStream;
   std::ostringstream _initStream;
-
-  std::ostringstream _combinedStringsStream;
-  size_t _combinedStringsSize = 0;
 };
 
 int COIL_ENTRY_POINT(std::vector<std::string>&& args)
@@ -572,8 +554,6 @@ namespace
       ++index;
     }
 
-    phraseMaker.OutputCombinedStrings(outStream);
-    outStream << "\n";
     outStream << std::move(defsStream).str();
 
     outStream << R"(
