@@ -6,10 +6,11 @@ Work-in-progress C++ 20 game engine. Not generally usable yet.
 
 * Vulkan graphics
 * SPIR-V shaders in C++
-* Linux and Windows support
+* Math library
+  * Also deterministic floating-point math library (WIP)
 * Windowing
   * SDL2
-  * Wayland
+  * Wayland (WIP)
 * Audio
   * PulseAudio
   * Windows CoreAudio
@@ -20,15 +21,22 @@ Work-in-progress C++ 20 game engine. Not generally usable yet.
 * glTF model support (WIP)
 * Rendering (WIP)
 
+## Platform support
+
+* Linux
+* Windows
+* macOS (planned)
+
 ## Building
 
-Nix configuration is the easiest to use. It contains the following CI-tested attributes:
+[NixOS](https://nixos.org/) is the main development platform, and the Nix configuration is the easiest to use. It contains the following CI-tested attributes:
 
 * `coil-core` - built using [nixpkgs](https://github.com/NixOS/nixpkgs) dependencies, for use on NixOS
-* `coil-core-ubuntu` - built on Ubuntu, for non-NixOS Linuxes
+* `coil-core-ubuntu` - built using Ubuntu LTS
 * `coil-core-windows` - Windows build, using MSVC/clang toolchain
 
-If Nix is not available, the engine can be compiled manually using CMake on various platforms. See [default.nix](default.nix) for lists of dependencies.
+### Building without Nix
 
-* Forcing clang or MSVC-clang is usually required (GCC does not work), e.g. `-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang`
-* `COIL_CORE_REQUIRE_LIBS` can be used to require only necessary engine libraries (for example, if not all dependencies are available). By default all libraries are required to build, and configuration will fail if some dependency is not available (useful for CI). Use `-DCOIL_CORE_REQUIRE_LIBS=` to not require any library (it will still try to configure as many libraries as possible).
+Building without Nix is not officially blessed, but should be doable. Build configuration is done with CMake. See [default.nix](default.nix) for the list of third-party dependencies. Clang or MSVC-clang is usually required (GCC does not work), e.g. `cmake -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang ...`.
+
+`COIL_CORE_REQUIRE_LIBS` CMake variable can be used to require only selected subset of engine libraries, e.g. for the case when not all dependencies are available. By default all libraries are required to build, and configuration will fail if some third-party dependency is not available. Use `-DCOIL_CORE_REQUIRE_LIBS=` to configure as many libraries as possible without failing if unable to do so for some of them.
