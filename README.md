@@ -21,6 +21,18 @@ Work-in-progress C++ 20 game engine. Not generally usable yet.
 * glTF model support (WIP)
 * Rendering (WIP)
 
+## Libraries
+
+Some WIP documentation.
+
+* [Basic](docs/basic.md)
+* [Data](docs/data.md)
+* [Math](docs/math.md)
+* [Platform](docs/platform.md)
+* [Graphics](docs/graphics.md)
+* [Audio](docs/audio.md)
+* [Text](docs/text.md)
+
 ## Platform support
 
 * Linux
