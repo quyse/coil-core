@@ -159,20 +159,16 @@ namespace Coil
     hb_buffer_reset(_hbBuffer);
   }
 
-  std::tuple<GlyphsPacking, RawImage2D<uint8_t>> FtHbFont::PackGlyphs(CreateGlyphsConfig const& config) const
+  std::vector<Font::Glyph> FtHbFont::CreateGlyphs(std::vector<GlyphWithOffset> const& glyphsNeeded, ivec2 const& offsetPrecision) const
   {
     try
     {
-      auto const& glyphsNeeded = config.glyphsNeeded;
-      auto const& offsetPrecision = config.offsetPrecision;
-
       size_t const glyphsCount = glyphsNeeded.size();
 
       if(FT_Set_Pixel_Sizes(_ftFace, _size * offsetPrecision.x(), _size * offsetPrecision.y()))
         throw Exception("setting pixel sizes failed");
 
-      std::vector<GlyphsPacking::GlyphInfo> glyphInfos(glyphsCount);
-      std::vector<RawImage2D<uint8_t>> glyphImages(glyphsCount);
+      std::vector<Glyph> glyphs(glyphsCount);
 
       for(size_t glyphIndex = 0; glyphIndex < glyphsCount; ++glyphIndex)
       {
@@ -191,8 +187,6 @@ namespace Coil
 
         if(FT_Render_Glyph(_ftFace->glyph, FT_RENDER_MODE_NORMAL))
           throw Exception("rendering glyph failed");
-
-        GlyphsPacking::GlyphInfo& glyphInfo = glyphInfos[glyphIndex];
 
         const FT_Bitmap& bitmap = _ftFace->glyph->bitmap;
         ivec2 bitmapSize((int32_t)bitmap.width, (int32_t)bitmap.rows);
@@ -235,46 +229,12 @@ namespace Coil
             glyphImage = glyphImage.DownSample<uint32_t>(offsetPrecision);
           }
 
-          glyphImages[glyphIndex] = std::move(glyphImage);
-          glyphInfo.size = glyphImages[glyphIndex].size;
-          glyphInfo.offset = boxLeftTop;
+          glyphs[glyphIndex].image = std::move(glyphImage);
+          glyphs[glyphIndex].offset = boxLeftTop;
         }
       }
 
-      // calculate placement of glyph images
-      std::vector<ivec2> glyphSizes(glyphsCount);
-      for(size_t i = 0; i < glyphsCount; ++i)
-        glyphSizes[i] = glyphImages[i].size;
-
-      auto [glyphPositions, resultSize] = Image2DShelfUnion(glyphSizes, config.maxSize.x(), 1);
-
-      // make size power of two
-      resultSize =
-      {
-        (int32_t)std::bit_ceil<uint32_t>(resultSize.x()),
-        (int32_t)std::bit_ceil<uint32_t>(resultSize.y()),
-      };
-
-      if(resultSize.y() > config.maxSize.y())
-        throw Exception("result image is too big");
-
-      // blit images into single image
-      RawImage2D<uint8_t> glyphsImage(resultSize);
-      for(size_t i = 0; i < glyphsCount; ++i)
-        glyphsImage.Blit(glyphImages[i], glyphPositions[i], {}, glyphImages[i].size);
-
-      // set glyph positions
-      for(FT_Long i = 0; i < glyphsCount; ++i)
-        glyphInfos[i].leftTop = glyphPositions[i];
-
-      return
-      {
-        GlyphsPacking{
-          .size = resultSize,
-          .glyphInfos = std::move(glyphInfos),
-        },
-        std::move(glyphsImage),
-      };
+      return std::move(glyphs);
     }
     catch(Exception const& exception)
     {

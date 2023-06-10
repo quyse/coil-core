@@ -539,12 +539,14 @@ endif()
 list(APPEND coil_core_all_libraries sqlite)
 
 if(TRUE)
-  add_library(coil_core_fonts INTERFACE)
+  add_library(coil_core_fonts STATIC
+    fonts.cpp
+  )
   set_property(TARGET coil_core_fonts PROPERTY PUBLIC_HEADER
     fonts.hpp
   )
   target_link_libraries(coil_core_fonts
-    INTERFACE
+    PUBLIC
       coil_core_graphics
       coil_core_image
       coil_core_localization

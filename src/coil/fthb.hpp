@@ -16,7 +16,7 @@ namespace Coil
     static FtHbFont& Load(Book& book, Buffer const& buffer, int32_t size);
 
     void Shape(std::string const& text, LanguageInfo const& languageInfo, std::vector<ShapedGlyph>& shapedGlyphs) const override;
-    std::tuple<GlyphsPacking, RawImage2D<uint8_t>> PackGlyphs(CreateGlyphsConfig const& config) const override;
+    std::vector<Glyph> CreateGlyphs(std::vector<GlyphWithOffset> const& glyphsNeeded, ivec2 const& offsetPrecision) const override;
 
   private:
     static FT_Face LoadFace(Book& book, Buffer const& buffer, int32_t size);

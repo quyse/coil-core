@@ -40,11 +40,11 @@ namespace Coil
   class Font
   {
   public:
-    struct CreateGlyphsConfig
+    struct Glyph
     {
-      std::vector<GlyphWithOffset> glyphsNeeded;
-      ivec2 maxSize = { 4096, 4096 };
-      ivec2 offsetPrecision = { 1, 1 };
+      RawImage2D<uint8_t> image;
+      // offset from pen point to left-top corner on canvas
+      ivec2 offset;
     };
 
     struct Metrics
@@ -65,7 +65,8 @@ namespace Coil
     };
 
     virtual void Shape(std::string const& text, LanguageInfo const& languageInfo, std::vector<ShapedGlyph>& shapedGlyphs) const = 0;
+    virtual std::vector<Glyph> CreateGlyphs(std::vector<GlyphWithOffset> const& glyphsNeeded, ivec2 const& offsetPrecision = { 1, 1 }) const = 0;
 
-    virtual std::tuple<GlyphsPacking, RawImage2D<uint8_t>> PackGlyphs(CreateGlyphsConfig const& config) const = 0;
+    static std::tuple<GlyphsPacking, RawImage2D<uint8_t>> PackGlyphs(std::vector<Glyph> const& glyphs, ivec2 const& maxSize = { 4096, 4096 }, ivec2 const& offsetPrecision = { 1, 1 });
   };
 }
