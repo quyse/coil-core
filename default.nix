@@ -154,12 +154,12 @@ rec {
     };
     opus = mkCmakePkg rec {
       pname = "opus";
-      version = "1.3.1";
+      version = "1.4";
       # use git checkout instead of tarball to get cmake exports
       src = pkgs.fetchgit {
         url = "https://github.com/xiph/opus";
         rev = "v${version}";
-        hash = "sha256-DO9JAO6907VpOUgBiJ4WIZm9hTAYBM2Qabi+x1ibqN4=";
+        hash = "sha256-rA47xZB2mj2lhweA+pra1wjAjsFPMl2yMgX78jdn364=";
       };
       cmakeFlags = [
         "-DBUILD_SHARED_LIBS=ON"
