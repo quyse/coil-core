@@ -27,7 +27,7 @@ namespace Coil
     void ShapeText(Font const& font, std::string const& text, LanguageInfo const& languageInfo, vec2 const& textOffset, std::vector<RenderGlyph>& renderGlyphs);
 
     // recreate image if needed
-    void Update();
+    bool Update();
 
     RawImage2D<uint8_t> const& GetImage() const;
     std::optional<GlyphsPacking::GlyphInfo> GetGlyphInfo(Font const& font, GlyphWithOffset const& glyphWithOffset) const;

@@ -42,9 +42,9 @@ namespace Coil
     _tempShapedGlyphs.clear();
   }
 
-  void FontGlyphCache::Update()
+  bool FontGlyphCache::Update()
   {
-    if(!_dirty) return;
+    if(!_dirty) return false;
 
     std::unordered_map<Font const*, std::pair<std::vector<GlyphWithOffset>, std::vector<int32_t*>>> glyphsNeeded;
     for(auto i = _glyphsMapping.begin(); i != _glyphsMapping.end(); ++i)
@@ -65,12 +65,25 @@ namespace Coil
         glyphs.push_back(std::move(fontGlyphs[j]));
     }
 
-    auto [packing, rawImage] = Font::PackGlyphs(glyphs, _size, _offsetPrecision);
+    try
+    {
+      auto [packing, rawImage] = Font::PackGlyphs(glyphs, _size, _offsetPrecision);
 
-    _image = std::move(rawImage);
-    _glyphsPacking = std::move(packing.glyphInfos);
+      _image = std::move(rawImage);
+      _glyphsPacking = std::move(packing.glyphInfos);
+
+    }
+    catch(Exception& exception)
+    {
+      // couldn't pack glyphs
+      // clear desired glyphs, in hope they will be repopulated on next frame
+      _glyphsMapping.clear();
+      _glyphsPacking.clear();
+    }
 
     _dirty = false;
+
+    return true;
   }
 
   RawImage2D<uint8_t> const& FontGlyphCache::GetImage() const
