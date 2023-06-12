@@ -1,6 +1,5 @@
 #pragma once
 
-#include "graphics.hpp"
 #include "image.hpp"
 #include "localization.hpp"
 #include <tuple>
@@ -8,6 +7,7 @@
 
 namespace Coil
 {
+  // identifier for both font glyph and subpixel offset
   struct GlyphWithOffset
   {
     // whatever glyph index
@@ -42,6 +42,9 @@ namespace Coil
   public:
     struct Glyph
     {
+      Glyph() = default;
+      Glyph(Glyph&&) = default;
+
       RawImage2D<uint8_t> image;
       // offset from pen point to left-top corner on canvas
       ivec2 offset;

@@ -1,4 +1,5 @@
 #include "fonts.hpp"
+#include <bit>
 
 namespace Coil
 {

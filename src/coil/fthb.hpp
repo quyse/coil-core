@@ -1,6 +1,7 @@
 #pragma once
 
 #include "fonts.hpp"
+#include <unordered_map>
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include <hb.h>
