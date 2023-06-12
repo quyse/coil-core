@@ -1,5 +1,6 @@
 #include "fthb.hpp"
 #include <bit>
+#include FT_MULTIPLE_MASTERS_H
 
 namespace
 {
@@ -80,12 +81,56 @@ namespace Coil
   FtHbFont::FtHbFont(FT_Face ftFace, hb_font_t* hbFont, hb_buffer_t* hbBuffer, int32_t size)
   : _ftFace(ftFace), _hbFont(hbFont), _hbBuffer(hbBuffer), _size(size) {}
 
-  FtHbFont& FtHbFont::Load(Book& book, Buffer const& buffer, int32_t size)
+  FtHbFont& FtHbFont::Load(Book& book, Buffer const& buffer, int32_t size, FontVariableStyle const& style)
   {
-    FT_Face ftFace = LoadFace(book, buffer, size);
-    FT_Face ftImmutableFace = LoadFace(book, buffer, size);
+    FT_Face ftFace;
+    if(FT_New_Memory_Face(FtEngine::GetLibrary(), (const FT_Byte*)buffer.data, (FT_Long)buffer.size, 0, &ftFace))
+      throw Exception("creating FreeType font face failed");
+    book.Allocate<FtFontFace>(ftFace);
 
-    hb_font_t* hbFont = hb_ft_font_create(ftImmutableFace, nullptr);
+    if(FT_Set_Pixel_Sizes(ftFace, size, size))
+      throw Exception("setting FreeType font size failed");
+
+    if(FT_HAS_MULTIPLE_MASTERS(ftFace))
+    {
+      FT_MM_Var* mmVar;
+      if(FT_Get_MM_Var(ftFace, &mmVar))
+        throw Exception("FreeType font wrongly claims to have multiple masters");
+
+      std::vector<FT_Fixed> coords(mmVar->num_axis);
+      if(FT_Get_Var_Design_Coordinates(ftFace, mmVar->num_axis, coords.data()))
+        throw Exception("getting FreeType font design coordinates failed");
+      for(FT_UInt i = 0; i < mmVar->num_axis; ++i)
+      {
+        switch(mmVar->axis[i].tag)
+        {
+        case FT_MAKE_TAG('w', 'g', 'h', 't'):
+          coords[i] = style.weight << 16;
+          break;
+        case FT_MAKE_TAG('o', 'p', 's', 'z'):
+          coords[i] = style.opticalSize.value_or(size) * (1 << 16) * 3 / 4;
+          break;
+        case FT_MAKE_TAG('w', 'd', 't', 'h'):
+          coords[i] = style.width << 16;
+          break;
+        case FT_MAKE_TAG('i', 't', 'a', 'l'):
+          coords[i] = style.italic ? 1 << 16 : 0;
+          break;
+        case FT_MAKE_TAG('s', 'l', 'n', 't'):
+          coords[i] = style.slant << 16;
+          break;
+        case FT_MAKE_TAG('G', 'R', 'A', 'D'):
+          coords[i] = style.grade << 16;
+          break;
+        }
+      }
+      if(FT_Set_Var_Design_Coordinates(ftFace, mmVar->num_axis, coords.data()))
+        throw Exception("setting FreeType font design coordinates failed");
+
+      FT_Done_MM_Var(FtEngine::GetLibrary(), mmVar);
+    }
+
+    hb_font_t* hbFont = hb_ft_font_create(ftFace, nullptr);
     book.Allocate<HbFont>(hbFont);
 
     hb_ft_font_set_funcs(hbFont);
@@ -240,19 +285,5 @@ namespace Coil
     {
       throw Exception("packing FreeType/Harfbuzz glyphs failed") << exception;
     }
-  }
-
-  FT_Face FtHbFont::LoadFace(Book& book, Buffer const& buffer, int32_t size)
-  {
-    FT_Face ftFace;
-    if(FT_New_Memory_Face(FtEngine::GetLibrary(), (const FT_Byte*)buffer.data, (FT_Long)buffer.size, 0, &ftFace))
-      throw Exception("creating FreeType font face failed");
-
-    book.Allocate<FtFontFace>(ftFace);
-
-    if(FT_Set_Pixel_Sizes(ftFace, size, size))
-      throw Exception("setting FreeType font size failed");
-
-    return ftFace;
   }
 }

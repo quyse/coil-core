@@ -2,6 +2,7 @@
 
 #include "image.hpp"
 #include "localization.hpp"
+#include <optional>
 #include <tuple>
 #include <vector>
 
@@ -35,6 +36,23 @@ namespace Coil
     };
 
     std::vector<GlyphInfo> glyphInfos;
+  };
+
+  // parameters of variable font
+  struct FontVariableStyle
+  {
+    // 'wght' axis
+    int16_t weight = 400; // regular by default
+    // 'opsz' axis, in pixels
+    std::optional<int16_t> opticalSize; // default uses font's pixel size
+    // 'wdth' axis
+    int16_t width = 100; // 100% by default
+    // 'ital' axis
+    bool italic = false; // no italics by default
+    // 'slnt' axis
+    int16_t slant = 0; // no slant by default
+    // 'GRAD' axis
+    int16_t grade = 0; // no change by default
   };
 
   class Font

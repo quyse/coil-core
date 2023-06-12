@@ -14,14 +14,12 @@ namespace Coil
   public:
     FtHbFont(FT_Face ftFace, hb_font_t* hbFont, hb_buffer_t* hbBuffer, int32_t size);
 
-    static FtHbFont& Load(Book& book, Buffer const& buffer, int32_t size);
+    static FtHbFont& Load(Book& book, Buffer const& buffer, int32_t size, FontVariableStyle const& style = {});
 
     void Shape(std::string const& text, LanguageInfo const& languageInfo, std::vector<ShapedGlyph>& shapedGlyphs) const override;
     std::vector<Glyph> CreateGlyphs(std::vector<GlyphWithOffset> const& glyphsNeeded, ivec2 const& offsetPrecision) const override;
 
   private:
-    static FT_Face LoadFace(Book& book, Buffer const& buffer, int32_t size);
-
     FT_Face const _ftFace;
     hb_font_t* const _hbFont;
     hb_buffer_t* const _hbBuffer;
