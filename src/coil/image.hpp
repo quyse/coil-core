@@ -63,7 +63,15 @@ namespace Coil
     };
 
   public:
-    void Blit(RawImageSlice const& image, ivec<n> dst, ivec<n> src, ivec<n> size)
+    void Blit(RawImageSlice const& image, ivec<n> const& dst, ivec<n> const& src, ivec<n> const& size)
+    {
+      Blend(image, dst, src, size, [](T& dst, T const& src)
+      {
+        dst = src;
+      });
+    }
+
+    void Blend(RawImageSlice const& image, ivec<n> dst, ivec<n> src, ivec<n> size, auto const& blend)
     {
       // crop image if it goes out of bounds
       for(size_t i = 0; i < n; ++i)
@@ -85,7 +93,7 @@ namespace Coil
       // perform blit
       ProcessHelper<ivec<n>, ivec<n>>(size, pitch, image.pitch).template Process<n - 1>([&](int32_t dstOffset, int32_t srcOffset)
       {
-        pixels[dstOffset] = image.pixels[srcOffset];
+        blend(pixels[dstOffset], image.pixels[srcOffset]);
       }, dot(dst, pitch), dot(src, image.pitch));
     }
   };
@@ -118,7 +126,7 @@ namespace Coil
     }
 
     RawImage(RawImage const&) = delete;
-    RawImage(RawImage&& image)
+    RawImage(RawImage&& image) noexcept
     {
       *this = std::move(image);
     }
