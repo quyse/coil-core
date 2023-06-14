@@ -103,6 +103,7 @@ lib.makeExtensible (self: with self; {
     ];
     postPatch = ''
       echo '#undef MBEDTLS_AESNI_C' >> include/mbedtls/mbedtls_config.h
+      echo '#define MBEDTLS_SSL_DTLS_SRTP' >> include/mbedtls/mbedtls_config.h
     '';
   };
   freetype = mkCmakePkg {
@@ -124,6 +125,53 @@ lib.makeExtensible (self: with self; {
       "-DHB_HAVE_FREETYPE=ON"
     ];
   };
+  libdatachannel = mkCmakePkg rec {
+    inherit (pkgs.libdatachannel) pname version src;
+
+    postPatch = ''
+      sed -ie 's/JUICE_INCLUDE_DIRS/JUICE_INCLUDE_DIR/' cmake/Modules/FindLibJuice.cmake
+      # workaround for mbedtls bug
+      sed -ie 's/PRIVATE MbedTLS::MbedTLS/PRIVATE MbedTLS::MbedTLS bcrypt.lib/' CMakeLists.txt
+    '';
+
+    buildInputs = [
+      plog
+      usrsctp
+      mbedtls
+      libjuice
+      nlohmann_json
+    ];
+
+    cmakeFlags = [
+      # do not use submodules
+      "-DPREFER_SYSTEM_LIB=ON"
+      # exclude unsupported stuff
+      "-DNO_WEBSOCKET=ON"
+      "-DNO_MEDIA=ON"
+      # use mbedtls for crypto
+      "-DUSE_MBEDTLS=ON"
+      "-DUsrsctp_INCLUDE_DIR=${usrsctp}/include"
+      "-DUsrsctp_LIBRARY=${usrsctp}/lib/usrsctp.lib"
+    ];
+  };
+  plog = mkCmakePkg {
+    inherit (pkgs.plog) pname version src;
+    cmakeFlags = [
+      "-DPLOG_BUILD_SAMPLES=OFF"
+    ];
+  };
+  usrsctp = mkCmakePkg {
+    inherit (pkgs.usrsctp) pname version src;
+    cmakeFlags = [
+      "-Dsctp_werror=OFF"
+      # "-Dsctp_build_shared_lib=ON"
+      "-Dsctp_build_programs=OFF"
+    ];
+  };
+  libjuice = mkCmakePkg {
+    inherit (pkgs.libjuice) pname version src;
+  };
+
   ogg = mkCmakePkg {
     inherit (pkgs.libogg) pname version src meta;
     cmakeFlags = [
@@ -253,6 +301,7 @@ lib.makeExtensible (self: with self; {
       mbedtls
       freetype
       harfbuzz
+      libdatachannel
       ogg
       libwebm
       opus

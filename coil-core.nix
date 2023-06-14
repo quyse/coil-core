@@ -26,6 +26,7 @@
 , libopus
 , libgav1
 , curl
+, libdatachannel
 , steam-sdk
 }: let
 
@@ -66,6 +67,7 @@ in stdenv.mkDerivation {
   ]
   ++ lib.optionals (hasFeature "network") [
     curl
+    libdatachannel
   ]
   ++ lib.optionals (hasFeature "steam") [
     steam-sdk

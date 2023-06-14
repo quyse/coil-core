@@ -87,7 +87,18 @@ lib.makeExtensible (self: with self; {
       meta.license = lib.licenses.asl20;
     };
 
+    mbedtls = super.mbedtls.overrideAttrs (attrs: {
+      postConfigure = (attrs.postConfigure or "") + ''
+        perl scripts/config.pl set MBEDTLS_SSL_DTLS_SRTP
+      '';
+    });
+
     inherit (llvmPackages_18) openmp;
+
+    libdatachannel = callPackage ./pkgs/libdatachannel.nix {};
+    plog = callPackage ./pkgs/plog.nix {};
+    libjuice = callPackage ./pkgs/libjuice.nix {};
+    libsrtp = callPackage ./pkgs/libsrtp.nix {};
 
     steam-sdk = if coil.toolchain-steam != null then coil.toolchain-steam.sdk else null;
   });
