@@ -124,6 +124,13 @@ namespace Coil
     Buffer(std::vector<T> const& v)
     : data(const_cast<void*>(static_cast<void const*>(v.data()))), size(v.size() * sizeof(T)) {}
 
+    template <typename T, size_t n>
+    Buffer(T (&init)[n])
+    : data(init), size(n * sizeof(T)) {}
+    template <typename T, size_t n>
+    Buffer(T const (&init)[n])
+    : data(const_cast<void*>(static_cast<void const*>(init))), size(n * sizeof(T)) {}
+
     operator bool() const
     {
       return data && size;

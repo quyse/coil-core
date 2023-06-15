@@ -13,6 +13,11 @@ namespace Coil
     ivec<n> pitch;
     ivec<n> size;
 
+    operator Buffer() const
+    {
+      return Buffer(pixels, pitch(n - 1) * size(n - 1));
+    }
+
     T& operator()(ivec<n> const& c)
     {
       return pixels[dot(c, pitch)];
