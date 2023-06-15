@@ -2125,11 +2125,10 @@ namespace Coil
       }
     }
 
-
     // recreate resources linked to images
     GraphicsPresentConfig const presentConfig =
     {
-      .book = _sizeDependentBook,
+      .book = _sizeDependentBook.Allocate<Book>(),
       .size = { (int32_t)extent.width, (int32_t)extent.height },
       .pixelFormat = (GraphicsOpaquePixelFormat)_surfaceFormat,
     };
