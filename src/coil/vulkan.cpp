@@ -2046,8 +2046,8 @@ namespace Coil
       // use size passed by window if it's available
       size.has_value() ? VkExtent2D
       {
-        .width = (uint32_t)size.value().x(),
-        .height = (uint32_t)size.value().y(),
+        .width = std::min(std::max((uint32_t)size.value().x(), surfaceCapabilities.minImageExtent.width), surfaceCapabilities.maxImageExtent.width),
+        .height = std::min(std::max((uint32_t)size.value().y(), surfaceCapabilities.minImageExtent.height), surfaceCapabilities.maxImageExtent.height),
       } :
       // on Wayland, initially special values are passed as extent in capabilities
       // replace them with some default size, they will be overriden with next resize call
