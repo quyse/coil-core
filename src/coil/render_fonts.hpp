@@ -56,7 +56,6 @@ namespace Coil
     GraphicsPipeline* _pGlyphPipeline = nullptr;
     ivec2 _canvasSize;
     vec4 _invCanvasSize4;
-    // FIXME: just one image instead of one per present image
     GraphicsImage* _pGlyphTexture = nullptr;
 
     std::vector<FontGlyphCache::RenderGlyph> _tempRenderGlyphs;

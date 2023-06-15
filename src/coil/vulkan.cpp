@@ -1720,7 +1720,7 @@ namespace Coil
         },
       };
       vkCmdPipelineBarrier(_commandBuffer,
-        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, // srcStageMask
+        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, // srcStageMask
         VK_PIPELINE_STAGE_TRANSFER_BIT, // dstStageMask
         0, // flags
         0, nullptr, // memory barriers
