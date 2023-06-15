@@ -41,6 +41,9 @@ namespace Coil
   // parameters of variable font
   struct FontVariableStyle
   {
+    // DPI scale, 1 means 96 DPI
+    // used to calculate font's optical size
+    float dpiScale = 1.0f;
     // 'wght' axis
     int16_t weight = 400; // regular by default
     // 'opsz' axis, in pixels

@@ -108,7 +108,11 @@ namespace Coil
           coords[i] = style.weight << 16;
           break;
         case FT_MAKE_TAG('o', 'p', 's', 'z'):
-          coords[i] = style.opticalSize.value_or(size) * (1 << 16) * 3 / 4;
+          coords[i] = (FT_Fixed)(
+            (float)style.opticalSize.value_or(size)
+            / style.dpiScale // downscale according to DPI
+            * 0.75f // convert 96 DPI "device-independent" pixels to points (1/72 inch)
+            * (1 << 16));
           break;
         case FT_MAKE_TAG('w', 'd', 't', 'h'):
           coords[i] = style.width << 16;
