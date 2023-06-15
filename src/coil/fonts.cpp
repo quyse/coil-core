@@ -3,7 +3,7 @@
 
 namespace Coil
 {
-  std::tuple<GlyphsPacking, RawImage2D<uint8_t>> Font::PackGlyphs(std::vector<Glyph> const& glyphs, ivec2 const& maxSize, ivec2 const& offsetPrecision)
+  std::tuple<GlyphsPacking, RawImage2D<uint8_t>> Font::PackGlyphs(std::vector<Glyph> const& glyphs, ivec2 const& size, ivec2 const& offsetPrecision)
   {
     size_t glyphsCount = glyphs.size();
 
@@ -14,20 +14,13 @@ namespace Coil
     for(size_t i = 0; i < glyphsCount; ++i)
       glyphSizes[i] = glyphs[i].image.size;
 
-    auto [glyphPositions, resultSize] = Image2DShelfUnion(glyphSizes, maxSize.x(), 1);
+    auto [glyphPositions, resultSize] = Image2DShelfUnion(glyphSizes, size.x(), 1);
 
-    // make size power of two
-    resultSize =
-    {
-      (int32_t)std::bit_ceil<uint32_t>(resultSize.x()),
-      (int32_t)std::bit_ceil<uint32_t>(resultSize.y()),
-    };
-
-    if(resultSize.y() > maxSize.y())
+    if(resultSize.x() > size.x() || resultSize.y() > size.y())
       throw Exception("result image is too big");
 
     // blit images into single image
-    RawImage2D<uint8_t> glyphsImage(resultSize);
+    RawImage2D<uint8_t> glyphsImage(size);
     for(size_t i = 0; i < glyphsCount; ++i)
       glyphsImage.Blit(glyphs[i].image, glyphPositions[i], {}, glyphs[i].image.size);
 
@@ -43,7 +36,7 @@ namespace Coil
     return
     {
       GlyphsPacking{
-        .size = resultSize,
+        .size = size,
         .glyphInfos = std::move(glyphInfos),
       },
       std::move(glyphsImage),
