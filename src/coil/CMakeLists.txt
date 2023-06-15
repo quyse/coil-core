@@ -556,6 +556,22 @@ if(TRUE)
 endif()
 list(APPEND coil_core_all_libraries fonts)
 
+if(TARGET coil_core_fonts)
+  add_library(coil_core_render_fonts STATIC
+    render_fonts.cpp
+  )
+  set_property(TARGET coil_core_render_fonts PROPERTY PUBLIC_HEADER
+    render_fonts.hpp
+  )
+  target_link_libraries(coil_core_render_fonts
+    PUBLIC
+      coil_core_fonts
+      coil_core_render
+  )
+  list(APPEND coil_core_libraries render_fonts)
+endif()
+list(APPEND coil_core_all_libraries render_fonts)
+
 if(TARGET Freetype::Freetype AND TARGET harfbuzz::harfbuzz)
   add_library(coil_core_fthb STATIC
     fthb.cpp

@@ -6,6 +6,11 @@ namespace Coil
   FontGlyphCache::FontGlyphCache(ivec2 const& offsetPrecision, ivec2 const& size)
   : _offsetPrecision(offsetPrecision), _size(size) {}
 
+  ivec2 FontGlyphCache::GetSize() const
+  {
+    return _size;
+  }
+
   void FontGlyphCache::ShapeText(Font const& font, std::string const& text, LanguageInfo const& languageInfo, vec2 const& textOffset, std::vector<RenderGlyph>& renderGlyphs)
   {
     font.Shape(text, languageInfo, _tempShapedGlyphs);

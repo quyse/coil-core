@@ -302,7 +302,7 @@ namespace Coil
 
   struct GraphicsPresentConfig
   {
-    // special presenter book which gets freed on next recreate
+    // presenter book which gets freed on next presenter resize
     Book& book;
     ivec2 size;
     GraphicsOpaquePixelFormat pixelFormat;

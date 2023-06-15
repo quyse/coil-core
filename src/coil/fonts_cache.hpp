@@ -24,6 +24,8 @@ namespace Coil
 
     FontGlyphCache(ivec2 const& offsetPrecision = { 4, 4 }, ivec2 const& size = { 1024, 1024 });
 
+    ivec2 GetSize() const;
+
     void ShapeText(Font const& font, std::string const& text, LanguageInfo const& languageInfo, vec2 const& textOffset, std::vector<RenderGlyph>& renderGlyphs);
 
     // recreate image if needed
