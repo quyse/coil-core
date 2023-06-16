@@ -45,7 +45,7 @@ namespace Coil
     void Render(Cache& cache, Font const& font, std::string const& text, LanguageInfo const& languageInfo, vec2 const& textOffset, vec4 const& color);
 
   private:
-    auto const& GetGlyphVertexLayout();
+    static auto const& GetGlyphVertexLayout();
 
     GraphicsDevice& _device;
     FontGlyphCache _glyphCache;

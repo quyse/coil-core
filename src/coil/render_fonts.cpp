@@ -108,17 +108,20 @@ namespace Coil
       _invCanvasSize4 = vec4(invCanvasSize.x(), invCanvasSize.y(), invCanvasSize.x(), invCanvasSize.y());
     }
 
-    GraphicsPipelineConfig config;
-
-    config.viewport = canvasSize;
-    config.depthTest = false;
-    config.depthWrite = false;
-    config.vertexLayout = GetGlyphVertexLayout().layout;
-    config.vertexLayout.slots[1].perInstance = true;
-    config.attachments.push_back(
+    GraphicsPipelineConfig config =
     {
-      .blending = GraphicsPipelineConfig::Blending {},
-    });
+      .viewport = canvasSize,
+      .depthTest = false,
+      .depthWrite = false,
+      .vertexLayout = GetGlyphVertexLayout().layout,
+      .attachments =
+      {
+        {
+          .blending = GraphicsPipelineConfig::Blending {},
+        },
+      },
+    };
+    config.vertexLayout.slots[1].perInstance = true;
     _pGlyphPipeline = &_device.CreatePipeline(book, config, *_pGlyphPipelineLayout, pass, subPassId, *_pGlyphShader);
   }
 
