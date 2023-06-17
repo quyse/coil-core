@@ -90,6 +90,7 @@ namespace Coil
   struct PixelFormats
   {
     static PixelFormat const uintR8;
+    static PixelFormat const uintR8S;
     static PixelFormat const uintRGB24;
     static PixelFormat const uintRGB24S;
     static PixelFormat const uintRGBA32;

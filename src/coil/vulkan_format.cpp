@@ -294,7 +294,7 @@ namespace Coil
         case F(Uint):
           switch(format.size)
           {
-          case S(8bit): return R(R8_UNORM);
+          case S(8bit): return format.srgb ? R(R8_SRGB) : R(R8_UNORM);
           case S(16bit): return R(R16_UNORM);
           default: break;
           }
@@ -315,7 +315,7 @@ namespace Coil
         case F(Uint):
           switch(format.size)
           {
-          case S(16bit): return R(R8G8_UNORM);
+          case S(16bit): return format.srgb ? R(R8G8_SRGB) : R(R8G8_UNORM);
           case S(32bit): return R(R16G16_UNORM);
           default: break;
           }
@@ -336,7 +336,7 @@ namespace Coil
         case F(Uint):
           switch(format.size)
           {
-          case S(24bit): return R(R8G8B8_UNORM);
+          case S(24bit): return format.srgb ? R(R8G8B8_SRGB) : R(R8G8B8_UNORM);
           case S(48bit): return R(R16G16B16_UNORM);
           default: break;
           }

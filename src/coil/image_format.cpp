@@ -4,21 +4,7 @@ namespace Coil
 {
   constexpr PixelFormat::PixelFormat(Components components, Format format, Size size, bool srgb)
   : type(Type::Uncompressed), components(components), format(format), size(size), srgb(srgb)
-  {
-    switch(components)
-    {
-    case Components::R:
-    case Components::RG:
-      if(srgb)
-        throw Exception("wrong pixel type for sRGB");
-      break;
-    case Components::RGB:
-    case Components::RGBA:
-      break;
-    default:
-      throw Exception("wrong pixel type");
-    }
-  }
+  {}
 
   constexpr PixelFormat::PixelFormat(Compression compression, bool srgb)
   : type(Type::Compressed), compression(compression), srgb(srgb)
@@ -200,6 +186,11 @@ namespace Coil
     PixelFormat::Components::R,
     PixelFormat::Format::Uint,
     PixelFormat::Size::_8bit);
+  PixelFormat const PixelFormats::uintR8S(
+    PixelFormat::Components::R,
+    PixelFormat::Format::Uint,
+    PixelFormat::Size::_8bit,
+    true);
   PixelFormat const PixelFormats::uintRGB24(
     PixelFormat::Components::RGB,
     PixelFormat::Format::Uint,
