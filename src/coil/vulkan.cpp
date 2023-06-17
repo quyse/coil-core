@@ -2028,14 +2028,27 @@ namespace Coil
 
     // choose surface format
     VkSurfaceFormatKHR const* pSurfaceFormat = nullptr;
-    for(size_t i = 0; i < surfaceFormats.size(); ++i)
     {
-      auto const& surfaceFormat = surfaceFormats[i];
-      if((surfaceFormat.format == VK_FORMAT_R8G8B8A8_SRGB || surfaceFormat.format == VK_FORMAT_B8G8R8A8_SRGB) &&
-        surfaceFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+      VkFormat const desiredFormats[] =
       {
-        pSurfaceFormat = &surfaceFormat;
-        break;
+        VK_FORMAT_B8G8R8A8_UNORM,
+        VK_FORMAT_R8G8B8A8_UNORM,
+        VK_FORMAT_B8G8R8_UNORM,
+        VK_FORMAT_R8G8B8_UNORM,
+      };
+      for(size_t i = 0; !pSurfaceFormat && i < sizeof(desiredFormats) / sizeof(desiredFormats[0]); ++i)
+      {
+        VkFormat const desiredFormat = desiredFormats[i];
+
+        for(size_t j = 0; !pSurfaceFormat && j < surfaceFormats.size(); ++j)
+        {
+          auto const& surfaceFormat = surfaceFormats[j];
+
+          if(surfaceFormat.format == desiredFormat && surfaceFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+          {
+            pSurfaceFormat = &surfaceFormat;
+          }
+        }
       }
     }
     if(!pSurfaceFormat) throw Exception("no suitable Vulkan surface format supported");
