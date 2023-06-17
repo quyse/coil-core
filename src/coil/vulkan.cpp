@@ -2,8 +2,9 @@
 #include "vulkan_objects.hpp"
 #include "spirv.hpp"
 #include "appidentity.hpp"
-#include <vector>
 #include <algorithm>
+#include <concepts>
+#include <vector>
 #include <limits>
 #include <cstring>
 
@@ -536,11 +537,10 @@ namespace Coil
         // note usage of attachment
         VkPipelineStageFlags readStageMask = 0, writeStageMask = 0;
         VkAccessFlags readAccessMask = 0, writeAccessMask = 0;
-        std::visit([&](auto const& attachment)
+        std::visit([&]<typename Attachment>(Attachment const& attachment)
         {
-          using T = std::decay_t<decltype(attachment)>;
           // color attachment
-          if constexpr(std::is_same_v<T, GraphicsPassConfig::SubPass::ColorAttachment>)
+          if constexpr(std::same_as<Attachment, GraphicsPassConfig::SubPass::ColorAttachment>)
           {
             colorAttachmentsReferences.push_back({
               .attachment = attachmentId,
@@ -558,7 +558,7 @@ namespace Coil
             writeAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
           }
           // depth stencil attachment
-          if constexpr(std::is_same_v<T, GraphicsPassConfig::SubPass::DepthStencilAttachment>)
+          if constexpr(std::same_as<Attachment, GraphicsPassConfig::SubPass::DepthStencilAttachment>)
           {
             if(depthStencilAttachmentId.has_value()) throw Exception("more than one Vulkan depth-stencil attachments in pass");
             depthStencilAttachmentId = attachmentId;
@@ -578,7 +578,7 @@ namespace Coil
             writeAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
           }
           // input attachment
-          if constexpr(std::is_same_v<T, GraphicsPassConfig::SubPass::InputAttachment>)
+          if constexpr(std::same_as<Attachment, GraphicsPassConfig::SubPass::InputAttachment>)
           {
             inputAttachmentsReferences.push_back({
               .attachment = attachmentId,
@@ -594,7 +594,7 @@ namespace Coil
             readAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
           }
           // shader attachment
-          if constexpr(std::is_same_v<T, GraphicsPassConfig::SubPass::ShaderAttachment>)
+          if constexpr(std::same_as<Attachment, GraphicsPassConfig::SubPass::ShaderAttachment>)
           {
             if(attachmentInfo.initialLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
               attachmentInfo.initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -748,17 +748,15 @@ namespace Coil
       GraphicsPassConfig::Attachment const& attachment = config.attachments[attachmentId];
       VkFormat format = VK_FORMAT_UNDEFINED;
       VkClearValue& clearValue = clearValues[attachmentId];
-      std::visit([&](auto const& config)
+      std::visit([&]<typename Config>(Config const& config)
       {
-        using T = std::decay_t<decltype(config)>;
-        if constexpr(std::is_same_v<T, GraphicsPassConfig::ColorAttachmentConfig>)
+        if constexpr(std::same_as<Config, GraphicsPassConfig::ColorAttachmentConfig>)
         {
-          format = std::visit([&](auto const& attachmentPixelFormat) -> VkFormat
+          format = std::visit([&]<typename Format>(Format const& attachmentPixelFormat) -> VkFormat
           {
-            using T = std::decay_t<decltype(attachmentPixelFormat)>;
-            if constexpr(std::is_same_v<T, PixelFormat>)
+            if constexpr(std::same_as<Format, PixelFormat>)
               return VulkanSystem::GetPixelFormat(attachmentPixelFormat);
-            if constexpr(std::is_same_v<T, GraphicsOpaquePixelFormat>)
+            if constexpr(std::same_as<Format, GraphicsOpaquePixelFormat>)
               return (VkFormat)attachmentPixelFormat;
           }, config.format);
           clearValue.color =
@@ -772,7 +770,7 @@ namespace Coil
             },
           };
         }
-        if constexpr(std::is_same_v<T, GraphicsPassConfig::DepthStencilAttachmentConfig>)
+        if constexpr(std::same_as<Config, GraphicsPassConfig::DepthStencilAttachmentConfig>)
         {
           format = VK_FORMAT_D24_UNORM_S8_UINT;
           clearValue.depthStencil =
@@ -1884,10 +1882,9 @@ namespace Coil
       // collect info
       for(auto const& bindingIt : descriptorSet.bindings)
       {
-        std::visit([&](auto const& binding)
+        std::visit([&]<typename Binding>(Binding const& binding)
         {
-          using T = std::decay_t<decltype(binding)>;
-          if constexpr(std::is_same_v<T, BindingUniformBuffer>)
+          if constexpr(std::same_as<Binding, BindingUniformBuffer>)
           {
             _bufWriteDescriptorSets.push_back(
             {
@@ -1903,7 +1900,7 @@ namespace Coil
               .pTexelBufferView = nullptr,
             });
           }
-          if constexpr(std::is_same_v<T, BindingStorageBuffer>)
+          if constexpr(std::same_as<Binding, BindingStorageBuffer>)
           {
             _bufWriteDescriptorSets.push_back(
             {
@@ -1919,7 +1916,7 @@ namespace Coil
               .pTexelBufferView = nullptr,
             });
           }
-          if constexpr(std::is_same_v<T, BindingImage>)
+          if constexpr(std::same_as<Binding, BindingImage>)
           {
             _bufWriteDescriptorSets.push_back(
             {

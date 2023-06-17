@@ -4,6 +4,7 @@
 #include "graphics_format.hpp"
 #include "util.hpp"
 #include <array>
+#include <concepts>
 #include <memory>
 #include <type_traits>
 
@@ -1099,7 +1100,7 @@ namespace Coil
     // is it ok to compose these types into vector
     static constexpr bool Ok =
       // all types should have same scalar type
-      (std::is_same_v<Scalar, typename VectorTraits<TT>::Scalar> && ...) &&
+      (std::same_as<Scalar, typename VectorTraits<TT>::Scalar> && ...) &&
       // size requirements
       N >= 2 && N <= 4;
     // result vector type

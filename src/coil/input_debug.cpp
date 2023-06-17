@@ -1,24 +1,23 @@
 #include "input_debug.hpp"
 #include "math_debug.hpp"
 #include "unicode.hpp"
+#include <concepts>
 
 namespace Coil
 {
   std::ostream& operator<<(std::ostream& stream, InputEvent const& event)
   {
-    std::visit([&](auto const& event)
+    std::visit([&]<typename E1>(E1 const& event)
     {
-      using E = std::decay_t<decltype(event)>;
-      if constexpr(std::is_same_v<E, InputKeyboardEvent>)
+      if constexpr(std::same_as<E1, InputKeyboardEvent>)
       {
-        std::visit([&](auto const& event)
+        std::visit([&]<typename E2>(E2 const& event)
         {
-          using E = std::decay_t<decltype(event)>;
-          if constexpr(std::is_same_v<E, InputKeyboardKeyEvent>)
+          if constexpr(std::same_as<E2, InputKeyboardKeyEvent>)
           {
             stream << (event.isPressed ? "KEYDOWN " : "KEYUP ") << (uint32_t)event.key;
           }
-          if constexpr(std::is_same_v<E, InputKeyboardCharacterEvent>)
+          if constexpr(std::same_as<E2, InputKeyboardCharacterEvent>)
           {
             char32_t s[] = { event.character, 0 };
             stream << "KEYPRESS ";
@@ -31,12 +30,11 @@ namespace Coil
           }
         }, event);
       }
-      if constexpr(std::is_same_v<E, InputMouseEvent>)
+      if constexpr(std::same_as<E1, InputMouseEvent>)
       {
-        std::visit([&](auto const& event)
+        std::visit([&]<typename E2>(E2 const& event)
         {
-          using E = std::decay_t<decltype(event)>;
-          if constexpr(std::is_same_v<E, InputMouseButtonEvent>)
+          if constexpr(std::same_as<E2, InputMouseButtonEvent>)
           {
             stream << (event.isPressed ? "MOUSEDOWN " : "MOUSEUP ");
             switch(event.button)
@@ -52,27 +50,26 @@ namespace Coil
               break;
             }
           }
-          if constexpr(std::is_same_v<E, InputMouseRawMoveEvent>)
+          if constexpr(std::same_as<E2, InputMouseRawMoveEvent>)
           {
             stream << "MOUSERAWMOVE " << event.rawMove;
           }
-          if constexpr(std::is_same_v<E, InputMouseCursorMoveEvent>)
+          if constexpr(std::same_as<E2, InputMouseCursorMoveEvent>)
           {
             stream << "MOUSECURSORMOVE " << event.cursor << ' ' << event.wheel;
           }
         }, event);
       }
-      if constexpr(std::is_same_v<E, InputControllerEvent>)
+      if constexpr(std::same_as<E1, InputControllerEvent>)
       {
         stream << "CONTROLLER " << event.controllerId << ' ';
-        std::visit([&](auto const& event)
+        std::visit([&]<typename E2>(E2 const& event)
         {
-          using E = std::decay_t<decltype(event)>;
-          if constexpr(std::is_same_v<E, InputControllerEvent::ControllerEvent>)
+          if constexpr(std::same_as<E2, InputControllerEvent::ControllerEvent>)
           {
             stream << (event.isAdded ? "ADDED" : "REMOVED");
           }
-          if constexpr(std::is_same_v<E, InputControllerEvent::ButtonEvent>)
+          if constexpr(std::same_as<E2, InputControllerEvent::ButtonEvent>)
           {
             stream << (event.isPressed ? "DOWN " : "UP ");
             switch(event.button)
@@ -94,7 +91,7 @@ namespace Coil
             case InputControllerButton::DPadRight:     stream << "DPADRIGHT"; break;
             }
           }
-          if constexpr(std::is_same_v<E, InputControllerEvent::AxisMotionEvent>)
+          if constexpr(std::same_as<E2, InputControllerEvent::AxisMotionEvent>)
           {
             switch(event.axis)
             {

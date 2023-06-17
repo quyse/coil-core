@@ -1,6 +1,7 @@
 #pragma once
 
 #include "base.hpp"
+#include <concepts>
 #include <coroutine>
 #include <optional>
 #include <memory>
@@ -190,9 +191,9 @@ namespace Coil
       R AwaitResume() const
       {
         // return value or rethrow exception
-        return std::visit([&](auto const& result) -> R
+        return std::visit([&]<typename V>(V const& result) -> R
         {
-          if constexpr(std::same_as<std::decay_t<decltype(result)>, Value>)
+          if constexpr(std::same_as<V, Value>)
           {
             if constexpr(!std::same_as<R, void>)
             {

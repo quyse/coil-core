@@ -1,6 +1,7 @@
 #pragma once
 
 #include "math.hpp"
+#include <concepts>
 
 namespace Coil
 {
@@ -28,7 +29,7 @@ namespace Coil
       // slow down exponentialy
       _speed = _speed * std::exp(time * _slowCoef);
       // limit
-      if constexpr(std::is_same_v<T, S>)
+      if constexpr(std::same_as<T, S>)
       {
         if(std::abs(_speed) > _maxSpeed)
         {

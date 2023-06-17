@@ -520,14 +520,14 @@ namespace Coil
   // define for selected scalars as well
   template <typename T>
   requires
-    std::is_same_v<T, float> ||
-    std::is_same_v<T, uint32_t> ||
-    std::is_same_v<T, uint16_t> ||
-    std::is_same_v<T, uint8_t> ||
-    std::is_same_v<T, int32_t> ||
-    std::is_same_v<T, int16_t> ||
-    std::is_same_v<T, int8_t> ||
-    std::is_same_v<T, bool>
+    std::same_as<T, float> ||
+    std::same_as<T, uint32_t> ||
+    std::same_as<T, uint16_t> ||
+    std::same_as<T, uint8_t> ||
+    std::same_as<T, int32_t> ||
+    std::same_as<T, int16_t> ||
+    std::same_as<T, int8_t> ||
+    std::same_as<T, bool>
   struct VectorTraits<T>
   {
     using Scalar = T;
@@ -544,7 +544,7 @@ namespace Coil
   template <typename T>
   concept IsFloatScalarOrVector = requires
   {
-    std::is_same_v<typename VectorTraits<T>::Scalar, float>;
+    std::same_as<typename VectorTraits<T>::Scalar, float>;
   };
 
   // convenience synonyms

@@ -1,4 +1,5 @@
 #include "input.hpp"
+#include <concepts>
 
 namespace Coil
 {
@@ -9,15 +10,13 @@ namespace Coil
       // process next event in state
       InputEvent const& event = _events[_nextEvent++];
 
-      if(!std::visit([&](auto const& event) -> bool
+      if(!std::visit([&]<typename E1>(E1 const& event) -> bool
       {
-        using E = std::decay_t<decltype(event)>;
-        if constexpr(std::is_same_v<E, InputKeyboardEvent>)
+        if constexpr(std::same_as<E1, InputKeyboardEvent>)
         {
-          return std::visit([&](auto const& event) -> bool
+          return std::visit([&]<typename E2>(E2 const& event) -> bool
           {
-            using E = std::decay_t<decltype(event)>;
-            if constexpr(std::is_same_v<E, InputKeyboardKeyEvent>)
+            if constexpr(std::same_as<E2, InputKeyboardKeyEvent>)
             {
               // if key is already in this state, skip
               if(_state[event.key] == event.isPressed) return false;
@@ -26,18 +25,17 @@ namespace Coil
               _ProcessKeyboardVirtualEvents(event);
               return true;
             }
-            if constexpr(std::is_same_v<E, InputKeyboardCharacterEvent>)
+            if constexpr(std::same_as<E2, InputKeyboardCharacterEvent>)
             {
               return true;
             }
           }, event);
         }
-        if constexpr(std::is_same_v<E, InputMouseEvent>)
+        if constexpr(std::same_as<E1, InputMouseEvent>)
         {
-          return std::visit([&](auto const& event) -> bool
+          return std::visit([&]<typename E2>(E2 const& event) -> bool
           {
-            using E = std::decay_t<decltype(event)>;
-            if constexpr(std::is_same_v<E, InputMouseButtonEvent>)
+            if constexpr(std::same_as<E2, InputMouseButtonEvent>)
             {
               // if button already in this state, skip
               if(_state[event.button] == event.isPressed) return false;
@@ -45,19 +43,19 @@ namespace Coil
               _state[event.button] = event.isPressed;
               return true;
             }
-            if constexpr(std::is_same_v<E, InputMouseRawMoveEvent>)
+            if constexpr(std::same_as<E2, InputMouseRawMoveEvent>)
             {
               // no state for raw move
               return true;
             }
-            if constexpr(std::is_same_v<E, InputMouseCursorMoveEvent>)
+            if constexpr(std::same_as<E2, InputMouseCursorMoveEvent>)
             {
               _state.cursor = event.cursor;
               return true;
             }
           }, event);
         }
-        if constexpr(std::is_same_v<E, InputControllerEvent>)
+        if constexpr(std::same_as<E1, InputControllerEvent>)
         {
           // TODO: controller state
           return true;
@@ -212,15 +210,13 @@ namespace Coil
   void InputManager::AddEvent(InputEvent const& event)
   {
     // skip text input events if text input is disabled
-    if(!_textInputEnabled && !std::visit([&](auto const& event) -> bool
+    if(!_textInputEnabled && !std::visit([&]<typename E1>(E1 const& event) -> bool
     {
-      using E = std::decay_t<decltype(event)>;
-      if constexpr(std::is_same_v<E, InputKeyboardEvent>)
+      if constexpr(std::same_as<E1, InputKeyboardEvent>)
       {
-        return std::visit([&](auto const& event) -> bool
+        return std::visit([&]<typename E2>(E2 const& event) -> bool
         {
-          using E = std::decay_t<decltype(event)>;
-          if constexpr(std::is_same_v<E, InputKeyboardCharacterEvent>)
+          if constexpr(std::same_as<E2, InputKeyboardCharacterEvent>)
           {
             return false;
           }
