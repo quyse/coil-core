@@ -1965,14 +1965,17 @@ namespace Coil
       for(size_t i = 0; i < _descriptorSets.size(); ++i)
         _bufDescriptorSets[i] = _descriptorSets[i].descriptorSet;
 
-      vkCmdBindDescriptorSets(_commandBuffer,
-        _pPipeline->_bindPoint,
-        _pPipeline->_pipelineLayout._pipelineLayout,
-        0, // first set
-        _bufDescriptorSets.size(),
-        _bufDescriptorSets.data(),
-        0, nullptr // dynamic offsets
-      );
+      if(!_bufDescriptorSets.empty())
+      {
+        vkCmdBindDescriptorSets(_commandBuffer,
+          _pPipeline->_bindPoint,
+          _pPipeline->_pipelineLayout._pipelineLayout,
+          0, // first set
+          _bufDescriptorSets.size(),
+          _bufDescriptorSets.data(),
+          0, nullptr // dynamic offsets
+        );
+      }
 
       _bufDescriptorSets.clear();
       _pBoundPipelineLayout = _pPipeline->_pipelineLayout._pipelineLayout;
