@@ -63,37 +63,34 @@ namespace Coil
   {
     if(!_instancesCount) return;
 
-    if(!_instanceData.empty())
+    // calculate number of instances per step
+    uint32_t instancesPerStep = std::numeric_limits<uint32_t>::max();
+    for(auto& i : _instanceData)
     {
-      // calculate number of instances per step
-      uint32_t instancesPerStep = std::numeric_limits<uint32_t>::max();
+      if(!i.second.data.empty())
+      {
+        i.second.stride = i.second.data.size() / _instancesCount;
+        instancesPerStep = std::min(instancesPerStep, _maxBufferSize / i.second.stride);
+      }
+    }
+
+    // perform steps
+    for(uint32_t k = 0; k < _instancesCount; k += instancesPerStep)
+    {
+      uint32_t instancesToRender = std::min(_instancesCount - k, instancesPerStep);
       for(auto& i : _instanceData)
       {
         if(!i.second.data.empty())
         {
-          i.second.stride = i.second.data.size() / _instancesCount;
-          instancesPerStep = std::min(instancesPerStep, _maxBufferSize / i.second.stride);
+          _pContext->BindDynamicVertexBuffer(i.first,
+            Buffer(
+              (uint8_t const*)i.second.data.data() + k * i.second.stride,
+              instancesToRender * i.second.stride
+            )
+          );
         }
       }
-
-      // perform steps
-      for(uint32_t k = 0; k < _instancesCount; k += instancesPerStep)
-      {
-        uint32_t instancesToRender = std::min(_instancesCount - k, instancesPerStep);
-        for(auto& i : _instanceData)
-        {
-          if(!i.second.data.empty())
-          {
-            _pContext->BindDynamicVertexBuffer(i.first,
-              Buffer(
-                (uint8_t const*)i.second.data.data() + k * i.second.stride,
-                instancesToRender * i.second.stride
-              )
-            );
-          }
-        }
-        _pContext->Draw(_indicesCount, instancesToRender);
-      }
+      _pContext->Draw(_indicesCount, instancesToRender);
     }
 
     Reset();
