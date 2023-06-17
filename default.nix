@@ -10,14 +10,15 @@ rec {
   nixos-pkgs = pkgs.extend (self: super: with self; {
     coil-core = (callPackage ./coil-core.nix {
     }).overrideAttrs (attrs: {
-      # force clang
       cmakeFlags = (attrs.cmakeFlags or []) ++ [
+        # force clang
         "-DCMAKE_CXX_COMPILER=clang++"
         "-DCMAKE_C_COMPILER=clang"
+        # do not require some libs
         "-DCOIL_CORE_DONT_REQUIRE_LIBS=${dontRequireLibsList}"
       ];
       nativeBuildInputs = attrs.nativeBuildInputs ++ [
-        pkgs.clang_15
+        pkgs.clang_16
       ];
     });
     steam-sdk = if toolchain-steam != null then toolchain-steam.sdk else null;
