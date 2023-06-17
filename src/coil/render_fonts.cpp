@@ -64,7 +64,8 @@ namespace Coil
       auto fOutColor = ShaderFragment<vec4>(0);
 
       auto fAlpha = image.Sample(*iTexcoord);
-      auto fColor = *iColor * fAlpha;
+      auto fColor = *iColor;
+      fColor = cvec(swizzle(fColor, "xyz"), float_(1)) * (swizzle(fColor, "w") * fAlpha);
 
       auto fragmentProgram = (
         fOutColor.Write(fColor)
