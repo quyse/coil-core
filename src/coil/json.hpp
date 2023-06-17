@@ -1,6 +1,7 @@
 #pragma once
 
 #include "math.hpp"
+#include <optional>
 #include <vector>
 #include <unordered_map>
 #include <nlohmann/json.hpp>
@@ -158,7 +159,7 @@ namespace Coil
   {
     static json Encode(std::optional<T> const& v)
     {
-      return v.has_value() ? JsonEncode<T>(v.value()) : nullptr;
+      return v.has_value() ? JsonEncode<T>(v.value()) : json(nullptr);
     }
   };
 
