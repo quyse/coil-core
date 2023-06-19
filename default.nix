@@ -28,7 +28,7 @@ rec {
 
   # Ubuntu build
   coil-core-ubuntu = let
-    clangVersion = "15";
+    clangVersion = "16";
   in pkgs.vmTools.runInLinuxImage ((pkgs.callPackage ./coil-core.nix {
     steam-sdk = if toolchain-steam != null then toolchain-steam.sdk else null;
   }).overrideAttrs (attrs: {
@@ -45,7 +45,7 @@ rec {
       # some libs do not work yet
       "-DCOIL_CORE_DONT_REQUIRE_LIBS=compress_zstd;steam"
     ];
-    diskImage = toolchain-linux.diskImagesFuns.ubuntu2204x86_64 [
+    diskImage = toolchain-linux.diskImagesFuns.ubuntu_2204_amd64 [
       "clang-${clangVersion}"
       "cmake"
       "ninja-build"
