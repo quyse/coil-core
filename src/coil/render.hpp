@@ -1,10 +1,10 @@
 #pragma once
 
 #include "graphics.hpp"
-#include <vector>
 #include <algorithm>
-#include <unordered_map>
 #include <concepts>
+#include <unordered_map>
+#include <vector>
 
 namespace Coil
 {
@@ -44,6 +44,7 @@ namespace Coil
     std::totally_ordered<typename Knob::Key>;
     std::same_as<std::remove_cv_t<decltype(knob.GetKey())>, typename Knob::Key>;
     { knob.Apply(context) } -> std::same_as<void>;
+    { knob.Apply(context, knob) } -> std::same_as<bool>;
   };
 
   class RenderPipelineKnob
@@ -61,6 +62,14 @@ namespace Coil
     void Apply(RenderContext& context) const
     {
       context.SetPipeline(_pipeline);
+    }
+    bool Apply(RenderContext& context, RenderPipelineKnob const& previousKnob) const
+    {
+      if(GetKey() == previousKnob.GetKey())
+        return false;
+
+      Apply(context);
+      return true;
     }
 
   private:
@@ -86,6 +95,14 @@ namespace Coil
     {
       context.SetUniformBuffer(slotSetId, slotId, Buffer(&_data, sizeof(_data)));
     }
+    bool Apply(RenderContext& context, RenderUniformBufferKnob const& previousKnob) const
+    {
+      if(GetKey() == previousKnob.GetKey())
+        return false;
+
+      Apply(context);
+      return true;
+    }
 
   private:
     Struct const& _data;
@@ -109,6 +126,14 @@ namespace Coil
     {
       context.SetImage(slotSetId, slotId, _image);
     }
+    bool Apply(RenderContext& context, RenderImageKnob const& previousKnob) const
+    {
+      if(GetKey() == previousKnob.GetKey())
+        return false;
+
+      Apply(context);
+      return true;
+    }
 
   private:
     GraphicsImage& _image;
@@ -129,6 +154,14 @@ namespace Coil
     void Apply(RenderContext& context) const
     {
       context.SetMesh(_mesh);
+    }
+    bool Apply(RenderContext& context, RenderMeshKnob const& previousKnob) const
+    {
+      if(GetKey() == previousKnob.GetKey())
+        return false;
+
+      Apply(context);
+      return true;
     }
 
   private:
@@ -156,6 +189,11 @@ namespace Coil
     {
       context.SetInstanceData(slot, Buffer(&_data, sizeof(_data)));
     }
+    bool Apply(RenderContext& context, RenderInstanceDataKnob const& previousKnob) const
+    {
+      Apply(context);
+      return true;
+    }
 
   private:
     Struct _data;
@@ -179,13 +217,130 @@ namespace Coil
     {
       // nothing to do
     }
+    bool Apply(RenderContext& context, RenderOrderKnob const& previousKnob) const
+    {
+      // nothing to do
+      return false;
+    }
 
   private:
     T _key;
   };
 
+  // Tuple knob for combining knobs.
   template <IsRenderKnob... Knobs>
-  class RenderCache
+  class RenderTupleKnob
+  {
+  public:
+    RenderTupleKnob(Knobs&&... knobs)
+    : _knobs(std::move(knobs)...) {}
+
+    using Key = std::tuple<typename Knobs::Key...>;
+    Key GetKey() const
+    {
+      return std::apply([](Knobs const&... knobs) -> Key
+      {
+        return { knobs.GetKey()... };
+      }, _knobs);
+    }
+
+    void Apply(RenderContext& context) const
+    {
+      std::apply([&](Knobs const&... knobs)
+      {
+        (knobs.Apply(context), ...);
+      }, _knobs);
+    }
+    bool Apply(RenderContext& context, RenderTupleKnob const& previousKnob) const
+    {
+      return PartialApply(context, previousKnob, std::index_sequence_for<Knobs...>());
+    }
+
+  private:
+    template <size_t... knobIndices>
+    bool PartialApply(RenderContext& context, RenderTupleKnob const& previousKnob, std::index_sequence<knobIndices...> seq) const
+    {
+      using ApplySubKnobMethod = void (RenderTupleKnob::*)(RenderContext&) const;
+      static constinit ApplySubKnobMethod const applyMethods[] = { &RenderTupleKnob::ApplySubKnob<knobIndices>... };
+
+      using PartialApplySubKnobMethod = bool (RenderTupleKnob::*)(RenderContext&, RenderTupleKnob const&) const;
+      static constinit PartialApplySubKnobMethod const partialApplyMethods[] = { &RenderTupleKnob::PartialApplySubKnob<knobIndices>... };
+
+      bool applied = false;
+      for(size_t i = 0; i < sizeof...(Knobs); ++i)
+      {
+        if(applied)
+          (this->*applyMethods[i])(context);
+        else if((this->*partialApplyMethods[i])(context, previousKnob))
+          applied = true;
+      }
+
+      return applied;
+    }
+
+    template <size_t i>
+    void ApplySubKnob(RenderContext& context) const
+    {
+      std::get<i>(_knobs).Apply(context);
+    }
+    template <size_t i>
+    bool PartialApplySubKnob(RenderContext& context, RenderTupleKnob const& previousKnob) const
+    {
+      return std::get<i>(_knobs).Apply(context, std::get<i>(previousKnob._knobs));
+    }
+
+    std::tuple<Knobs...> _knobs;
+  };
+
+  // Variant knob for providing multiple paths for knobs.
+  template <IsRenderKnob... Knobs>
+  class RenderVariantKnob
+  {
+  public:
+    template <IsRenderKnob Knob>
+    requires (std::constructible_from<std::variant<Knobs...>, Knob&&>)
+    RenderVariantKnob(Knob&& knob)
+    : _knob(std::move(knob)) {}
+
+    using Key = std::variant<typename Knobs::Key...>;
+    Key GetKey() const
+    {
+      return std::visit([](auto const& knob) -> Key
+      {
+        return knob;
+      }, _knob);
+    }
+
+    void Apply(RenderContext& context) const
+    {
+      std::apply([&](auto const& knob)
+      {
+        knob.Apply(context);
+      }, _knob);
+    }
+    bool Apply(RenderContext& context, RenderVariantKnob const& previousKnob) const
+    {
+      return std::apply([&]<typename SubKnob, typename PreviousSubKnob>(SubKnob const& subKnob, PreviousSubKnob const& previousSubKnob) -> bool
+      {
+        if constexpr(std::same_as<SubKnob, PreviousSubKnob>)
+        {
+          return subKnob.Apply(context, previousSubKnob);
+        }
+        else
+        {
+          subKnob.Apply(context);
+          return true;
+        }
+      }, _knob, previousKnob._knob);
+    }
+
+  private:
+    std::variant<Knobs...> _knob;
+  };
+
+  // render cache implementation
+  template <IsRenderKnob Knob>
+  class RenderCacheImpl
   {
   public:
     void Reset()
@@ -194,11 +349,12 @@ namespace Coil
       _instanceIndices.clear();
     }
 
-    void Render(Knobs&&... knobs)
+    template <typename... Args>
+    void Render(Args&&... args)
     {
       // add instance
       _instanceIndices.push_back(_instances.size());
-      _instances.push_back(std::tuple<Knobs...>(std::forward<Knobs>(knobs)...));
+      _instances.push_back({ std::forward<Args>(args)... });
     }
 
     void Flush(GraphicsContext& context)
@@ -208,62 +364,45 @@ namespace Coil
       // sort instances
       std::sort(_instanceIndices.begin(), _instanceIndices.end(), [&](size_t a, size_t b)
       {
-        return KnobsKey(_instances[a]) < KnobsKey(_instances[b]);
+        return _instances[a].GetKey() < _instances[b].GetKey();
       });
 
-      // apply instances in order, skipping application of same knobs
+      // apply instances in order
       for(size_t i = 0; i < _instanceIndices.size(); ++i)
       {
         auto const& instance = _instances[_instanceIndices[i]];
-        ApplyInstance(instance,
-          i > 0 ? FindFirstDifferent<0>(_instances[_instanceIndices[i - 1]], instance) : 0,
-          std::index_sequence_for<Knobs...>());
+
+        if(i > 0)
+          instance.Apply(_context, _instances[_instanceIndices[i - 1]]);
+        else
+          instance.Apply(_context);
+
         _context.EndInstance();
       }
+
       Reset();
 
       _context.Flush();
     }
 
-    static std::tuple<typename Knobs::Key...> KnobsKey(std::tuple<Knobs...> const& knobs)
-    {
-      return std::apply([](Knobs const&... knobs)
-      {
-        return std::tuple<typename Knobs::Key...>(knobs.GetKey()...);
-      }, knobs);
-    }
-
-    template <size_t i>
-    static size_t FindFirstDifferent(std::tuple<Knobs...> const& a, std::tuple<Knobs...> const& b)
-    {
-      if constexpr(i < sizeof...(Knobs))
-      {
-        if(std::get<i>(a).GetKey() == std::get<i>(b).GetKey())
-        {
-          return FindFirstDifferent<i + 1>(a, b);
-        }
-      }
-      return i;
-    }
-
-    template <size_t... knobIndices>
-    void ApplyInstance(std::tuple<Knobs...> const& instance, size_t i, std::index_sequence<knobIndices...> seq)
-    {
-      using ApplyFunc = void (RenderCache::*)(std::tuple<Knobs...> const&);
-      static constinit ApplyFunc const applyFuncs[] = { &RenderCache::ApplyKnob<knobIndices>... };
-      for(; i < sizeof...(Knobs); ++i)
-        (this->*applyFuncs[i])(instance);
-    }
-
-    template <size_t i>
-    void ApplyKnob(std::tuple<Knobs...> const& instance)
-    {
-      std::get<i>(instance).Apply(_context);
-    }
-
   private:
-    std::vector<std::tuple<Knobs...>> _instances;
+    std::vector<Knob> _instances;
     std::vector<size_t> _instanceIndices;
     RenderContext _context;
   };
+
+  // convenience wrapper
+  // wraps knobs types into tuple, but doesn't wrap single knob
+  template <IsRenderKnob... Knobs>
+  struct RenderCacheHelper
+  {
+    using RenderCache = RenderCacheImpl<RenderTupleKnob<Knobs...>>;
+  };
+  template <IsRenderKnob Knob>
+  struct RenderCacheHelper<Knob>
+  {
+    using RenderCache = RenderCacheImpl<Knob>;
+  };
+  template <IsRenderKnob... Knobs>
+  using RenderCache = typename RenderCacheHelper<Knobs...>::RenderCache;
 }
