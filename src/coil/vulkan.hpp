@@ -76,7 +76,7 @@ namespace Coil
     void BeginFrame();
     void Reset();
     VkDescriptorSet AllocateDescriptorSet(VkDescriptorSetLayout descriptorSetLayout);
-    AllocatedBuffer AllocateBuffer(VkBufferUsageFlagBits usage, uint32_t size);
+    AllocatedBuffer AllocateBuffer(VkBufferUsageFlagBits usage, uint32_t size, uint32_t alignment = 1);
     void Prepare();
 
     VulkanDevice& _device;

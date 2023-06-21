@@ -1553,7 +1553,7 @@ namespace Coil
   void VulkanContext::BindUniformBuffer(GraphicsSlotSetId slotSet, GraphicsSlotId slot, Buffer const& buffer)
   {
     // allocate buffer
-    auto buf = AllocateBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, buffer.size);
+    auto buf = AllocateBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, buffer.size, _device._properties.limits.minUniformBufferOffsetAlignment);
     // upload data
     void* data;
     CheckSuccess(vkMapMemory(_device._device, buf.buffer.memory, buf.buffer.memoryOffset + buf.bufferOffset, buffer.size, 0, &data), "mapping Vulkan uniform buffer memory failed");
@@ -1800,7 +1800,7 @@ namespace Coil
     return descriptorSet;
   }
 
-  VulkanContext::AllocatedBuffer VulkanContext::AllocateBuffer(VkBufferUsageFlagBits usage, uint32_t size)
+  VulkanContext::AllocatedBuffer VulkanContext::AllocateBuffer(VkBufferUsageFlagBits usage, uint32_t size, uint32_t alignment)
   {
     BufferCache& cache = _bufferCaches[usage];
 
@@ -1809,7 +1809,7 @@ namespace Coil
       throw Exception("too big Vulkan buffer to allocate");
 
     // if there's existing buffer, but not enough space
-    if(cache.nextBuffer < cache.buffers.size() && cache.nextBufferOffset + size > _maxBufferSize)
+    if(cache.nextBuffer < cache.buffers.size() && ((cache.nextBufferOffset + alignment - 1) & ~(alignment - 1)) + size > _maxBufferSize)
     {
       // use next buffer
       ++cache.nextBuffer;
@@ -1854,8 +1854,8 @@ namespace Coil
     }
 
     // there's now existing buffer and enough space
-    VkDeviceSize offset = cache.nextBufferOffset;
-    cache.nextBufferOffset += size;
+    VkDeviceSize offset = (cache.nextBufferOffset + alignment - 1) & ~(alignment - 1);
+    cache.nextBufferOffset = offset + size;
     return { cache.buffers[cache.nextBuffer], offset };
   }
 
