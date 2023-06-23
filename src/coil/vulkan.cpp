@@ -90,7 +90,7 @@ namespace Coil
         extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
       }
 
-      VkApplicationInfo appInfo =
+      VkApplicationInfo const appInfo =
       {
         .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
         .pNext = nullptr,
@@ -101,7 +101,7 @@ namespace Coil
         .apiVersion = VK_API_VERSION_1_0,
       };
 
-      VkInstanceCreateInfo info =
+      VkInstanceCreateInfo const info =
       {
         .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
         .pNext = nullptr,
@@ -174,7 +174,7 @@ namespace Coil
     {
       // currently just create single queue
       float const queuePriority = 1;
-      VkDeviceQueueCreateInfo queueInfo =
+      VkDeviceQueueCreateInfo const queueInfo =
       {
         .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
         .pNext = nullptr,
@@ -191,7 +191,7 @@ namespace Coil
         enabledExtensionNames.push_back(VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME);
       if(enablePortabilitySubsetExtension)
         enabledExtensionNames.push_back("VK_KHR_portability_subset");
-      VkDeviceCreateInfo info =
+      VkDeviceCreateInfo const info =
       {
         .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
         .pNext = nullptr,
@@ -237,7 +237,7 @@ namespace Coil
 
     // create command pool
     {
-      VkCommandPoolCreateInfo info =
+      VkCommandPoolCreateInfo const info =
       {
         .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
         .pNext = nullptr,
@@ -331,7 +331,7 @@ namespace Coil
     // create image
     VkImage image;
     {
-      VkImageCreateInfo info =
+      VkImageCreateInfo const info =
       {
         .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
         .pNext = nullptr,
@@ -369,7 +369,7 @@ namespace Coil
     // create image view
     VkImageView imageView;
     {
-      VkImageViewCreateInfo info =
+      VkImageViewCreateInfo const info =
       {
         .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
         .pNext = nullptr,
@@ -403,7 +403,7 @@ namespace Coil
     // create image
     VkImage image;
     {
-      VkImageCreateInfo info =
+      VkImageCreateInfo const info =
       {
         .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
         .pNext = nullptr,
@@ -441,7 +441,7 @@ namespace Coil
     // create image view
     VkImageView imageView;
     {
-      VkImageViewCreateInfo info =
+      VkImageViewCreateInfo const info =
       {
         .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
         .pNext = nullptr,
@@ -795,7 +795,7 @@ namespace Coil
       };
     }
 
-    VkRenderPassCreateInfo info =
+    VkRenderPassCreateInfo const info =
     {
       .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
       .pNext = nullptr,
@@ -819,7 +819,7 @@ namespace Coil
     SpirvModule module = SpirvCompile(roots);
 
     {
-      VkShaderModuleCreateInfo info =
+      VkShaderModuleCreateInfo const info =
       {
         .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
         .pNext = nullptr,
@@ -928,7 +928,7 @@ namespace Coil
           });
         }
 
-        VkDescriptorSetLayoutCreateInfo info =
+        VkDescriptorSetLayoutCreateInfo const info =
         {
           .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
           .pNext = nullptr,
@@ -941,7 +941,7 @@ namespace Coil
       }
     }
 
-    VkPipelineLayoutCreateInfo info =
+    VkPipelineLayoutCreateInfo const info =
     {
       .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
       .pNext = nullptr,
@@ -1008,7 +1008,7 @@ namespace Coil
       });
     }
 
-    VkPipelineVertexInputStateCreateInfo vertexInputStateInfo =
+    VkPipelineVertexInputStateCreateInfo const vertexInputStateInfo =
     {
       .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
       .pNext = nullptr,
@@ -1019,7 +1019,7 @@ namespace Coil
       .pVertexAttributeDescriptions = vertexAttributeDescriptions.data(),
     };
 
-    VkPipelineInputAssemblyStateCreateInfo inputAssemblyState =
+    VkPipelineInputAssemblyStateCreateInfo const inputAssemblyState =
     {
       .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
       .pNext = nullptr,
@@ -1028,7 +1028,7 @@ namespace Coil
       .primitiveRestartEnable = VK_FALSE,
     };
 
-    VkViewport viewport =
+    VkViewport const viewport =
     {
       .x = 0,
       .y = 0,
@@ -1037,12 +1037,12 @@ namespace Coil
       .minDepth = 0,
       .maxDepth = 1,
     };
-    VkRect2D scissor =
+    VkRect2D const scissor =
     {
       .offset = { 0, 0 },
       .extent = { (uint32_t)config.viewport.x(), (uint32_t)config.viewport.y() },
     };
-    VkPipelineViewportStateCreateInfo viewportStateInfo =
+    VkPipelineViewportStateCreateInfo const viewportStateInfo =
     {
       .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
       .pNext = nullptr,
@@ -1053,7 +1053,7 @@ namespace Coil
       .pScissors = &scissor,
     };
 
-    VkPipelineRasterizationStateCreateInfo rasterizationState =
+    VkPipelineRasterizationStateCreateInfo const rasterizationState =
     {
       .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
       .pNext = nullptr,
@@ -1070,7 +1070,7 @@ namespace Coil
       .lineWidth = 1,
     };
 
-    VkPipelineMultisampleStateCreateInfo multisampleState =
+    VkPipelineMultisampleStateCreateInfo const multisampleState =
     {
       .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
       .pNext = nullptr,
@@ -1083,7 +1083,7 @@ namespace Coil
       .alphaToOneEnable = VK_FALSE,
     };
 
-    VkPipelineDepthStencilStateCreateInfo depthStencilState =
+    VkPipelineDepthStencilStateCreateInfo const depthStencilState =
     {
       .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
       .pNext = nullptr,
@@ -1128,7 +1128,7 @@ namespace Coil
       }
     }
 
-    VkPipelineColorBlendStateCreateInfo colorBlendStateInfo =
+    VkPipelineColorBlendStateCreateInfo const colorBlendStateInfo =
     {
       .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
       .pNext = nullptr,
@@ -1140,7 +1140,7 @@ namespace Coil
       .blendConstants = { 0 },
     };
 
-    VkGraphicsPipelineCreateInfo info =
+    VkGraphicsPipelineCreateInfo const info =
     {
       .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
       .pNext = nullptr,
@@ -1174,7 +1174,7 @@ namespace Coil
     VulkanPipelineLayout& pipelineLayout = static_cast<VulkanPipelineLayout&>(graphicsPipelineLayout);
     VulkanShader& shader = static_cast<VulkanShader&>(graphicsShader);
 
-    VkComputePipelineCreateInfo info =
+    VkComputePipelineCreateInfo const info =
     {
       .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
       .pNext = nullptr,
@@ -1209,7 +1209,7 @@ namespace Coil
     for(auto const& pImage : pImages)
       attachments.push_back(static_cast<VulkanImage&>(*pImage)._imageView);
 
-    VkFramebufferCreateInfo info =
+    VkFramebufferCreateInfo const info =
     {
       .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
       .pNext = nullptr,
@@ -1234,7 +1234,7 @@ namespace Coil
 
     VkImage image;
     {
-      VkImageCreateInfo info =
+      VkImageCreateInfo const info =
       {
         .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
         .pNext = nullptr,
@@ -1282,7 +1282,7 @@ namespace Coil
       {
         imageViewType = format.depth ? VK_IMAGE_VIEW_TYPE_3D : format.height ? VK_IMAGE_VIEW_TYPE_2D : VK_IMAGE_VIEW_TYPE_1D;
       }
-      VkImageViewCreateInfo info =
+      VkImageViewCreateInfo const info =
       {
         .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
         .pNext = nullptr,
@@ -1355,7 +1355,7 @@ namespace Coil
       }
     };
 
-    VkSamplerCreateInfo info =
+    VkSamplerCreateInfo const info =
     {
       .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
       .pNext = nullptr,
@@ -1436,7 +1436,7 @@ namespace Coil
     // create buffer
     VkBuffer buffer;
     {
-      VkBufferCreateInfo info =
+      VkBufferCreateInfo const info =
       {
         .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
         .pNext = nullptr,
@@ -1483,7 +1483,7 @@ namespace Coil
 
   VkFence VulkanDevice::CreateFence(Book& book, bool signaled)
   {
-    VkFenceCreateInfo info =
+    VkFenceCreateInfo const info =
     {
       .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
       .pNext = nullptr,
@@ -1497,7 +1497,7 @@ namespace Coil
 
   VkSemaphore VulkanDevice::CreateSemaphore(Book& book)
   {
-    VkSemaphoreCreateInfo info =
+    VkSemaphoreCreateInfo const info =
     {
       .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
       .pNext = nullptr,
@@ -1697,7 +1697,7 @@ namespace Coil
 
     // transition image to transfer dst layout
     {
-      VkImageMemoryBarrier imageMemoryBarrier =
+      VkImageMemoryBarrier const imageMemoryBarrier =
       {
         .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
         .pNext = nullptr,
@@ -1732,7 +1732,7 @@ namespace Coil
 
     // transition to shader read only layout
     {
-      VkImageMemoryBarrier imageMemoryBarrier =
+      VkImageMemoryBarrier const imageMemoryBarrier =
       {
         .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
         .pNext = nullptr,
@@ -1822,7 +1822,7 @@ namespace Coil
       // create buffer
       VkBuffer buffer;
       {
-        VkBufferCreateInfo info =
+        VkBufferCreateInfo const info =
         {
           .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
           .pNext = nullptr,
@@ -2074,7 +2074,7 @@ namespace Coil
 
     // create swapchain
     {
-      VkSwapchainCreateInfoKHR info =
+      VkSwapchainCreateInfoKHR const info =
       {
         .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
         .pNext = nullptr,
@@ -2113,7 +2113,7 @@ namespace Coil
 
       for(uint32_t i = 0; i < imagesCount; ++i)
       {
-        VkImageViewCreateInfo info =
+        VkImageViewCreateInfo const info =
         {
           .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
           .pNext = nullptr,
@@ -2181,7 +2181,7 @@ namespace Coil
 
     // start command buffer
     {
-      VkCommandBufferBeginInfo info =
+      VkCommandBufferBeginInfo const info =
       {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
         .pNext = nullptr,
@@ -2196,7 +2196,7 @@ namespace Coil
 
     // global memory barrier for reading results on host
     {
-      VkMemoryBarrier memoryBarrier =
+      VkMemoryBarrier const memoryBarrier =
       {
         .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
         .pNext = nullptr,
@@ -2220,7 +2220,7 @@ namespace Coil
     CheckSuccess(vkResetFences(_device._device, 1, &_fenceComputeFinished), "resetting Vulkan fence failed");
     // queue command buffer
     {
-      VkSubmitInfo info =
+      VkSubmitInfo const info =
       {
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
         .pNext = nullptr,
@@ -2249,7 +2249,7 @@ namespace Coil
     // if requested size is bigger than chunk, perform dedicated allocation
     if(size > _chunkSize)
     {
-      VkMemoryAllocateInfo info =
+      VkMemoryAllocateInfo const info =
       {
         .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
         .pNext = nullptr,
@@ -2270,7 +2270,7 @@ namespace Coil
       memoryType = {};
       offset = 0;
 
-      VkMemoryAllocateInfo info =
+      VkMemoryAllocateInfo const info =
       {
         .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
         .pNext = nullptr,
@@ -2297,7 +2297,7 @@ namespace Coil
   {
     auto allocateDescriptorSet = [&](bool requireSuccess) -> VkDescriptorSet
     {
-      VkDescriptorSetAllocateInfo info =
+      VkDescriptorSetAllocateInfo const info =
       {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
         .pNext = nullptr,
@@ -2323,7 +2323,7 @@ namespace Coil
     // otherwise there's no descriptor pool, or the allocation failed due to no space in pool
     // create new descriptor pool
     {
-      VkDescriptorPoolSize poolSizes[] =
+      VkDescriptorPoolSize const poolSizes[] =
       {
         {
           .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -2338,7 +2338,7 @@ namespace Coil
           .descriptorCount = 4096,
         },
       };
-      VkDescriptorPoolCreateInfo info =
+      VkDescriptorPoolCreateInfo const info =
       {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
         .pNext = nullptr,
@@ -2402,7 +2402,7 @@ namespace Coil
 
     // start command buffer
     {
-      VkCommandBufferBeginInfo info =
+      VkCommandBufferBeginInfo const info =
       {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
         .pNext = nullptr,
@@ -2430,7 +2430,7 @@ namespace Coil
 
     // start render pass
     {
-      VkRenderPassBeginInfo info =
+      VkRenderPassBeginInfo const info =
       {
         .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
         .pNext = nullptr,
@@ -2464,7 +2464,7 @@ namespace Coil
   {
     // transition frame image to proper present layout
     {
-      VkImageMemoryBarrier imageMemoryBarrier =
+      VkImageMemoryBarrier const imageMemoryBarrier =
       {
         .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
         .pNext = nullptr,
@@ -2502,7 +2502,7 @@ namespace Coil
     // queue command buffer
     {
       VkPipelineStageFlags waitDstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-      VkSubmitInfo info =
+      VkSubmitInfo const info =
       {
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
         .pNext = nullptr,
@@ -2519,7 +2519,7 @@ namespace Coil
 
     // present
     {
-      VkPresentInfoKHR info =
+      VkPresentInfoKHR const info =
       {
         .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
         .pNext = nullptr,
@@ -2565,7 +2565,7 @@ namespace Coil
   {
     if(!count) return {};
 
-    VkCommandBufferAllocateInfo info =
+    VkCommandBufferAllocateInfo const info =
     {
       .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
       .pNext = nullptr,
