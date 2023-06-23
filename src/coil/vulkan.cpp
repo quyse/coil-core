@@ -52,20 +52,20 @@ namespace
 
 namespace Coil
 {
-  VulkanSystem::VulkanSystem(VkInstance instance, bool renderCapable, bool computeCapable)
-  : _instance(instance), _renderCapable(renderCapable), _computeCapable(computeCapable) {}
+  VulkanSystem::VulkanSystem(VkInstance instance, GraphicsCapabilities const& capabilities)
+  : _instance(instance), _capabilities(capabilities) {}
 
-  VulkanSystem& VulkanSystem::Create(Book& book)
+  VulkanSystem& VulkanSystem::Create(Book& book, GraphicsCapabilities const& capabilities)
   {
-    return Create(book, nullptr, false, true);
+    return Create(book, nullptr, capabilities);
   }
 
-  VulkanSystem& VulkanSystem::Create(Book& book, Window& window, bool computeCapable)
+  VulkanSystem& VulkanSystem::Create(Book& book, Window& window, GraphicsCapabilities const& capabilities)
   {
-    return Create(book, &window, true, computeCapable);
+    return Create(book, &window, capabilities);
   }
 
-  VulkanSystem& VulkanSystem::Create(Book& book, Window* window, bool renderCapable, bool computeCapable)
+  VulkanSystem& VulkanSystem::Create(Book& book, Window* window, GraphicsCapabilities const& capabilities)
   {
     // get instance version
     {
@@ -85,7 +85,7 @@ namespace Coil
         for(auto const& handler : _instanceExtensionsHandlers)
           handler(*window, extensions);
       }
-      else if(renderCapable)
+      else if(capabilities.render)
       {
         extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
       }
@@ -117,7 +117,7 @@ namespace Coil
       AllocateVulkanObject(book, instance);
     }
 
-    return book.Allocate<VulkanSystem>(instance, renderCapable, computeCapable);
+    return book.Allocate<VulkanSystem>(instance, capabilities);
   }
 
   VulkanDevice& VulkanSystem::CreateDefaultDevice(Book& book)
@@ -185,9 +185,9 @@ namespace Coil
       };
 
       std::vector<char const*> enabledExtensionNames;
-      if(_renderCapable)
+      if(_capabilities.render)
         enabledExtensionNames.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-      if(_computeCapable)
+      if(_capabilities.compute)
         enabledExtensionNames.push_back(VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME);
       if(enablePortabilitySubsetExtension)
         enabledExtensionNames.push_back("VK_KHR_portability_subset");

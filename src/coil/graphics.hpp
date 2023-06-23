@@ -112,6 +112,12 @@ namespace Coil
     std::vector<SubPass> subPasses;
   };
 
+  struct GraphicsCapabilities
+  {
+    bool render = false;
+    bool compute = false;
+  };
+
   class GraphicsDevice;
   class GraphicsContext;
   class GraphicsPass;
