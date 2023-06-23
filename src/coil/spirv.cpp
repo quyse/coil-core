@@ -579,7 +579,7 @@ namespace Coil
       case ShaderExpressionType::Read:
         {
           ShaderReadNode* readNode = static_cast<ShaderReadNode*>(node);
-          ResultId variableResultId = TraverseVariable(function, readNode->node.get()).first;
+          ResultId variableResultId = TraverseVariable(function, readNode->node.get(), false).first;
           EmitOp(function.code, spv::Op::OpLoad, [&]()
           {
             Emit(function.code, typeResultId);
@@ -680,7 +680,7 @@ namespace Coil
       case ShaderStatementType::Write:
         {
           ShaderStatementWriteNode* writeNode = static_cast<ShaderStatementWriteNode*>(node);
-          ResultId variableResultId = TraverseVariable(function, writeNode->variableNode.get()).first;
+          ResultId variableResultId = TraverseVariable(function, writeNode->variableNode.get(), true).first;
           ResultId expressionResultId = TraverseExpression(function, writeNode->expressionNode.get());
           EmitOp(function.code, spv::Op::OpStore, [&]()
           {
@@ -694,13 +694,14 @@ namespace Coil
       }
     }
 
-    std::pair<ResultId, spv::StorageClass> TraverseVariable(Function& function, ShaderVariableNode* node)
+    std::pair<ResultId, spv::StorageClass> TraverseVariable(Function& function, ShaderVariableNode* node, bool write)
     {
-      spv::StorageClass storageClass;
+      spv::StorageClass storageClass = write ? spv::StorageClass::Output : spv::StorageClass::Input;
       std::optional<uint32_t> location;
       std::optional<spv::BuiltIn> builtin;
       std::optional<std::tuple<uint32_t, uint32_t, SpirvDescriptorType>> descriptor;
       std::optional<std::tuple<ResultId, ResultId>> accessChain;
+      bool interfaceVariable = false;
 
       switch(node->GetVariableType())
       {
@@ -730,10 +731,19 @@ namespace Coil
       case ShaderVariableType::StructMember:
         {
           ShaderStructMemberVariableNode* memberNode = static_cast<ShaderStructMemberVariableNode*>(node);
-          auto structVariable = TraverseVariable(function, memberNode->structNode.get());
+          auto structVariable = TraverseVariable(function, memberNode->structNode.get(), write);
           storageClass = structVariable.second;
           ResultId indexResultId = TraverseConst(memberNode->index);
           accessChain = { structVariable.first, indexResultId };
+        }
+        break;
+      case ShaderVariableType::ArrayMember:
+        {
+          ShaderArrayMemberVariableNode* memberNode = static_cast<ShaderArrayMemberVariableNode*>(node);
+          auto arrayVariable = TraverseVariable(function, memberNode->arrayNode.get(), write);
+          storageClass = arrayVariable.second;
+          ResultId indexResultId = TraverseExpression(function, memberNode->indexNode.get());
+          accessChain = { arrayVariable.first, indexResultId };
         }
         break;
       case ShaderVariableType::Attribute:
@@ -754,14 +764,7 @@ namespace Coil
             throw Exception("unknown SPIR-V shader attribute builtin");
           }
         }
-        switch(function.executionModel)
-        {
-        case spv::ExecutionModel::Vertex:
-          storageClass = spv::StorageClass::Input;
-          break;
-        default:
-          throw Exception("unsupported SPIR-V execution model for shader attribute variable");
-        }
+        interfaceVariable = true;
         break;
       case ShaderVariableType::Interpolant:
         {
@@ -784,17 +787,7 @@ namespace Coil
             throw Exception("unknown SPIR-V shader interpolant builtin");
           }
         }
-        switch(function.executionModel)
-        {
-        case spv::ExecutionModel::Vertex:
-          storageClass = spv::StorageClass::Output;
-          break;
-        case spv::ExecutionModel::Fragment:
-          storageClass = spv::StorageClass::Input;
-          break;
-        default:
-          throw Exception("unsupported SPIR-V execution model for shader attribute variable");
-        }
+        interfaceVariable = true;
         break;
       case ShaderVariableType::Fragment:
         {
@@ -811,14 +804,7 @@ namespace Coil
             throw Exception("unknown SPIR-V shader fragment builtin");
           }
         }
-        switch(function.executionModel)
-        {
-        case spv::ExecutionModel::Fragment:
-          storageClass = spv::StorageClass::Output;
-          break;
-        default:
-          throw Exception("unsupported SPIR-V execution model for shader fragment variable");
-        }
+        interfaceVariable = true;
         break;
       default:
         throw Exception("unknown SPIR-V shader variable type");
@@ -902,14 +888,17 @@ namespace Coil
         binding.stageFlags |= (uint32_t)function.stage;
       }
 
-      switch(storageClass)
+      if(interfaceVariable)
       {
-      case spv::StorageClass::Input:
-      case spv::StorageClass::Output:
-        function.interfaceVariablesResultIds.insert(resultId);
-        break;
-      default:
-        break;
+        switch(storageClass)
+        {
+        case spv::StorageClass::Input:
+        case spv::StorageClass::Output:
+          function.interfaceVariablesResultIds.insert(resultId);
+          break;
+        default:
+          break;
+        }
       }
 
       return { resultId, storageClass };
@@ -985,7 +974,14 @@ namespace Coil
       case ShaderDataKind::Array:
         {
           ShaderDataArrayType const& dataArrayType = static_cast<ShaderDataArrayType const&>(dataType);
-          resultId = TraverseCompositeType(spv::Op::OpTypeArray, dataArrayType.baseType, dataArrayType.n);
+          ResultId baseTypeResultId = TraverseType(dataArrayType.baseType);
+          ResultId lengthResultId = TraverseConst(dataArrayType.n);
+          EmitOp(_codeDecls, spv::Op::OpTypeArray, [&]()
+          {
+            resultId = EmitResultId(_codeDecls);
+            Emit(_codeDecls, baseTypeResultId);
+            Emit(_codeDecls, lengthResultId);
+          });
         }
         break;
       case ShaderDataKind::Struct:

@@ -308,6 +308,7 @@ namespace Coil
   {
     Buffer,
     StructMember,
+    ArrayMember,
     Attribute,
     Interpolant,
     Fragment,
@@ -635,6 +636,26 @@ namespace Coil
     }
   };
 
+  struct ShaderArrayMemberVariableNode : public ShaderVariableNode
+  {
+    ShaderArrayMemberVariableNode(std::shared_ptr<ShaderVariableNode> arrayNode, ShaderDataType const& dataType, std::shared_ptr<ShaderExpressionNode> indexNode)
+    : arrayNode(std::move(arrayNode)), dataType(dataType), indexNode(indexNode) {}
+
+    std::shared_ptr<ShaderVariableNode> arrayNode;
+    ShaderDataType const& dataType;
+    std::shared_ptr<ShaderExpressionNode> indexNode;
+
+    ShaderVariableType GetVariableType() const override
+    {
+      return ShaderVariableType::ArrayMember;
+    }
+
+    ShaderDataType const& GetDataType() const override
+    {
+      return dataType;
+    }
+  };
+
   struct ShaderSampledImageNode : public ShaderNode
   {
     ShaderSampledImageNode(uint32_t slotSet, uint32_t slot)
@@ -886,6 +907,13 @@ namespace Coil
     ShaderExpression<T> operator*() const
     {
       return ShaderExpression<T>(std::make_shared<ShaderReadNodeImpl<T>>(node));
+    }
+
+    template <std::integral I>
+    ShaderVariable<std::remove_extent_t<T>> operator[](ShaderExpression<I> indexExpression) const
+    requires (std::is_array_v<T>)
+    {
+      return std::make_shared<ShaderArrayMemberVariableNode>(node, ShaderDataTypeOf<std::remove_extent_t<T>>(), indexExpression.node);
     }
 
     ShaderStatement Write(ShaderExpression<T> expression) const
