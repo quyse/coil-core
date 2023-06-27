@@ -250,6 +250,26 @@ namespace Coil
 
     // get memory properties
     vkGetPhysicalDeviceMemoryProperties(_physicalDevice, &_memoryProperties);
+
+    // get suitable depth format
+    {
+      VkFormat const formats[] =
+      {
+        VK_FORMAT_D32_SFLOAT,
+        VK_FORMAT_D32_SFLOAT_S8_UINT,
+        VK_FORMAT_D24_UNORM_S8_UINT,
+      };
+      for(size_t i = 0; i < sizeof(formats) / sizeof(formats[0]); ++i)
+      {
+        VkFormatProperties formatProperties;
+        vkGetPhysicalDeviceFormatProperties(_physicalDevice, formats[i], &formatProperties);
+        if(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
+        {
+          _depthFormat = formats[i];
+          break;
+        }
+      }
+    }
   }
 
   Book& VulkanDevice::GetBook()
@@ -362,7 +382,7 @@ namespace Coil
     VkMemoryRequirements memoryRequirements;
     vkGetImageMemoryRequirements(_device, image, &memoryRequirements);
     // allocate memory
-    std::pair<VkDeviceMemory, VkDeviceSize> memory = AllocateMemory(pool, memoryRequirements, 0);
+    std::pair<VkDeviceMemory, VkDeviceSize> memory = AllocateMemory(pool, memoryRequirements, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     // bind memory
     CheckSuccess(vkBindImageMemory(_device, image, memory.first, memory.second), "binding Vulkan memory to render image failed");
 
@@ -394,11 +414,9 @@ namespace Coil
     return book.Allocate<VulkanImage>(image, imageView, pSampler ? pSampler->_sampler : nullptr);
   }
 
-  VulkanImage& VulkanDevice::CreateDepthStencilImage(Book& book, GraphicsPool& graphicsPool, ivec2 const& size)
+  VulkanImage& VulkanDevice::CreateDepthImage(Book& book, GraphicsPool& graphicsPool, ivec2 const& size)
   {
     VulkanPool& pool = static_cast<VulkanPool&>(graphicsPool);
-
-    VkFormat const format = VK_FORMAT_D24_UNORM_S8_UINT;
 
     // create image
     VkImage image;
@@ -409,7 +427,7 @@ namespace Coil
         .pNext = nullptr,
         .flags = 0,
         .imageType = VK_IMAGE_TYPE_2D,
-        .format = format,
+        .format = _depthFormat,
         .extent =
         {
           .width = (uint32_t)size.x(),
@@ -434,7 +452,7 @@ namespace Coil
     VkMemoryRequirements memoryRequirements;
     vkGetImageMemoryRequirements(_device, image, &memoryRequirements);
     // allocate memory
-    std::pair<VkDeviceMemory, VkDeviceSize> memory = AllocateMemory(pool, memoryRequirements, 0);
+    std::pair<VkDeviceMemory, VkDeviceSize> memory = AllocateMemory(pool, memoryRequirements, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     // bind memory
     CheckSuccess(vkBindImageMemory(_device, image, memory.first, memory.second), "binding Vulkan memory to depth stencil image failed");
 
@@ -448,7 +466,7 @@ namespace Coil
         .flags = 0,
         .image = image,
         .viewType = VK_IMAGE_VIEW_TYPE_2D,
-        .format = format,
+        .format = _depthFormat,
         .components = {},
         .subresourceRange =
         {
@@ -772,7 +790,7 @@ namespace Coil
         }
         if constexpr(std::same_as<Config, GraphicsPassConfig::DepthStencilAttachmentConfig>)
         {
-          format = VK_FORMAT_D24_UNORM_S8_UINT;
+          format = _depthFormat;
           clearValue.depthStencil =
           {
             .depth = config.clearDepth,
@@ -1096,7 +1114,7 @@ namespace Coil
       .front = {},
       .back = {},
       .minDepthBounds = 0,
-      .maxDepthBounds = 0,
+      .maxDepthBounds = 1,
     };
 
     std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachmentStates(config.attachments.size());
@@ -1265,7 +1283,7 @@ namespace Coil
     VkMemoryRequirements memoryRequirements;
     vkGetImageMemoryRequirements(_device, image, &memoryRequirements);
     // allocate memory
-    std::pair<VkDeviceMemory, VkDeviceSize> memory = AllocateMemory(pool, memoryRequirements, 0);
+    std::pair<VkDeviceMemory, VkDeviceSize> memory = AllocateMemory(pool, memoryRequirements, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     // bind memory
     CheckSuccess(vkBindImageMemory(_device, image, memory.first, memory.second), "binding Vulkan memory to texture image failed");
 

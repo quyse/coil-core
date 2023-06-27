@@ -368,7 +368,7 @@ namespace Coil
     VulkanIndexBuffer& CreateIndexBuffer(Book& book, GraphicsPool& pool, Buffer const& buffer, bool is32Bit) override;
     VulkanStorageBuffer& CreateStorageBuffer(Book& book, GraphicsPool& pool, Buffer const& buffer) override;
     VulkanImage& CreateRenderImage(Book& book, GraphicsPool& pool, PixelFormat const& pixelFormat, ivec2 const& size, GraphicsSampler* pSampler = nullptr) override;
-    VulkanImage& CreateDepthStencilImage(Book& book, GraphicsPool& pool, ivec2 const& size) override;
+    VulkanImage& CreateDepthImage(Book& book, GraphicsPool& pool, ivec2 const& size) override;
     VulkanPass& CreatePass(Book& book, GraphicsPassConfig const& config) override;
     VulkanShader& CreateShader(Book& book, GraphicsShaderRoots const& roots) override;
     VulkanPipelineLayout& CreatePipelineLayout(Book& book, std::span<GraphicsShader*> const& shaders) override;
@@ -395,6 +395,7 @@ namespace Coil
     VkCommandPool _commandPool = nullptr;
     VkPhysicalDeviceProperties _properties;
     VkPhysicalDeviceMemoryProperties _memoryProperties;
+    VkFormat _depthFormat = VK_FORMAT_UNDEFINED;
 
     friend class VulkanContext;
     friend class VulkanPresenter;

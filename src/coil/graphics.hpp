@@ -332,7 +332,7 @@ namespace Coil
     virtual GraphicsIndexBuffer& CreateIndexBuffer(Book& book, GraphicsPool& pool, Buffer const& buffer, bool is32Bit) = 0;
     virtual GraphicsStorageBuffer& CreateStorageBuffer(Book& book, GraphicsPool& pool, Buffer const& data) = 0;
     virtual GraphicsImage& CreateRenderImage(Book& book, GraphicsPool& pool, PixelFormat const& pixelFormat, ivec2 const& size, GraphicsSampler* pSampler = nullptr) = 0;
-    virtual GraphicsImage& CreateDepthStencilImage(Book& book, GraphicsPool& pool, ivec2 const& size) = 0;
+    virtual GraphicsImage& CreateDepthImage(Book& book, GraphicsPool& pool, ivec2 const& size) = 0;
     virtual GraphicsPass& CreatePass(Book& book, GraphicsPassConfig const& config) = 0;
     virtual GraphicsShader& CreateShader(Book& book, GraphicsShaderRoots const& exprs) = 0;
     virtual GraphicsPipelineLayout& CreatePipelineLayout(Book& book, std::span<GraphicsShader*> const& shaders) = 0;
