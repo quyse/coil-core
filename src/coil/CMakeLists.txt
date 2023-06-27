@@ -345,9 +345,11 @@ list(APPEND coil_core_all_libraries image)
 if(TRUE)
   add_library(coil_core_render STATIC
     render.cpp
+    render_canvas.cpp
   )
   set_property(TARGET coil_core_render PROPERTY PUBLIC_HEADER
     render.hpp
+    render_canvas.hpp
   )
   target_link_libraries(coil_core_render
     PUBLIC
@@ -757,7 +759,7 @@ list(APPEND coil_core_all_libraries steam)
 list(TRANSFORM coil_core_libraries PREPEND coil_core_)
 
 
-# executables
+# executables (tools)
 
 if(TARGET coil_core_localization)
   add_executable(coil_core_localization_tool
@@ -770,11 +772,30 @@ if(TARGET coil_core_localization)
     coil_core_text
     coil_core_unicode
   )
-  list(APPEND coil_core_executables localization_tool)
+  list(APPEND coil_core_tools localization_tool)
 endif()
-list(APPEND coil_core_all_executables localization_tool)
+list(APPEND coil_core_all_tools localization_tool)
 
-list(TRANSFORM coil_core_executables PREPEND coil_core_)
+list(TRANSFORM coil_core_tools PREPEND coil_core_)
+
+
+# executables (examples)
+
+if(TARGET coil_core_sdl_vulkan)
+  add_executable(example_render_gradient
+    examples/example_render_gradient.cpp
+  )
+  target_link_libraries(example_render_gradient
+    coil_core_appidentity
+    coil_core_entrypoint_console
+    coil_core_render
+    coil_core_sdl
+    coil_core_sdl_vulkan
+    coil_core_vulkan
+  )
+  list(APPEND coil_core_examples example_render_gradient)
+endif()
+list(APPEND coil_core_all_examples example_render_gradient)
 
 
 # interface
@@ -785,6 +806,13 @@ foreach(library ${coil_core_libraries})
       $<INSTALL_INTERFACE:include>
   )
 endforeach()
+
+
+list(APPEND coil_core_executables ${coil_core_tools})
+set(COIL_CORE_INSTALL_EXAMPLES OFF CACHE BOOL "whether to install example executables")
+if(COIL_CORE_INSTALL_EXAMPLES)
+  list(APPEND coil_core_executables ${coil_core_examples})
+endif()
 
 # installation
 install(TARGETS ${coil_core_libraries} ${coil_core_executables}
@@ -913,7 +941,12 @@ if(BUILD_TESTING)
 
 endif() # BUILD_TESTING
 
+
+# check that everything required to be built is actually built
+
+# require all libraries to build by default
 set(COIL_CORE_REQUIRE_LIBS ${coil_core_all_libraries} CACHE STRING "list of libs required to build")
+# allow to exclude some libraries
 set(COIL_CORE_DONT_REQUIRE_LIBS "" CACHE STRING "list of libs not required to build (overrides COIL_CORE_REQUIRE_LIBS)")
 
 foreach(library ${COIL_CORE_REQUIRE_LIBS})
