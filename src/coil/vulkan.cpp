@@ -191,6 +191,11 @@ namespace Coil
         enabledExtensionNames.push_back(VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME);
       if(enablePortabilitySubsetExtension)
         enabledExtensionNames.push_back("VK_KHR_portability_subset");
+
+      VkPhysicalDeviceFeatures const enabledFeatures =
+      {
+        .tessellationShader = _capabilities.tessellation,
+      };
       VkDeviceCreateInfo const info =
       {
         .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
@@ -202,7 +207,7 @@ namespace Coil
         .ppEnabledLayerNames = nullptr,
         .enabledExtensionCount = (uint32_t)enabledExtensionNames.size(),
         .ppEnabledExtensionNames = enabledExtensionNames.data(),
-        .pEnabledFeatures = nullptr,
+        .pEnabledFeatures = &enabledFeatures,
       };
 
       CheckSuccess(vkCreateDevice(physicalDevice, &info, nullptr, &device), "creating Vulkan device failed");
@@ -933,6 +938,8 @@ namespace Coil
 
           VkShaderStageFlags stageFlags = 0;
           if(mergedBinding.stageFlags & (uint32_t)SpirvStageFlag::Vertex) stageFlags |= VK_SHADER_STAGE_VERTEX_BIT;
+          if(mergedBinding.stageFlags & (uint32_t)SpirvStageFlag::TessellationControl) stageFlags |= VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+          if(mergedBinding.stageFlags & (uint32_t)SpirvStageFlag::TessellationEvaluation) stageFlags |= VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
           if(mergedBinding.stageFlags & (uint32_t)SpirvStageFlag::Fragment) stageFlags |= VK_SHADER_STAGE_FRAGMENT_BIT;
           if(mergedBinding.stageFlags & (uint32_t)SpirvStageFlag::Compute) stageFlags |= VK_SHADER_STAGE_COMPUTE_BIT;
 

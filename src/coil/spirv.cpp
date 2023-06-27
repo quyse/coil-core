@@ -46,6 +46,10 @@ namespace Coil
       case spv::ExecutionModel::GLCompute:
         _capabilities.insert(spv::Capability::Shader);
         break;
+      case spv::ExecutionModel::TessellationControl:
+      case spv::ExecutionModel::TessellationEvaluation:
+        _capabilities.insert(spv::Capability::Tessellation);
+        break;
       default:
         break;
       }
@@ -106,6 +110,14 @@ namespace Coil
       {
         switch(function.second.executionModel)
         {
+        case spv::ExecutionModel::TessellationControl:
+          EmitOp(_codeModule, spv::Op::OpExecutionMode, [&]()
+          {
+            Emit(_codeModule, function.second.resultId);
+            Emit(_codeModule, spv::ExecutionMode::OutputVertices);
+            Emit(_codeModule, _tessellationOutputVertices);
+          });
+          break;
         case spv::ExecutionModel::Fragment:
           EmitOp(_codeModule, spv::Op::OpExecutionMode, [&]()
           {
@@ -203,6 +215,11 @@ namespace Coil
       }
 
       return std::move(module);
+    }
+
+    void SetTessellationOutputVertices(uint32_t tessellationOutputVertices)
+    {
+      _tessellationOutputVertices = tessellationOutputVertices;
     }
 
     void SetComputeSize(ivec3 computeSize)
@@ -787,6 +804,14 @@ namespace Coil
             throw Exception("unknown SPIR-V shader interpolant builtin");
           }
         }
+        interfaceVariable = true;
+        break;
+      case ShaderVariableType::TessLevelInner:
+        builtin = spv::BuiltIn::TessLevelInner;
+        interfaceVariable = true;
+        break;
+      case ShaderVariableType::TessLevelOuter:
+        builtin = spv::BuiltIn::TessLevelOuter;
         interfaceVariable = true;
         break;
       case ShaderVariableType::Fragment:
@@ -1396,6 +1421,7 @@ namespace Coil
       spv::Capability::Matrix,
     };
     std::set<char const*, CStringComparator> _extensions;
+    uint32_t _tessellationOutputVertices = 0;
     ivec3 _computeSize;
     ResultId _nextResultId = 1;
     uint32_t _upperBoundResultIdOffset = 0;
@@ -1409,6 +1435,14 @@ namespace Coil
 
     if(roots.vertex)
       compiler.TraverseEntryPoint("mainVertex", SpirvStageFlag::Vertex, spv::ExecutionModel::Vertex, roots.vertex.get());
+    if(roots.tessellationControl || roots.tessellationEvaluation)
+    {
+      if(!(roots.tessellationControl && roots.tessellationEvaluation))
+        throw Exception("Incomplete tessellation stages in SPIR-V shader");
+      compiler.SetTessellationOutputVertices(roots.tessellationOutputVertices);
+      compiler.TraverseEntryPoint("mainTessellationControl", SpirvStageFlag::TessellationControl, spv::ExecutionModel::TessellationControl, roots.tessellationControl.get());
+      compiler.TraverseEntryPoint("mainTessellationEvaluation", SpirvStageFlag::TessellationEvaluation, spv::ExecutionModel::TessellationEvaluation, roots.tessellationEvaluation.get());
+    }
     if(roots.fragment)
       compiler.TraverseEntryPoint("mainFragment", SpirvStageFlag::Fragment, spv::ExecutionModel::Fragment, roots.fragment.get());
     if(roots.compute)

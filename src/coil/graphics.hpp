@@ -115,6 +115,7 @@ namespace Coil
   struct GraphicsCapabilities
   {
     bool render = false;
+    bool tessellation = false;
     bool compute = false;
   };
 
@@ -212,6 +213,9 @@ namespace Coil
   struct GraphicsShaderRoots
   {
     std::shared_ptr<ShaderStatementNode> vertex;
+    std::shared_ptr<ShaderStatementNode> tessellationControl;
+    std::shared_ptr<ShaderStatementNode> tessellationEvaluation;
+    uint32_t tessellationOutputVertices = 0;
     std::shared_ptr<ShaderStatementNode> fragment;
     std::shared_ptr<ShaderStatementNode> compute;
     ivec3 computeSize = { 1, 1, 1 };

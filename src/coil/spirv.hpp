@@ -17,8 +17,10 @@ namespace Coil
   enum class SpirvStageFlag
   {
     Vertex = 1,
-    Fragment = 2,
-    Compute = 4,
+    TessellationControl = 2,
+    TessellationEvaluation = 4,
+    Fragment = 8,
+    Compute = 16,
   };
 
   struct SpirvDescriptorSetLayoutBinding

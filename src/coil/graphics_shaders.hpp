@@ -311,6 +311,8 @@ namespace Coil
     ArrayMember,
     Attribute,
     Interpolant,
+    TessLevelInner,
+    TessLevelOuter,
     Fragment,
   };
 
@@ -821,6 +823,36 @@ namespace Coil
     }
   };
 
+  struct ShaderVariableTessLevelInnerNode final : public ShaderVariableNode
+  {
+    ShaderVariableTessLevelInnerNode() = default;
+
+    ShaderVariableType GetVariableType() const override
+    {
+      return ShaderVariableType::TessLevelInner;
+    }
+
+    ShaderDataType const& GetDataType() const override
+    {
+      return ShaderDataTypeOf<float[2]>();
+    }
+  };
+
+  struct ShaderVariableTessLevelOuterNode final : public ShaderVariableNode
+  {
+    ShaderVariableTessLevelOuterNode() = default;
+
+    ShaderVariableType GetVariableType() const override
+    {
+      return ShaderVariableType::TessLevelOuter;
+    }
+
+    ShaderDataType const& GetDataType() const override
+    {
+      return ShaderDataTypeOf<float[4]>();
+    }
+  };
+
   enum class ShaderFragmentBuiltin
   {
     None,
@@ -991,6 +1023,15 @@ namespace Coil
   inline auto ShaderInterpolantBuiltinPosition()
   {
     return ShaderInterpolant<vec4>(ShaderInterpolantBuiltin::Position);
+  }
+
+  inline ShaderVariable<float[2]> ShaderTessLevelInner()
+  {
+    return std::make_shared<ShaderVariableTessLevelInnerNode>();
+  }
+  inline ShaderVariable<float[4]> ShaderTessLevelOuter()
+  {
+    return std::make_shared<ShaderVariableTessLevelOuterNode>();
   }
 
   template <typename T>
