@@ -31,6 +31,17 @@ namespace Coil
   struct Tuple<>
   {
   };
+
+
+  // adaptable structs
+#define COIL_ADAPT_STRUCT(name) \
+  template <typename Adapter> \
+  struct name : public Adapter::template Base<name>
+#define COIL_ADAPT_STRUCT_MEMBER(type, name) \
+  typename Adapter::template Member<type> name = this->template RegisterMember<type, []<typename Struct>() \
+  { \
+    return &Struct::name; \
+  }>(#name)
 }
 
 namespace std

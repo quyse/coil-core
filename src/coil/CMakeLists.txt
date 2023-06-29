@@ -290,6 +290,21 @@ endif()
 list(APPEND coil_core_all_libraries input)
 
 if(TRUE)
+  add_library(coil_core_player_input STATIC
+    player_input.cpp
+  )
+  set_property(TARGET coil_core_player_input PROPERTY PUBLIC_HEADER
+    player_input.hpp
+  )
+  target_link_libraries(coil_core_player_input
+    PUBLIC
+      coil_core_input
+  )
+  list(APPEND coil_core_libraries player_input)
+endif()
+list(APPEND coil_core_all_libraries player_input)
+
+if(TRUE)
   add_library(coil_core_platform STATIC
     platform.cpp
   )
@@ -748,8 +763,7 @@ if(TARGET Steam::Steam)
   )
   target_link_libraries(coil_core_steam
     PUBLIC
-      coil_core_base
-    PRIVATE
+      coil_core_player_input
       Steam::Steam
   )
   list(APPEND coil_core_libraries steam)
@@ -796,6 +810,24 @@ if(TARGET coil_core_sdl_vulkan)
   list(APPEND coil_core_examples example_render_gradient)
 endif()
 list(APPEND coil_core_all_examples example_render_gradient)
+
+if(TARGET coil_core_steam)
+  add_executable(example_steam
+    examples/example_steam.cpp
+  )
+  target_link_libraries(example_steam
+    coil_core_appidentity
+    coil_core_entrypoint_console
+    coil_core_render
+    coil_core_sdl
+    coil_core_sdl_vulkan
+    coil_core_steam
+    coil_core_util
+    coil_core_vulkan
+  )
+  list(APPEND coil_core_examples example_steam)
+endif()
+list(APPEND coil_core_all_examples example_steam)
 
 
 # interface
@@ -928,16 +960,6 @@ if(BUILD_TESTING)
     add_test(NAME test_sqlite COMMAND test_sqlite)
   endif()
 
-  if(TARGET coil_core_steam)
-    add_executable(test_steam
-      test_steam.cpp
-    )
-    target_link_libraries(test_steam
-      coil_core_entrypoint_console
-      coil_core_steam
-    )
-    add_test(NAME test_steam COMMAND test_steam)
-  endif()
 
 endif() # BUILD_TESTING
 
