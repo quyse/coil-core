@@ -19,7 +19,7 @@ rec {
         "-DCOIL_CORE_DONT_REQUIRE_LIBS=${dontRequireLibsList}"
       ];
       nativeBuildInputs = attrs.nativeBuildInputs ++ [
-        pkgs.clang_16
+        clang_16
       ];
     });
     steam-sdk = if toolchain-steam != null then toolchain-steam.sdk else null;
@@ -27,24 +27,8 @@ rec {
   coil-core-nixos = nixos-pkgs.coil-core;
 
   # Ubuntu build
-  coil-core-ubuntu = let
+  ubuntu-pkgs = rec {
     clangVersion = "16";
-  in pkgs.vmTools.runInLinuxImage ((pkgs.callPackage ./coil-core.nix {
-    steam-sdk = if toolchain-steam != null then toolchain-steam.sdk else null;
-  }).overrideAttrs (attrs: {
-    nativeBuildInputs = [
-      pkgs.cmake
-      pkgs.ninja
-    ];
-    propagatedBuildInputs = [
-    ];
-    cmakeFlags = (attrs.cmakeFlags or []) ++ [
-      # force clang
-      "-DCMAKE_CXX_COMPILER=clang++-${clangVersion}"
-      "-DCMAKE_C_COMPILER=clang-${clangVersion}"
-      # some libs do not work yet
-      "-DCOIL_CORE_DONT_REQUIRE_LIBS=compress_zstd;steam"
-    ];
     diskImage = toolchain-linux.diskImagesFuns.ubuntu_2204_amd64 [
       "clang-${clangVersion}"
       "cmake"
@@ -66,9 +50,27 @@ rec {
       "libogg-dev"
       "libopus-dev"
     ];
-    diskImageFormat = "qcow2";
-    memSize = 2048;
-  }));
+    coil-core = pkgs.vmTools.runInLinuxImage ((pkgs.callPackage ./coil-core.nix {
+      steam-sdk = if toolchain-steam != null then toolchain-steam.sdk else null;
+    }).overrideAttrs (attrs: {
+      propagatedBuildInputs = [];
+      cmakeFlags = (attrs.cmakeFlags or []) ++ [
+        # force clang
+        "-DCMAKE_CXX_COMPILER=clang++-${clangVersion}"
+        "-DCMAKE_C_COMPILER=clang-${clangVersion}"
+        # some libs do not work yet
+        "-DCOIL_CORE_DONT_REQUIRE_LIBS=compress_zstd"
+        # steam
+        "-DSteam_INCLUDE_DIRS=${toolchain-steam.sdk}/include"
+        "-DSteam_LIBRARIES=${toolchain-steam.sdk}/lib/libsteam_api.so"
+      ];
+      inherit diskImage;
+      diskImageFormat = "qcow2";
+      memSize = 2048;
+      enableParallelBuilding = true;
+    }));
+  };
+  coil-core-ubuntu = ubuntu-pkgs.coil-core;
 
   # Windows build
   windows-pkgs = import ./pkgs/windows-pkgs.nix {
