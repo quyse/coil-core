@@ -99,7 +99,7 @@ namespace Coil
   using InputEvent = std::variant<InputKeyboardEvent, InputMouseEvent, InputControllerEvent>;
 
   // Input state.
-  struct State
+  struct InputState
   {
     // Keyboard keys state.
     std::bitset<256> keyboard;
@@ -132,7 +132,7 @@ namespace Coil
   {
   public:
     InputEvent const* NextEvent();
-    State const& GetCurrentState() const;
+    InputState const& GetCurrentState() const;
     void ForwardEvents();
 
     void Reset();
@@ -143,7 +143,7 @@ namespace Coil
 
     std::vector<InputEvent> _events;
     size_t _nextEvent = 0;
-    State _state;
+    InputState _state;
   };
 
   // Input controller (gamepad).

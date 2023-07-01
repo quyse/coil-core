@@ -69,7 +69,7 @@ namespace Coil
     return nullptr;
   }
 
-  State const& InputFrame::GetCurrentState() const
+  InputState const& InputFrame::GetCurrentState() const
   {
     return _state;
   }
@@ -154,7 +154,7 @@ namespace Coil
     {
       _releaseButtonsOnUpdate = false;
 
-      const State& state = _internalFrame->GetCurrentState();
+      const InputState& state = _internalFrame->GetCurrentState();
       for(size_t i = 0; i < state.keyboard.size(); ++i)
         if(state.keyboard[i])
         {
