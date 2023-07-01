@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+#include <string_view>
 #include <tuple>
 
 namespace Coil
@@ -42,6 +44,13 @@ namespace Coil
   { \
     return &Struct::name; \
   }>(#name)
+
+
+  // serialization to/from string, to be specialized
+  template <typename T>
+  std::string ToString(T const& value);
+  template <typename T>
+  T FromString(std::string_view const& value);
 }
 
 namespace std

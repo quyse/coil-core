@@ -1,7 +1,7 @@
 #pragma once
 
 #include "math.hpp"
-#include "input_keys.hpp"
+#include "util.hpp"
 #include <variant>
 #include <bitset>
 
@@ -9,6 +9,17 @@ namespace Coil
 {
   // Controller ID.
   using InputControllerId = uint64_t;
+
+  // Key numbers.
+  enum class InputKey : uint8_t
+  {
+#define K(key, str, value) key = value,
+#include "input_keys.hpp"
+#undef K
+  };
+
+  template <> std::string ToString(InputKey const& key);
+  template <> InputKey FromString(std::string_view const& str);
 
   // keyboard event
   struct InputKeyboardKeyEvent

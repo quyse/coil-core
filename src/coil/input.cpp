@@ -1,5 +1,6 @@
 #include "input.hpp"
 #include <concepts>
+#include <unordered_map>
 
 namespace Coil
 {
@@ -227,5 +228,30 @@ namespace Coil
     }, event)) return;
 
     _internalFrame->AddEvent(event);
+  }
+
+  template <> std::string ToString(InputKey const& key)
+  {
+    switch(key)
+    {
+#define K(key, str, value) case InputKey::key: return #str;
+#include "input_keys.hpp"
+#undef K
+    default: return {};
+    }
+  }
+
+  template <> InputKey FromString(std::string_view const& str)
+  {
+    static std::unordered_map<std::string_view, InputKey> const keys =
+    {
+#define K(key, str, value) { #str, InputKey::key },
+#include "input_keys.hpp"
+#undef K
+    };
+
+    auto i = keys.find(str);
+    if(i == keys.end()) return InputKey::_Unknown;
+    return i->second;
   }
 }

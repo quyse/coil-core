@@ -282,6 +282,7 @@ if(TRUE)
   target_link_libraries(coil_core_input
     PUBLIC
       coil_core_math
+      coil_core_util
     PRIVATE
       coil_core_unicode
   )
