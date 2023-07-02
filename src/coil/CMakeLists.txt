@@ -299,11 +299,28 @@ if(TRUE)
   )
   target_link_libraries(coil_core_player_input
     PUBLIC
-      coil_core_input
+      coil_core_base
   )
   list(APPEND coil_core_libraries player_input)
 endif()
 list(APPEND coil_core_all_libraries player_input)
+
+if(TRUE)
+  add_library(coil_core_player_input_native STATIC
+    player_input_native.cpp
+  )
+  set_property(TARGET coil_core_player_input_native PROPERTY PUBLIC_HEADER
+    player_input_native.hpp
+  )
+  target_link_libraries(coil_core_player_input_native
+    PUBLIC
+      coil_core_input
+      coil_core_json
+      coil_core_player_input
+  )
+  list(APPEND coil_core_libraries player_input_native)
+endif()
+list(APPEND coil_core_all_libraries player_input_native)
 
 if(TRUE)
   add_library(coil_core_platform STATIC
