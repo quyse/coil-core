@@ -13,12 +13,16 @@ namespace Coil
   public:
     Steam();
 
+    // return if initialized
+    operator bool() const;
+    // run every frame
     void Update();
 
   private:
     class Global;
 
     std::shared_ptr<Global> _global;
+    bool _initialized = false;
   };
 
   class SteamInput

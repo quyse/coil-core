@@ -1,12 +1,15 @@
 #include <coil/appidentity.hpp>
-#include <coil/sdl.hpp>
-#include <coil/sdl_vulkan.hpp>
-#include <coil/vulkan.hpp>
+#include <coil/entrypoint.hpp>
+#include <coil/fs.hpp>
+#include <coil/player_input_combined.hpp>
+#include <coil/player_input_native.hpp>
 #include <coil/render.hpp>
 #include <coil/render_canvas.hpp>
+#include <coil/sdl.hpp>
+#include <coil/sdl_vulkan.hpp>
 #include <coil/steam.hpp>
 #include <coil/util.hpp>
-#include <coil/entrypoint.hpp>
+#include <coil/vulkan.hpp>
 #include <iostream>
 
 using namespace Coil;
@@ -20,15 +23,11 @@ COIL_ADAPT_STRUCT(InGameActionSet)
 
 int COIL_ENTRY_POINT(std::vector<std::string>&& args)
 {
-  Steam steam;
-  SteamPlayerInputManager playerInputManager;
-  InGameActionSet<PlayerInputActionSetRegistrationAdapter> actionSetRegistration;
-  actionSetRegistration.Register(playerInputManager);
-  auto actionSetId = playerInputManager.GetActionSetId("InGame");
-
   AppIdentity::GetInstance().Name() = "coil_core_example_steam";
 
   Book book;
+
+  Steam steam;
 
   SdlVulkanSystem::Init();
   auto& windowSystem = book.Allocate<SdlWindowSystem>();
@@ -119,39 +118,25 @@ int COIL_ENTRY_POINT(std::vector<std::string>&& args)
     });
 
   InputManager& inputManager = window.GetInputManager();
+  auto& nativePlayerInputManager = book.Allocate<NativePlayerInputManager>(inputManager);
+  nativePlayerInputManager.SetMapping(JsonDecode<NativePlayerInputMapping>(JsonFromBuffer(File::MapRead(book, "example_native_player_input_mapping.json"))));
+
+  PlayerInputManager& playerInputManager = steam
+    ? static_cast<PlayerInputManager&>(book.Allocate<CombinedPlayerInputManager<NativePlayerInputManager, SteamPlayerInputManager>>(
+        nativePlayerInputManager,
+        book.Allocate<SteamPlayerInputManager>()
+      ))
+    : static_cast<PlayerInputManager&>(nativePlayerInputManager)
+  ;
+  InGameActionSet<PlayerInputActionSetRegistrationAdapter> actionSetRegistration;
+  actionSetRegistration.Register(playerInputManager);
+  auto actionSetId = playerInputManager.GetActionSetId("InGame");
 
   RenderContext renderContext;
 
   window.Run([&]()
   {
-    auto& inputFrame = inputManager.GetCurrentFrame();
-    while(auto const* event = inputFrame.NextEvent())
-    {
-      std::visit([&]<typename E1>(E1 const& event)
-      {
-        if constexpr(std::same_as<E1, InputKeyboardEvent>)
-        {
-          std::visit([&]<typename E2>(E2 const& event)
-          {
-            if constexpr(std::same_as<E2, InputKeyboardKeyEvent>)
-            {
-              if(event.isPressed)
-              {
-                switch(event.key)
-                {
-                case InputKey::Escape:
-                  window.Stop();
-                  break;
-                default:
-                  break;
-                }
-              }
-            }
-          }, event);
-        }
-      }, *event);
-    }
-    bool firing = inputFrame.GetCurrentState()[InputMouseButton::Left];
+    bool firing = false;
 
     steam.Update();
     playerInputManager.Update();
@@ -163,10 +148,7 @@ int COIL_ENTRY_POINT(std::vector<std::string>&& args)
         playerInputManager.ActivateActionSet(controllerId, actionSetId);
         InGameActionSet<PlayerInputActionSetStateAdapter> actionSetState;
         actionSetState.Update(playerInputManager, actionSetRegistration, controllerId);
-        if(actionSetState.fire.isPressed)
-        {
-          firing = true;
-        }
+        firing |= actionSetState.fire.isPressed;
         if(actionSetState.exit.isPressed)
         {
           window.Stop();

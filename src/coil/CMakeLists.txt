@@ -296,6 +296,7 @@ if(TRUE)
   )
   set_property(TARGET coil_core_player_input PROPERTY PUBLIC_HEADER
     player_input.hpp
+    player_input_combined.hpp
   )
   target_link_libraries(coil_core_player_input
     PUBLIC
@@ -836,6 +837,8 @@ if(TARGET coil_core_steam)
   target_link_libraries(example_steam
     coil_core_appidentity
     coil_core_entrypoint_console
+    coil_core_fs
+    coil_core_player_input_native
     coil_core_render
     coil_core_sdl
     coil_core_sdl_vulkan

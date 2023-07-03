@@ -7,19 +7,33 @@ namespace Coil
   public:
     Global()
     {
-      SteamAPI_Init();
+      _initialized = SteamAPI_Init();
     }
 
     ~Global()
     {
-      SteamAPI_Shutdown();
+      if(_initialized)
+      {
+        SteamAPI_Shutdown();
+      }
     }
+
+  private:
+    bool _initialized = false;
+
+    friend Steam;
   };
 
   Steam::Steam()
   {
     static std::shared_ptr<Global> global = std::make_shared<Global>();
     _global = global;
+    _initialized = global->_initialized;
+  }
+
+  Steam::operator bool() const
+  {
+    return _initialized;
   }
 
   void Steam::Update()

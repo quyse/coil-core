@@ -1,0 +1,13 @@
+{
+  "actionSets":
+  {
+    "InGame":
+    {
+      "keyboard":
+      {
+        "Space": "fire",
+        "Escape": "exit"
+      }
+    }
+  }
+}
