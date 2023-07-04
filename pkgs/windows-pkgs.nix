@@ -64,6 +64,13 @@ lib.makeExtensible (self: with self; {
       "-DPNG_TESTS=OFF"
     ];
   };
+  libsquish = mkCmakePkg rec {
+    inherit (pkgs.libsquish) pname version src sourceRoot;
+    cmakeFlags = [
+      "-DBUILD_SHARED_LIBS=ON"
+      "-DBUILD_SQUISH_WITH_OPENMP=OFF"
+    ];
+  };
   sqlite = mkCmakePkg {
     inherit (pkgs.sqlite) pname version src;
     postPatch = ''
@@ -136,6 +143,7 @@ lib.makeExtensible (self: with self; {
       zstd
       SDL2
       libpng
+      libsquish
       sqlite
       freetype
       harfbuzz

@@ -367,6 +367,7 @@ if(TRUE)
   set_property(TARGET coil_core_image PROPERTY PUBLIC_HEADER
     image.hpp
     image_format.hpp
+    image_typed.hpp
   )
   target_link_libraries(coil_core_image
     PUBLIC
@@ -501,13 +502,30 @@ if(TARGET PNG::PNG)
   )
   target_link_libraries(coil_core_image_png
     PUBLIC
-      coil_core_graphics
+      coil_core_image
     PRIVATE
       PNG::PNG
   )
   list(APPEND coil_core_libraries image_png)
 endif()
 list(APPEND coil_core_all_libraries image_png)
+
+if(TARGET Squish::Squish)
+  add_library(coil_core_image_compress STATIC
+    image_compress.cpp
+  )
+  set_property(TARGET coil_core_image_compress PROPERTY PUBLIC_HEADER
+    image_compress.hpp
+  )
+  target_link_libraries(coil_core_image_compress
+    PUBLIC
+      coil_core_image
+    PRIVATE
+      Squish::Squish
+  )
+  list(APPEND coil_core_libraries image_compress)
+endif()
+list(APPEND coil_core_all_libraries image_compress)
 
 if(TARGET zstd::libzstd_shared)
   add_library(coil_core_compress_zstd STATIC

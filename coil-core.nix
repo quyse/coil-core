@@ -12,6 +12,7 @@
 , zstd
 , sqlite
 , libpng
+, libsquish
 , freetype
 , harfbuzz
 , wayland
@@ -41,6 +42,7 @@ stdenv.mkDerivation {
     zstd
     sqlite
     libpng
+    libsquish
     freetype
     harfbuzz
     libogg

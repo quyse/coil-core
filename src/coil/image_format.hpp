@@ -82,7 +82,72 @@ namespace Coil
     // Set pixel components, preserving correct size.
     void SetComponents(Components newComponents);
 
-    static size_t GetPixelSize(Size size);
+    // apply function to type representing pixel format
+    // returns false if format is not supported
+    template <typename F>
+    bool ApplyTyped(F const& f) const;
+
+    static constexpr size_t GetPixelSize(Size size)
+    {
+      switch(size)
+      {
+      case Size::_8bit: return 1;
+      case Size::_16bit: return 2;
+      case Size::_24bit: return 3;
+      case Size::_32bit: return 4;
+      case Size::_64bit: return 8;
+      case Size::_96bit: return 12;
+      case Size::_128bit: return 16;
+      default: return 0;
+      }
+    }
+
+    struct CompressionMetrics
+    {
+      int32_t blockWidth = 0;
+      int32_t blockHeight = 0;
+      size_t blockSize = 0;
+    };
+
+    static constexpr CompressionMetrics GetCompressionMetrics(Compression compression)
+    {
+      switch(compression)
+      {
+      case PixelFormat::Compression::Bc1:
+      case PixelFormat::Compression::Bc1Alpha:
+        return
+        {
+          .blockWidth = 4,
+          .blockHeight = 4,
+          .blockSize = 8,
+        };
+      case PixelFormat::Compression::Bc2:
+      case PixelFormat::Compression::Bc3:
+        return
+        {
+          .blockWidth = 4,
+          .blockHeight = 4,
+          .blockSize = 16,
+        };
+      case PixelFormat::Compression::Bc4:
+      case PixelFormat::Compression::Bc4Signed:
+        return
+        {
+          .blockWidth = 4,
+          .blockHeight = 4,
+          .blockSize = 8,
+        };
+      case PixelFormat::Compression::Bc5:
+      case PixelFormat::Compression::Bc5Signed:
+        return
+        {
+          .blockWidth = 4,
+          .blockHeight = 4,
+          .blockSize = 16,
+        };
+      default: return {};
+      }
+    }
 
     friend auto operator<=>(PixelFormat const&, PixelFormat const&) = default;
   };

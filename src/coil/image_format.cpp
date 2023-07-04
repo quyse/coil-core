@@ -167,21 +167,6 @@ namespace Coil
     }
   }
 
-  size_t PixelFormat::GetPixelSize(Size size)
-  {
-    switch(size)
-    {
-    case Size::_8bit: return 1;
-    case Size::_16bit: return 2;
-    case Size::_24bit: return 3;
-    case Size::_32bit: return 4;
-    case Size::_64bit: return 8;
-    case Size::_96bit: return 12;
-    case Size::_128bit: return 16;
-    default: return 0;
-    }
-  }
-
   PixelFormat const PixelFormats::uintR8(
     PixelFormat::Components::R,
     PixelFormat::Format::Uint,
@@ -229,7 +214,7 @@ namespace Coil
   ImageMetrics ImageFormat::GetMetrics() const
   {
     ImageMetrics metrics;
-    metrics.pixelSize = PixelFormat::GetPixelSize(format.size);
+    metrics.pixelSize = format.type == PixelFormat::Type::Uncompressed ? PixelFormat::GetPixelSize(format.size) : 0;
     metrics.mips.resize(mips);
     uint32_t mipOffset = 0;
     for(int32_t i = 0; i < mips; ++i)
@@ -238,9 +223,25 @@ namespace Coil
       mip.width = std::max(width >> i, 1);
       mip.height = std::max(height >> i, 1);
       mip.depth = std::max(depth >> i, 1);
-      mip.size = mip.width * mip.height * mip.depth * metrics.pixelSize;
-      mip.offset = mipOffset;
 
+      switch(format.type)
+      {
+      case PixelFormat::Type::Uncompressed:
+        mip.size = mip.width * mip.height * mip.depth * metrics.pixelSize;
+        break;
+      case PixelFormat::Type::Compressed:
+        {
+          auto compressionMetrics = PixelFormat::GetCompressionMetrics(format.compression);
+          mip.size =
+            ((mip.width + compressionMetrics.blockWidth - 1) / compressionMetrics.blockWidth) *
+            ((mip.height + compressionMetrics.blockHeight - 1) / compressionMetrics.blockHeight) *
+            mip.depth *
+            compressionMetrics.blockSize;
+        }
+        break;
+      }
+
+      mip.offset = mipOffset;
       mipOffset += mip.size;
     }
     metrics.imageSize = mipOffset;

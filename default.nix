@@ -22,6 +22,29 @@ rec {
         clang_16
       ];
     });
+
+    libsquish = stdenv.mkDerivation rec {
+      pname = "libsquish";
+      version = "1.15";
+      src = pkgs.fetchurl {
+        url = "https://downloads.sourceforge.net/libsquish/libsquish-${version}.tgz";
+        hash = "sha256-YoeW7rpgiGYYOmHQgNRpZ8ndpnI7wKPsUjJMhdIUcmk=";
+      };
+      sourceRoot = ".";
+      nativeBuildInputs = [
+        cmake
+        ninja
+      ];
+      buildInputs = [
+        openmp
+      ];
+      cmakeFlags = [
+        "-DBUILD_SHARED_LIBS=ON"
+      ];
+    };
+
+    inherit (llvmPackages_16) openmp;
+
     steam-sdk = if toolchain-steam != null then toolchain-steam.sdk else null;
   });
   coil-core-nixos = nixos-pkgs.coil-core;
@@ -41,6 +64,7 @@ rec {
       "libzstd-dev"
       "libsqlite3-dev"
       "libpng-dev"
+      "libsquish-dev"
       "libfreetype-dev"
       "libharfbuzz-dev"
       "libwayland-dev"
@@ -51,6 +75,7 @@ rec {
       "libopus-dev"
     ];
     coil-core = pkgs.vmTools.runInLinuxImage ((pkgs.callPackage ./coil-core.nix {
+      libsquish = null;
       steam-sdk = if toolchain-steam != null then toolchain-steam.sdk else null;
     }).overrideAttrs (attrs: {
       propagatedBuildInputs = [];

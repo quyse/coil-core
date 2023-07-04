@@ -76,7 +76,8 @@ namespace Coil
       });
     }
 
-    void Blend(RawImageSlice const& image, ivec<n> dst, ivec<n> src, ivec<n> size, auto const& blend)
+    template <typename S>
+    void Blend(RawImageSlice<S, n> const& image, ivec<n> dst, ivec<n> src, ivec<n> size, auto const& blend)
     {
       // crop image if it goes out of bounds
       for(size_t i = 0; i < n; ++i)

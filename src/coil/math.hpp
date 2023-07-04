@@ -521,9 +521,12 @@ namespace Coil
   template <typename T>
   requires
     std::same_as<T, float> ||
+    std::same_as<T, double> ||
+    std::same_as<T, uint64_t> ||
     std::same_as<T, uint32_t> ||
     std::same_as<T, uint16_t> ||
     std::same_as<T, uint8_t> ||
+    std::same_as<T, int64_t> ||
     std::same_as<T, int32_t> ||
     std::same_as<T, int16_t> ||
     std::same_as<T, int8_t> ||
