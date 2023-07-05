@@ -169,7 +169,7 @@ namespace Coil
             if constexpr(0 < n)
             {
               imageSlice.size.x() = mip.width;
-              imageSlice.pitch.x() = metrics.pixelSize;
+              imageSlice.pitch.x() = 1;
             }
             if constexpr(1 < n)
             {

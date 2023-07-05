@@ -10,12 +10,14 @@ namespace Coil
   struct RawImageSlice
   {
     T* pixels = nullptr;
-    ivec<n> pitch;
+    // size of image in pixels
     ivec<n> size;
+    // pitch (1, width, width * height, ...) in pixels
+    ivec<n> pitch;
 
     operator Buffer() const
     {
-      return Buffer(pixels, pitch(n - 1) * size(n - 1));
+      return Buffer(pixels, pitch(n - 1) * size(n - 1) * sizeof(T));
     }
 
     T& operator()(ivec<n> const& c)
@@ -30,8 +32,8 @@ namespace Coil
     friend void swap(RawImageSlice& a, RawImageSlice& b) noexcept
     {
       std::swap(a.pixels, b.pixels);
-      std::swap(a.pitch, b.pitch);
       std::swap(a.size, b.size);
+      std::swap(a.pitch, b.pitch);
     }
 
   protected:

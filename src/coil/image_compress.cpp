@@ -53,7 +53,7 @@ namespace Coil
             }
           }
           for(size_t i = VectorTraits<T>::N; i < 4; ++i)
-            dst(i) = i < 4 ? 0 : 255;
+            dst(i) = i < 3 ? 0 : 255;
         });
         f(rgbaImage);
       }
@@ -85,7 +85,8 @@ namespace Coil
             resultPixels.resize(offset + compressedMipsSize[mipIndex]);
             squish::CompressImage(
               (uint8_t const*)imageSlice.pixels,
-              imageSlice.size.x(), imageSlice.size.y(), imageSlice.pitch.y(),
+              imageSlice.size.x(), imageSlice.size.y(),
+              imageSlice.pitch.y() * sizeof(xvec_ua<uint8_t, 4>),
               (uint8_t*)resultPixels.data() + offset,
               flags
             );

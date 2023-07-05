@@ -248,8 +248,8 @@ namespace Coil
           RawImageSlice2D<uint8_t> bitmapImage
           {
             .pixels = bitmap.pitch >= 0 ? bitmap.buffer : (bitmap.buffer + (bitmap.rows - 1) * bitmap.pitch),
-            .pitch = { 1, bitmap.pitch },
             .size = bitmapSize,
+            .pitch = { 1, bitmap.pitch },
           };
 
           ivec2 glyphOffset
