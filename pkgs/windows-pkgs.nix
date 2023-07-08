@@ -66,7 +66,6 @@ lib.makeExtensible (self: with self; {
   libsquish = mkCmakePkg rec {
     inherit (pkgs.libsquish) pname version src sourceRoot;
     cmakeFlags = [
-      "-DBUILD_SHARED_LIBS=ON"
       "-DBUILD_SQUISH_WITH_OPENMP=OFF"
     ];
   };
