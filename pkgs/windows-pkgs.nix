@@ -1,12 +1,11 @@
 { pkgs
 , lib
-, toolchain-windows
-, toolchain-steam
+, coil
 , dontRequireLibsList
 }:
 
 lib.makeExtensible (self: with self; {
-  msvc = toolchain-windows.msvc {};
+  msvc = coil.toolchain-windows.msvc {};
   inherit (msvc) mkCmakePkg finalizePkg;
 
   nlohmann_json = mkCmakePkg {
@@ -127,7 +126,7 @@ lib.makeExtensible (self: with self; {
       "-DOPUS_X86_MAY_HAVE_AVX=OFF"
     ];
   };
-  steam = if toolchain-steam != null then toolchain-steam.sdk.overrideAttrs (attrs: {
+  steam = if coil.toolchain-steam != null then coil.toolchain-steam.sdk.overrideAttrs (attrs: {
     installPhase = (attrs.installPhase or "") + (finalizePkg {
       buildInputs = [];
     });

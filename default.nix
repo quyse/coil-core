@@ -1,9 +1,7 @@
 { pkgsFun ? import <nixpkgs>
 , pkgs ? pkgsFun {}
 , lib ? pkgs.lib
-, toolchain-linux
-, toolchain-windows
-, toolchain-steam
+, coil
 }:
 
 rec {
@@ -45,14 +43,14 @@ rec {
 
     inherit (llvmPackages_16) openmp;
 
-    steam-sdk = if toolchain-steam != null then toolchain-steam.sdk else null;
+    steam-sdk = if coil.toolchain-steam != null then coil.toolchain-steam.sdk else null;
   });
   coil-core-nixos = nixos-pkgs.coil-core;
 
   # Ubuntu build
   ubuntu-pkgs = rec {
     clangVersion = "16";
-    diskImage = toolchain-linux.diskImagesFuns.ubuntu_2204_amd64 [
+    diskImage = coil.toolchain-linux.diskImagesFuns.ubuntu_2204_amd64 [
       "clang-${clangVersion}"
       "cmake"
       "ninja-build"
@@ -76,7 +74,7 @@ rec {
     ];
     coil-core = pkgs.vmTools.runInLinuxImage ((pkgs.callPackage ./coil-core.nix {
       libsquish = null;
-      steam-sdk = if toolchain-steam != null then toolchain-steam.sdk else null;
+      steam-sdk = if coil.toolchain-steam != null then coil.toolchain-steam.sdk else null;
     }).overrideAttrs (attrs: {
       propagatedBuildInputs = [];
       cmakeFlags = (attrs.cmakeFlags or []) ++ [
@@ -86,8 +84,8 @@ rec {
         # some libs do not work yet
         "-DCOIL_CORE_DONT_REQUIRE_LIBS=compress_zstd"
         # steam
-        "-DSteam_INCLUDE_DIRS=${toolchain-steam.sdk}/include"
-        "-DSteam_LIBRARIES=${toolchain-steam.sdk}/lib/libsteam_api.so"
+        "-DSteam_INCLUDE_DIRS=${coil.toolchain-steam.sdk}/include"
+        "-DSteam_LIBRARIES=${coil.toolchain-steam.sdk}/lib/libsteam_api.so"
       ];
       inherit diskImage;
       diskImageFormat = "qcow2";
@@ -100,13 +98,13 @@ rec {
   # Windows build
   windows-pkgs = import ./pkgs/windows-pkgs.nix {
     pkgs = nixos-pkgs;
-    inherit lib toolchain-windows toolchain-steam dontRequireLibsList;
+    inherit lib coil dontRequireLibsList;
   };
   coil-core-windows = windows-pkgs.coil-core;
 
   # list of libs to not require if dependencies not available
   dontRequireLibsList = lib.concatStringsSep ";" (lib.concatLists [
-    (lib.optional (toolchain-steam == null) "steam")
+    (lib.optional (coil.toolchain-steam == null) "steam")
   ]);
 
   touch = {
