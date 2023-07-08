@@ -40,6 +40,8 @@ namespace Coil
     Right,
     Middle,
   };
+  template <> std::string ToString(InputMouseButton const& key);
+  template <> InputMouseButton FromString(std::string_view const& str);
   struct InputMouseButtonEvent
   {
     InputMouseButton button;

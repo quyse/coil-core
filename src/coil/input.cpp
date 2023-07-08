@@ -254,4 +254,34 @@ namespace Coil
     if(i == keys.end()) return InputKey::_Unknown;
     return i->second;
   }
+
+  template <> std::string ToString(InputMouseButton const& button)
+  {
+    switch(button)
+    {
+#define B(b) case InputMouseButton::b: return #b;
+    B(Left)
+    B(Right)
+    B(Middle)
+#undef B
+    default: return {};
+    }
+  }
+
+  template <> InputMouseButton FromString(std::string_view const& str)
+  {
+    static std::unordered_map<std::string_view, InputMouseButton> const buttons =
+    {
+#define B(b) { #b, InputMouseButton::b },
+    B(Left)
+    B(Right)
+    B(Middle)
+#undef B
+    };
+
+    auto i = buttons.find(str);
+    if(i == buttons.end())
+      throw Exception("unknown mouse button");
+    return i->second;
+  }
 }

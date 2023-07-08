@@ -16,9 +16,23 @@ namespace Coil
     {
       auto& actionSet = _actionSets[GetActionSetId(actionSetName.c_str())];
 
+      // keyboard
       for(auto const& [inputKey, buttonActionName] : mappingActionSet.keyboard)
       {
         actionSet.inputKeyToButtonActionId[inputKey] = GetButtonActionId(buttonActionName.c_str());
+      }
+      // mouse
+      for(auto const& [inputMouseButton, buttonActionName] : mappingActionSet.mouse.buttons)
+      {
+        actionSet.mouseButtonToButtonActionId[inputMouseButton] = GetButtonActionId(buttonActionName.c_str());
+      }
+      if(mappingActionSet.mouse.move.has_value())
+      {
+        actionSet.mouseMoveAnalogActionId = GetAnalogActionId(mappingActionSet.mouse.move.value().c_str());
+      }
+      if(mappingActionSet.mouse.cursor.has_value())
+      {
+        actionSet.mouseCursorAnalogActionId = GetAnalogActionId(mappingActionSet.mouse.cursor.value().c_str());
       }
     }
   }
@@ -45,11 +59,22 @@ namespace Coil
 
   void NativePlayerInputManager::Update()
   {
-    // reset "just changed" states
+    // reset states
     for(auto& [controllerId, controller] : _controllers)
     {
+      // reset "just changed" button states
       for(size_t i = 0; i < controller.buttonActionsStates.size(); ++i)
         controller.buttonActionsStates[i].isJustChanged = false;
+      // reset relative analog states
+      for(size_t i = 0; i < controller.analogActionsStates.size(); ++i)
+      {
+        auto& analogActionState = controller.analogActionsStates[i];
+        if(!analogActionState.absolute)
+        {
+          analogActionState.x = 0;
+          analogActionState.y = 0;
+        }
+      }
     }
 
     // process events
@@ -75,6 +100,60 @@ namespace Coil
                   auto& buttonActionState = controller.GetButtonActionState(i->second);
                   buttonActionState.isJustChanged = buttonActionState.isPressed != event.isPressed;
                   buttonActionState.isPressed = event.isPressed;
+                }
+              }
+            }
+          }, event);
+        }
+        if constexpr(std::same_as<E1, InputMouseEvent>)
+        {
+          std::visit([&]<typename E2>(E2 const& event)
+          {
+            if constexpr(std::same_as<E2, InputMouseButtonEvent>)
+            {
+              auto& controller = _controllers[(ControllerId)SpecialControllerId::keyboardMouse];
+              if(controller.actionSetId.has_value())
+              {
+                ActionSet const& actionSet = _actionSets[controller.actionSetId.value()];
+
+                auto i = actionSet.mouseButtonToButtonActionId.find(event.button);
+                if(i != actionSet.mouseButtonToButtonActionId.end())
+                {
+                  auto& buttonActionState = controller.GetButtonActionState(i->second);
+                  buttonActionState.isJustChanged = buttonActionState.isPressed != event.isPressed;
+                  buttonActionState.isPressed = event.isPressed;
+                }
+              }
+            }
+            if constexpr(std::same_as<E2, InputMouseRawMoveEvent>)
+            {
+              auto& controller = _controllers[(ControllerId)SpecialControllerId::keyboardMouse];
+              if(controller.actionSetId.has_value())
+              {
+                ActionSet const& actionSet = _actionSets[controller.actionSetId.value()];
+
+                if(actionSet.mouseMoveAnalogActionId.has_value())
+                {
+                  auto& analogActionState = controller.GetAnalogActionState(actionSet.mouseMoveAnalogActionId.value());
+                  analogActionState.x = event.rawMove.x();
+                  analogActionState.y = event.rawMove.y();
+                  analogActionState.absolute = false;
+                }
+              }
+            }
+            if constexpr(std::same_as<E2, InputMouseCursorMoveEvent>)
+            {
+              auto& controller = _controllers[(ControllerId)SpecialControllerId::keyboardMouse];
+              if(controller.actionSetId.has_value())
+              {
+                ActionSet const& actionSet = _actionSets[controller.actionSetId.value()];
+
+                if(actionSet.mouseCursorAnalogActionId.has_value())
+                {
+                  auto& analogActionState = controller.GetAnalogActionState(actionSet.mouseCursorAnalogActionId.value());
+                  analogActionState.x = event.cursor.x();
+                  analogActionState.y = event.cursor.y();
+                  analogActionState.absolute = true;
                 }
               }
             }
@@ -174,6 +253,21 @@ namespace Coil
       return
       {
         .keyboard = JsonDecodeField<std::unordered_map<InputKey, std::string>>(j, "keyboard", {}),
+        .mouse = JsonDecodeField<NativePlayerInputMapping::ActionSet::Mouse>(j, "mouse", {}),
+      };
+    }
+  };
+
+  template <>
+  struct JsonDecoder<NativePlayerInputMapping::ActionSet::Mouse> : public JsonDecoderBase<NativePlayerInputMapping::ActionSet::Mouse>
+  {
+    static NativePlayerInputMapping::ActionSet::Mouse Decode(json const& j)
+    {
+      return
+      {
+        .buttons = JsonDecodeField<std::unordered_map<InputMouseButton, std::string>>(j, "buttons", {}),
+        .move = JsonDecodeField<std::optional<std::string>>(j, "move", {}),
+        .cursor = JsonDecodeField<std::optional<std::string>>(j, "cursor", {}),
       };
     }
   };
@@ -189,6 +283,24 @@ namespace Coil
         r.insert(
         {
           FromString<InputKey>(JsonDecode<std::string>(k)),
+          JsonDecode<std::string>(v),
+        });
+      }
+      return r;
+    }
+  };
+
+  template <>
+  struct JsonDecoder<std::unordered_map<InputMouseButton, std::string>> : public JsonDecoderBase<std::unordered_map<InputMouseButton, std::string>>
+  {
+    static std::unordered_map<InputMouseButton, std::string> Decode(json const& j)
+    {
+      std::unordered_map<InputMouseButton, std::string> r;
+      for(auto const& [k, v] : j.items())
+      {
+        r.insert(
+        {
+          FromString<InputMouseButton>(JsonDecode<std::string>(k)),
           JsonDecode<std::string>(v),
         });
       }

@@ -28,6 +28,10 @@ namespace Coil
   {
     float x = 0;
     float y = 0;
+    // whether state is absolute or relative
+    // absolute stay the same if no movement
+    // relative resets to zero every tick if no movement
+    bool absolute = false;
   };
 
   // base class for player input manager

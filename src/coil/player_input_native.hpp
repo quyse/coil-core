@@ -13,6 +13,13 @@ namespace Coil
     struct ActionSet
     {
       std::unordered_map<InputKey, std::string> keyboard;
+      struct Mouse
+      {
+        std::unordered_map<InputMouseButton, std::string> buttons;
+        std::optional<std::string> move;
+        std::optional<std::string> cursor;
+      };
+      Mouse mouse;
     };
 
     std::unordered_map<std::string, ActionSet> actionSets;
@@ -50,6 +57,9 @@ namespace Coil
     struct ActionSet
     {
       std::unordered_map<InputKey, ButtonActionId> inputKeyToButtonActionId;
+      std::unordered_map<InputMouseButton, ButtonActionId> mouseButtonToButtonActionId;
+      std::optional<AnalogActionId> mouseMoveAnalogActionId;
+      std::optional<AnalogActionId> mouseCursorAnalogActionId;
     };
     std::vector<ActionSet> _actionSets;
 
