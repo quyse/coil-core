@@ -39,8 +39,6 @@ int COIL_ENTRY_POINT(std::vector<std::string>&& args)
 
     auto const& [vertex] = Canvas::GetScreenQuadVertexLayout().slots;
 
-    ShaderSampledImage<float, 2> image(0, 1);
-
     auto vInPosition = *vertex.position;
 
     auto iOutPosition = ShaderInterpolantBuiltinPosition();
@@ -54,7 +52,7 @@ int COIL_ENTRY_POINT(std::vector<std::string>&& args)
     auto fOutColor = ShaderFragment<vec4>(0);
 
     auto fragmentProgram = (
-      fOutColor.Write(cvec(swizzle(*iPosition, "xy"), float_(0), float_(1)))
+      fOutColor.Write(cvec(*iPosition, float_(0), float_(1)))
     );
 
     return
