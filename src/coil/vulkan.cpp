@@ -1678,6 +1678,8 @@ namespace Coil
     if(textureSize > imageBuffer.buffer.size)
       throw Exception("texture data buffer is too small");
 
+    auto buf = AllocateBuffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT, textureSize);
+
     for(int32_t i = 0; i < count; ++i)
     {
       for(size_t j = 0; j < metrics.mips.size(); ++j)
@@ -1685,7 +1687,7 @@ namespace Coil
         auto const& mip = metrics.mips[j];
         regions.push_back(
         {
-          .bufferOffset = i * metrics.imageSize + mip.offset,
+          .bufferOffset = buf.bufferOffset + i * metrics.imageSize + mip.offset,
           .bufferRowLength = (uint32_t)mip.width,
           .bufferImageHeight = (uint32_t)mip.height,
           .imageSubresource =
@@ -1711,7 +1713,6 @@ namespace Coil
       }
     }
 
-    auto buf = AllocateBuffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT, textureSize);
     // upload data to buffer
     {
       void* data;
