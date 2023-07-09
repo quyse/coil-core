@@ -47,14 +47,14 @@ namespace Coil
 
     // enumerate devices
     ComPtr<IMMDeviceEnumerator> pDeviceEnumerator;
-    CheckHResult(CoCreateInstance(CLSID_MMDeviceEnumerator, NULL, CLSCTX_ALL, IID_IMMDeviceEnumerator, (void**)&pDeviceEnumerator), "creating MM device enumerator failed");
+    CheckHResult(CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&pDeviceEnumerator), "creating MM device enumerator failed");
 
     // get default device
     ComPtr<IMMDevice> pDevice;
     CheckHResult(pDeviceEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &pDevice), "getting default MM device failed");
 
     // activate device, get audio client
-    CheckHResult(pDevice->Activate(IID_IAudioClient, CLSCTX_ALL, NULL, (void**)&_pAudioClient), "activating MM device failed");
+    CheckHResult(pDevice->Activate(__uuidof(IAudioClient), CLSCTX_ALL, NULL, (void**)&_pAudioClient), "activating MM device failed");
 
     // get device format
     CoTaskMemPtr<WAVEFORMATEX> pFormat;
@@ -65,7 +65,7 @@ namespace Coil
     CheckHResult(_pAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_EVENTCALLBACK, 0, 0, pFormat, NULL), "initializing audio client failed");
 
     // get audio render client
-    CheckHResult(_pAudioClient->GetService(IID_IAudioRenderClient, (void**)&_pAudioRenderClient), "getting audio render client failed");
+    CheckHResult(_pAudioClient->GetService(__uuidof(IAudioRenderClient), (void**)&_pAudioRenderClient), "getting audio render client failed");
 
     // get device buffer size
     CheckHResult(_pAudioClient->GetBufferSize(&_bufferFramesCount), "getting buffer size failed");

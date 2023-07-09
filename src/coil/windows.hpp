@@ -19,6 +19,7 @@
 #include <initguid.h>
 
 // undef unpleasant macros
+#undef CreateWindow
 #undef GetMessage
 
 namespace Coil
