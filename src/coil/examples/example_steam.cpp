@@ -9,6 +9,7 @@
 #include <coil/sdl_vulkan.hpp>
 #include <coil/steam.hpp>
 #include <coil/util.hpp>
+#include <coil/util_generator.hpp>
 #include <coil/vulkan.hpp>
 #include <iostream>
 
@@ -117,7 +118,7 @@ int COIL_ENTRY_POINT(std::vector<std::string>&& args)
       pFramebuffers[imageIndex] = &graphicsDevice.CreateFramebuffer(presentConfig.book, *pPass, images, presentConfig.size);
     });
 
-  InputManager& inputManager = window.GetInputManager();
+  auto& inputManager = window.GetInputManager();
   auto& nativePlayerInputManager = book.Allocate<NativePlayerInputManager>(inputManager);
   nativePlayerInputManager.SetMapping(JsonDecode<NativePlayerInputMapping>(JsonFromBuffer(File::MapRead(book, "example_native_player_input_mapping.json"))));
 
@@ -134,42 +135,46 @@ int COIL_ENTRY_POINT(std::vector<std::string>&& args)
 
   RenderContext renderContext;
 
-  window.Run([&]()
+  window.RunGenerator([&]() -> Generator<std::tuple<>>
   {
-    bool firing = false;
-
-    steam.Update();
-    playerInputManager.Update();
-
+    for(;;)
     {
-      auto const& controllersIds = playerInputManager.GetControllersIds();
-      for(auto controllerId : controllersIds)
+      bool firing = false;
+
+      steam.Update();
+      playerInputManager.Update();
+
       {
-        playerInputManager.ActivateActionSet(controllerId, actionSetId);
-        InGameActionSet<PlayerInputActionSetStateAdapter> actionSetState;
-        actionSetState.Update(playerInputManager, actionSetRegistration, controllerId);
-        firing |= actionSetState.fire.isPressed;
-        if(actionSetState.exit.isPressed)
+        auto const& controllersIds = playerInputManager.GetControllersIds();
+        for(auto controllerId : controllersIds)
         {
-          window.Stop();
-          break;
+          playerInputManager.ActivateActionSet(controllerId, actionSetId);
+          InGameActionSet<PlayerInputActionSetStateAdapter> actionSetState;
+          actionSetState.Update(playerInputManager, actionSetRegistration, controllerId);
+          firing |= actionSetState.fire.isPressed;
+          if(actionSetState.exit.isPressed)
+          {
+            co_return;
+          }
         }
       }
-    }
 
-    GraphicsFrame& frame = graphicsPresenter.StartFrame();
-    frame.Pass(*pPass, *pFramebuffers[frame.GetImageIndex()], [&](GraphicsSubPassId subPassId, GraphicsContext& context)
-    {
-      renderContext.Begin(context);
-      if(firing)
+      GraphicsFrame& frame = graphicsPresenter.StartFrame();
+      frame.Pass(*pPass, *pFramebuffers[frame.GetImageIndex()], [&](GraphicsSubPassId subPassId, GraphicsContext& context)
       {
-        RenderPipelineKnob(*pPipeline).Apply(renderContext);
-        RenderMeshKnob(canvas.GetQuadMesh()).Apply(renderContext);
-        renderContext.EndInstance();
-      }
-      renderContext.Flush();
-    });
-    frame.EndFrame();
+        renderContext.Begin(context);
+        if(firing)
+        {
+          RenderPipelineKnob(*pPipeline).Apply(renderContext);
+          RenderMeshKnob(canvas.GetQuadMesh()).Apply(renderContext);
+          renderContext.EndInstance();
+        }
+        renderContext.Flush();
+      });
+      frame.EndFrame();
+
+      co_yield {};
+    }
   });
 
   return 0;

@@ -2,6 +2,7 @@
 
 #include "input.hpp"
 #include "math.hpp"
+#include "util_generator.hpp"
 #include <functional>
 #include <string>
 
@@ -28,6 +29,21 @@ namespace Coil
 
     // Run window loop.
     virtual void Run(std::function<void()> const& loop) = 0;
+
+    // Helper function, running window loop with generator.
+    // It is OK to pass lambda coroutine here
+    template <typename CreateGenerator>
+    void RunGenerator(CreateGenerator&& createGenerator)
+    {
+      auto generator = createGenerator();
+      Run([&]()
+      {
+        if(!generator())
+        {
+          Stop();
+        }
+      });
+    }
 
     void SetPresenter(GraphicsPresenter* presenter);
     // Set mouse lock state.

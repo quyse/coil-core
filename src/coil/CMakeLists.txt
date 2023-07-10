@@ -58,6 +58,7 @@ if(TRUE)
   add_library(coil_core_util INTERFACE)
   set_property(TARGET coil_core_util PROPERTY PUBLIC_HEADER
     util.hpp
+    util_generator.hpp
   )
   list(APPEND coil_core_libraries util)
 endif()
@@ -334,6 +335,7 @@ if(TRUE)
     PUBLIC
       coil_core_input
       coil_core_math
+      coil_core_util
   )
   list(APPEND coil_core_libraries platform)
 endif()
