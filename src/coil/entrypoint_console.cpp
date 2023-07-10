@@ -1,6 +1,6 @@
 #include "entrypoint.hpp"
 
-#if defined(___COIL_PLATFORM_WINDOWS)
+#if defined(COIL_PLATFORM_WINDOWS)
 
 #include "windows.hpp"
 

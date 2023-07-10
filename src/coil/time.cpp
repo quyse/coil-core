@@ -1,7 +1,7 @@
 #include "time.hpp"
-#if defined(___COIL_PLATFORM_WINDOWS)
+#if defined(COIL_PLATFORM_WINDOWS)
 #include "windows.hpp"
-#elif defined(___COIL_PLATFORM_MACOS)
+#elif defined(COIL_PLATFORM_MACOS)
 #include <mach/mach_time.h>
 #else
 #include <ctime>
@@ -11,11 +11,11 @@ namespace Coil
 {
   Time::Tick const Time::ticksPerSecond = []()
   {
-#if defined(___COIL_PLATFORM_WINDOWS)
+#if defined(COIL_PLATFORM_WINDOWS)
     LARGE_INTEGER ticks;
     QueryPerformanceFrequency(&ticks);
     return ticks.QuadPart;
-#elif defined(___COIL_PLATFORM_MACOS)
+#elif defined(COIL_PLATFORM_MACOS)
     mach_timebase_info_data_t timebase;
     mach_timebase_info(&timebase);
     return 1000000000ULL * timebase.numer / timebase.denom;
@@ -28,11 +28,11 @@ namespace Coil
 
   Time::Tick Time::GetTick()
   {
-#if defined(___COIL_PLATFORM_WINDOWS)
+#if defined(COIL_PLATFORM_WINDOWS)
     LARGE_INTEGER tick;
     QueryPerformanceCounter(&tick);
     return tick.QuadPart;
-#elif defined(___COIL_PLATFORM_MACOS)
+#elif defined(COIL_PLATFORM_MACOS)
     return mach_absolute_time();
 #else
     struct timespec t;

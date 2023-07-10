@@ -1,8 +1,8 @@
 #include "fs.hpp"
 #include "unicode.hpp"
-#if defined(___COIL_PLATFORM_WINDOWS)
+#if defined(COIL_PLATFORM_WINDOWS)
 #include "windows.hpp"
-#elif defined(___COIL_PLATFORM_POSIX)
+#elif defined(COIL_PLATFORM_POSIX)
 #include <limits>
 #include <unistd.h>
 #include <sys/types.h>
@@ -23,9 +23,9 @@ namespace
 
     ~FileMapping()
     {
-#if defined(___COIL_PLATFORM_WINDOWS)
+#if defined(COIL_PLATFORM_WINDOWS)
       ::UnmapViewOfFile(_pMapping);
-#elif defined(___COIL_PLATFORM_POSIX)
+#elif defined(COIL_PLATFORM_POSIX)
       ::munmap(_pMapping, _size);
 #endif
     }
@@ -38,20 +38,20 @@ namespace
 
 namespace Coil
 {
-#if defined(___COIL_PLATFORM_WINDOWS)
+#if defined(COIL_PLATFORM_WINDOWS)
   File::File(void* hFile)
   : _hFile(hFile) {}
-#elif defined(___COIL_PLATFORM_POSIX)
+#elif defined(COIL_PLATFORM_POSIX)
   File::File(int fd)
   : _fd(fd) {}
 #endif
 
   File::~File()
   {
-#if defined(___COIL_PLATFORM_WINDOWS)
+#if defined(COIL_PLATFORM_WINDOWS)
     if(_hFile)
       ::CloseHandle(_hFile);
-#elif defined(___COIL_PLATFORM_POSIX)
+#elif defined(COIL_PLATFORM_POSIX)
     if(_fd >= 0)
       ::close(_fd);
 #endif
@@ -59,7 +59,7 @@ namespace Coil
 
   size_t File::Read(uint64_t offset, Buffer const& buffer)
   {
-#if defined(___COIL_PLATFORM_WINDOWS)
+#if defined(COIL_PLATFORM_WINDOWS)
     OVERLAPPED overlapped =
     {
       .Offset = (DWORD)(offset & 0xFFFFFFFF),
@@ -69,7 +69,7 @@ namespace Coil
     if(!::ReadFile(_hFile, buffer.data, buffer.size, &bytesRead, &overlapped) && GetLastError() != ERROR_HANDLE_EOF)
       throw Exception("reading file failed");
     return bytesRead;
-#elif defined(___COIL_PLATFORM_POSIX)
+#elif defined(COIL_PLATFORM_POSIX)
     uint8_t* data = (uint8_t*)buffer.data;
     size_t size = buffer.size;
     size_t totalReadSize = 0;
@@ -91,7 +91,7 @@ namespace Coil
 
   void File::Write(uint64_t offset, Buffer const& buffer)
   {
-#if defined(___COIL_PLATFORM_WINDOWS)
+#if defined(COIL_PLATFORM_WINDOWS)
     OVERLAPPED overlapped =
     {
       .Offset = (DWORD)(offset & 0xFFFFFFFF),
@@ -100,7 +100,7 @@ namespace Coil
     DWORD bytesWritten;
     if(!::WriteFile(_hFile, buffer.data, buffer.size, &bytesWritten, &overlapped) || bytesWritten != buffer.size)
       throw Exception("writing file failed");
-#elif defined(___COIL_PLATFORM_POSIX)
+#elif defined(COIL_PLATFORM_POSIX)
     uint8_t const* data = (uint8_t const*)buffer.data;
     size_t size = buffer.size;
     while(size > 0)
@@ -117,12 +117,12 @@ namespace Coil
 
   uint64_t File::GetSize() const
   {
-#if defined(___COIL_PLATFORM_WINDOWS)
+#if defined(COIL_PLATFORM_WINDOWS)
     LARGE_INTEGER size;
     if(!::GetFileSizeEx(_hFile, &size))
       throw Exception("getting file size failed");
     return size.QuadPart;
-#elif defined(___COIL_PLATFORM_POSIX)
+#elif defined(COIL_PLATFORM_POSIX)
     struct stat st;
     if(::fstat(_fd, &st) != 0)
       throw Exception("getting file size failed");
@@ -150,7 +150,7 @@ namespace Coil
     try
     {
       File file = DoOpen(name, accessMode, openMode);
-#if defined(___COIL_PLATFORM_WINDOWS)
+#if defined(COIL_PLATFORM_WINDOWS)
       // create mapping
       uint64_t size = file.GetSize();
       if((size_t)size != size)
@@ -181,7 +181,7 @@ namespace Coil
       book.Allocate<FileMapping>(pMapping, size);
 
       return Buffer(pMapping, size);
-#elif defined(___COIL_PLATFORM_POSIX)
+#elif defined(COIL_PLATFORM_POSIX)
       uint64_t size = file.GetSize();
       if((size_t)size != size)
         throw Exception("too big file mapping");
@@ -232,16 +232,16 @@ namespace Coil
 
   void File::Seek(uint64_t offset)
   {
-#if defined(___COIL_PLATFORM_WINDOWS)
+#if defined(COIL_PLATFORM_WINDOWS)
     if(!::SetFilePointerEx(_hFile, { .QuadPart = (LONGLONG)offset }, NULL, FILE_BEGIN))
       throw Exception("setting file pointer failed");
-#elif defined(___COIL_PLATFORM_POSIX)
+#elif defined(COIL_PLATFORM_POSIX)
     if(::lseek64(_fd, offset, SEEK_SET) == -1)
       throw Exception("seeking in file failed");
 #endif
   }
 
-#if defined(___COIL_PLATFORM_WINDOWS)
+#if defined(COIL_PLATFORM_WINDOWS)
   void* File::DoOpen(std::string const& name, FileAccessMode accessMode, FileOpenMode openMode)
   {
     std::wstring s;
@@ -283,7 +283,7 @@ namespace Coil
       throw Exception("opening file failed: ") << name;
     return hFile;
   }
-#elif defined(___COIL_PLATFORM_POSIX)
+#elif defined(COIL_PLATFORM_POSIX)
   int File::DoOpen(std::string const& name, FileAccessMode accessMode, FileOpenMode openMode)
   {
     int flags = 0;

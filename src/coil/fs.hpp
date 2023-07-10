@@ -24,9 +24,9 @@ namespace Coil
   class File
   {
   public:
-#if defined(___COIL_PLATFORM_WINDOWS)
+#if defined(COIL_PLATFORM_WINDOWS)
     File(void* hFile);
-#elif defined(___COIL_PLATFORM_POSIX)
+#elif defined(COIL_PLATFORM_POSIX)
     File(int fd);
 #endif
     ~File();
@@ -50,12 +50,12 @@ namespace Coil
 
   private:
     void Seek(uint64_t offset);
-#if defined(___COIL_PLATFORM_WINDOWS)
+#if defined(COIL_PLATFORM_WINDOWS)
     // not using Windows HANDLE to not include windows.h
     static void* DoOpen(std::string const& name, FileAccessMode accessMode, FileOpenMode openMode);
 
     void* _hFile = nullptr;
-#elif defined(___COIL_PLATFORM_POSIX)
+#elif defined(COIL_PLATFORM_POSIX)
     static int DoOpen(std::string const& name, FileAccessMode accessMode, FileOpenMode openMode);
 
     int _fd = -1;
@@ -94,7 +94,7 @@ namespace Coil
   };
 
   constexpr char const FsPathSeparator =
-#if defined(___COIL_PLATFORM_WINDOWS)
+#if defined(COIL_PLATFORM_WINDOWS)
     '\\'
 #else
     '/'

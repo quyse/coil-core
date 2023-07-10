@@ -3,7 +3,7 @@
 #include "base.hpp"
 #include <thread>
 
-#if !defined(___COIL_PLATFORM_WINDOWS)
+#if !defined(COIL_PLATFORM_WINDOWS)
   #error not windows
 #endif
 
