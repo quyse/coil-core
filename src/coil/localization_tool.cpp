@@ -21,7 +21,7 @@ struct LocalizationLanguageConfig
 template <>
 struct JsonDecoder<LocalizationLanguageConfig> : public JsonDecoderBase<LocalizationLanguageConfig>
 {
-  static LocalizationLanguageConfig Decode(json const& j)
+  static LocalizationLanguageConfig Decode(Json const& j)
   {
     return
     {
@@ -39,7 +39,7 @@ struct LocalizationConfig
 template <>
 struct JsonDecoder<LocalizationConfig> : public JsonDecoderBase<LocalizationConfig>
 {
-  static LocalizationConfig Decode(json const& j)
+  static LocalizationConfig Decode(Json const& j)
   {
     return
     {

@@ -9,24 +9,24 @@
 
 namespace Coil
 {
-  using json = nlohmann::json;
+  using Json = nlohmann::json;
 
   template <typename T>
   struct JsonDecoder;
 
   // convenience functions
   template <typename T>
-  T JsonDecode(json const& j)
+  T JsonDecode(Json const& j)
   {
     return JsonDecoder<T>::Decode(j);
   }
   template <typename T, typename Key>
-  T JsonDecodeField(json const& j, Key const& key)
+  T JsonDecodeField(Json const& j, Key const& key)
   {
     return JsonDecoder<T>::template DecodeField<Key>(j, key);
   }
   template <typename T, typename Key>
-  T JsonDecodeField(json const& j, Key const& key, T&& defaultValue)
+  T JsonDecodeField(Json const& j, Key const& key, T&& defaultValue)
   {
     return JsonDecoder<T>::template DecodeField<Key>(j, key, std::move(defaultValue));
   }
@@ -36,7 +36,7 @@ namespace Coil
   struct JsonDecoderBase
   {
     template <typename Key>
-    static T DecodeField(json const& j, Key const& key)
+    static T DecodeField(Json const& j, Key const& key)
     {
       if(!j.is_object())
         throw Exception() << "decoding " << typeid(T).name() << ", JSON field is not an object";
@@ -47,7 +47,7 @@ namespace Coil
     }
 
     template <typename Key>
-    static T DecodeField(json const& j, Key const& key, T&& defaultValue)
+    static T DecodeField(Json const& j, Key const& key, T&& defaultValue)
     {
       if(!j.is_object())
         throw Exception() << "decoding " << typeid(T).name() << ", JSON field is not an object";
@@ -58,17 +58,17 @@ namespace Coil
     }
   };
 
-  // decoder for various types from json
+  // decoder for various types from JSON
   // struct so we can use partial specialization
   template <typename T>
   struct JsonDecoder;
 
   // specialization for types already implemented in nlohmann library
   template <typename T>
-  requires requires(json const& j) { j.get<T>(); }
+  requires requires(Json const& j) { j.get<T>(); }
   struct JsonDecoder<T> : public JsonDecoderBase<T>
   {
-    static T Decode(json const& j)
+    static T Decode(Json const& j)
     {
       if(j.is_null())
         throw Exception() << "decoding " << typeid(T).name() << ", got null";
@@ -76,17 +76,17 @@ namespace Coil
     }
   };
 
-  // encoder for various types to json
+  // encoder for various types to JSON
   // struct so we can use partial specialization
   template <typename T>
   struct JsonEncoder;
 
   // specialization for types already implemented in nlohmann library
   template <typename T>
-  requires std::constructible_from<json, T const&>
+  requires std::constructible_from<Json, T const&>
   struct JsonEncoder<T>
   {
-    static json Encode(T const& v)
+    static Json Encode(T const& v)
     {
       return v;
     }
@@ -94,7 +94,7 @@ namespace Coil
 
   // convenience function
   template <typename T>
-  json JsonEncode(T const& v)
+  Json JsonEncode(T const& v)
   {
     return JsonEncoder<T>::Encode(v);
   }
@@ -102,7 +102,7 @@ namespace Coil
   template <typename T, size_t n, MathOptions o>
   struct JsonDecoder<xvec<T, n, o>> : public JsonDecoderBase<xvec<T, n, o>>
   {
-    static xvec<T, n, o> Decode(json const& j)
+    static xvec<T, n, o> Decode(Json const& j)
     {
       if(!j.is_array() || j.size() != n)
         throw Exception() << "decoding " << typeid(xvec<T, n, o>).name() << ", expected JSON array of " << n << " " << typeid(T).name() << " but got: " << j;
@@ -115,9 +115,9 @@ namespace Coil
   template <typename T, size_t n, MathOptions o>
   struct JsonEncoder<xvec<T, n, o>>
   {
-    static json Encode(xvec<T, n, o> const& v)
+    static Json Encode(xvec<T, n, o> const& v)
     {
-      json t[n];
+      Json t[n];
       for(size_t i = 0; i < n; ++i)
         t[i] = JsonEncode<T>(v.t[i]);
       return t;
@@ -127,7 +127,7 @@ namespace Coil
   template <typename T, MathOptions o>
   struct JsonDecoder<xquat<T, o>> : public JsonDecoderBase<xquat<T, o>>
   {
-    static xquat<T, o> Decode(json const& j)
+    static xquat<T, o> Decode(Json const& j)
     {
       if(!j.is_array() || j.size() != 4)
         throw Exception() << "decoding " << typeid(xquat<T, o>).name() << ", expected JSON array of 4 " << typeid(T).name() << " but got: " << j;
@@ -140,7 +140,7 @@ namespace Coil
   template <typename T, MathOptions o>
   struct JsonEncoder<xquat<T, o>>
   {
-    static json Encode(xquat<T, o> const& v)
+    static Json Encode(xquat<T, o> const& v)
     {
       return Encode<xvec<T, 4, o>>(v);
     }
@@ -149,7 +149,7 @@ namespace Coil
   template <typename T>
   struct JsonDecoder<std::optional<T>> : public JsonDecoderBase<std::optional<T>>
   {
-    static std::optional<T> Decode(json const& j)
+    static std::optional<T> Decode(Json const& j)
     {
       if(j.is_null()) return {};
       return JsonDecode<T>(j);
@@ -158,16 +158,16 @@ namespace Coil
   template <typename T>
   struct JsonEncoder<std::optional<T>>
   {
-    static json Encode(std::optional<T> const& v)
+    static Json Encode(std::optional<T> const& v)
     {
-      return v.has_value() ? JsonEncode<T>(v.value()) : json(nullptr);
+      return v.has_value() ? JsonEncode<T>(v.value()) : Json(nullptr);
     }
   };
 
   template <typename T>
   struct JsonDecoder<std::vector<T>> : public JsonDecoderBase<std::vector<T>>
   {
-    static std::vector<T> Decode(json const& j)
+    static std::vector<T> Decode(Json const& j)
     {
       if(!j.is_array())
         throw Exception() << "decoding " << typeid(std::vector<T>).name() << ", expected JSON array of " << typeid(T).name() << " but got: " << j;
@@ -181,9 +181,9 @@ namespace Coil
   template <typename T>
   struct JsonEncoder<std::vector<T>>
   {
-    static json Encode(std::vector<T> const& v)
+    static Json Encode(std::vector<T> const& v)
     {
-      std::vector<json> j(v.size());
+      std::vector<Json> j(v.size());
       for(size_t i = 0; i < v.size(); ++i)
         j[i] = JsonEncode<T>(v[i]);
       return std::move(j);
@@ -193,7 +193,7 @@ namespace Coil
   template <typename K, typename V>
   struct JsonDecoder<std::map<K, V>> : public JsonDecoderBase<std::map<K, V>>
   {
-    static std::map<K, V> Decode(json const& j)
+    static std::map<K, V> Decode(Json const& j)
     {
       if(!j.is_object())
         throw Exception() << "decoding " << typeid(std::map<K, V>).name() << ", expected JSON object but got: " << j;
@@ -206,9 +206,9 @@ namespace Coil
   template <typename K, typename V>
   struct JsonEncoder<std::map<K, V>>
   {
-    static json Encode(std::map<K, V> const& m)
+    static Json Encode(std::map<K, V> const& m)
     {
-      json r = json::object();
+      Json r = Json::object();
       for(auto const& [k, v] : m)
         r[JsonEncode<K>(k)] = JsonEncode<V>(v);
       return r;
@@ -218,7 +218,7 @@ namespace Coil
   template <typename K, typename V>
   struct JsonDecoder<std::unordered_map<K, V>> : public JsonDecoderBase<std::unordered_map<K, V>>
   {
-    static std::unordered_map<K, V> Decode(json const& j)
+    static std::unordered_map<K, V> Decode(Json const& j)
     {
       if(!j.is_object())
         throw Exception() << "decoding " << typeid(std::unordered_map<K, V>).name() << ", expected JSON object but got: " << j;
@@ -232,9 +232,9 @@ namespace Coil
   template <typename K, typename V>
   struct JsonEncoder<std::unordered_map<K, V>>
   {
-    static json Encode(std::unordered_map<K, V> const& m)
+    static Json Encode(std::unordered_map<K, V> const& m)
     {
-      json r = json::object();
+      Json r = Json::object();
       for(auto const& [k, v] : m)
         r[JsonEncode<K>(k)] = JsonEncode<V>(v);
       return r;
@@ -242,7 +242,7 @@ namespace Coil
   };
 
   // deserialize JSON from buffer
-  json JsonFromBuffer(Buffer const& buffer);
+  Json JsonFromBuffer(Buffer const& buffer);
   // serialize JSON into buffer
-  std::string JsonToString(json const& j);
+  std::string JsonToString(Json const& j);
 }

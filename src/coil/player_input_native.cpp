@@ -237,7 +237,7 @@ namespace Coil
     return analogActionsStates[actionId];
   }
 
-  NativePlayerInputMapping JsonDecoder<NativePlayerInputMapping>::Decode(json const& j)
+  NativePlayerInputMapping JsonDecoder<NativePlayerInputMapping>::Decode(Json const& j)
   {
     return
     {
@@ -248,7 +248,7 @@ namespace Coil
   template <>
   struct JsonDecoder<NativePlayerInputMapping::ActionSet> : public JsonDecoderBase<NativePlayerInputMapping::ActionSet>
   {
-    static NativePlayerInputMapping::ActionSet Decode(json const& j)
+    static NativePlayerInputMapping::ActionSet Decode(Json const& j)
     {
       return
       {
@@ -261,7 +261,7 @@ namespace Coil
   template <>
   struct JsonDecoder<NativePlayerInputMapping::ActionSet::Mouse> : public JsonDecoderBase<NativePlayerInputMapping::ActionSet::Mouse>
   {
-    static NativePlayerInputMapping::ActionSet::Mouse Decode(json const& j)
+    static NativePlayerInputMapping::ActionSet::Mouse Decode(Json const& j)
     {
       return
       {
@@ -275,7 +275,7 @@ namespace Coil
   template <>
   struct JsonDecoder<std::unordered_map<InputKey, std::string>> : public JsonDecoderBase<std::unordered_map<InputKey, std::string>>
   {
-    static std::unordered_map<InputKey, std::string> Decode(json const& j)
+    static std::unordered_map<InputKey, std::string> Decode(Json const& j)
     {
       std::unordered_map<InputKey, std::string> r;
       for(auto const& [k, v] : j.items())
@@ -293,7 +293,7 @@ namespace Coil
   template <>
   struct JsonDecoder<std::unordered_map<InputMouseButton, std::string>> : public JsonDecoderBase<std::unordered_map<InputMouseButton, std::string>>
   {
-    static std::unordered_map<InputMouseButton, std::string> Decode(json const& j)
+    static std::unordered_map<InputMouseButton, std::string> Decode(Json const& j)
     {
       std::unordered_map<InputMouseButton, std::string> r;
       for(auto const& [k, v] : j.items())

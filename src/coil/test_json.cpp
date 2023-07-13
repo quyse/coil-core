@@ -105,9 +105,9 @@ template <typename T>
 bool TestEncodeDecode()
 {
   T value = Random<T>::Generate();
-  json j = JsonEncode<T>(value);
+  Json j = JsonEncode<T>(value);
   std::string s = JsonToString(j);
-  json j2 = JsonFromBuffer(Buffer(s.data(), s.length()));
+  Json j2 = JsonFromBuffer(Buffer(s.data(), s.length()));
   T decodedValue = JsonDecode<T>(j);
   return value == decodedValue && j == j2;
 }

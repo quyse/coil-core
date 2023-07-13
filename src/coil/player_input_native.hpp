@@ -28,7 +28,7 @@ namespace Coil
   template <>
   struct JsonDecoder<NativePlayerInputMapping> : public JsonDecoderBase<NativePlayerInputMapping>
   {
-    static NativePlayerInputMapping Decode(json const& j);
+    static NativePlayerInputMapping Decode(Json const& j);
   };
 
   class NativePlayerInputManager final : public PlayerInputManager

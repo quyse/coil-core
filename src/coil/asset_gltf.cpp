@@ -27,7 +27,7 @@ namespace Coil
   template <>
   struct JsonDecoder<GLTF::Accessor> : public JsonDecoderBase<GLTF::Accessor>
   {
-    static GLTF::Accessor Decode(json const& j)
+    static GLTF::Accessor Decode(Json const& j)
     {
       return
       {
@@ -43,7 +43,7 @@ namespace Coil
   template <>
   struct JsonDecoder<GLTF::Buffer> : public JsonDecoderBase<GLTF::Buffer>
   {
-    static GLTF::Buffer Decode(json const& j)
+    static GLTF::Buffer Decode(Json const& j)
     {
       return
       {
@@ -55,7 +55,7 @@ namespace Coil
   template <>
   struct JsonDecoder<GLTF::BufferView> : public JsonDecoderBase<GLTF::BufferView>
   {
-    static GLTF::BufferView Decode(json const& j)
+    static GLTF::BufferView Decode(Json const& j)
     {
       return
       {
@@ -69,7 +69,7 @@ namespace Coil
   template <>
   struct JsonDecoder<GLTF::Image> : public JsonDecoderBase<GLTF::Image>
   {
-    static GLTF::Image Decode(json const& j)
+    static GLTF::Image Decode(Json const& j)
     {
       return
       {
@@ -83,7 +83,7 @@ namespace Coil
   template <>
   struct JsonDecoder<GLTF::Material> : public JsonDecoderBase<GLTF::Material>
   {
-    static GLTF::Material Decode(json const& j)
+    static GLTF::Material Decode(Json const& j)
     {
       return
       {
@@ -102,7 +102,7 @@ namespace Coil
   template <>
   struct JsonDecoder<GLTF::Material::TextureInfo> : public JsonDecoderBase<GLTF::Material::TextureInfo>
   {
-    static GLTF::Material::TextureInfo Decode(json const& j)
+    static GLTF::Material::TextureInfo Decode(Json const& j)
     {
       return
       {
@@ -114,7 +114,7 @@ namespace Coil
   template <>
   struct JsonDecoder<GLTF::Material::NormalTextureInfo> : public JsonDecoderBase<GLTF::Material::NormalTextureInfo>
   {
-    static GLTF::Material::NormalTextureInfo Decode(json const& j)
+    static GLTF::Material::NormalTextureInfo Decode(Json const& j)
     {
       return
       {
@@ -127,7 +127,7 @@ namespace Coil
   template <>
   struct JsonDecoder<GLTF::Material::OcclusionTextureInfo> : public JsonDecoderBase<GLTF::Material::OcclusionTextureInfo>
   {
-    static GLTF::Material::OcclusionTextureInfo Decode(json const& j)
+    static GLTF::Material::OcclusionTextureInfo Decode(Json const& j)
     {
       return
       {
@@ -140,7 +140,7 @@ namespace Coil
   template <>
   struct JsonDecoder<GLTF::Material::PbrMetallicRoughness> : public JsonDecoderBase<GLTF::Material::PbrMetallicRoughness>
   {
-    static GLTF::Material::PbrMetallicRoughness Decode(json const& j)
+    static GLTF::Material::PbrMetallicRoughness Decode(Json const& j)
     {
       return
       {
@@ -155,7 +155,7 @@ namespace Coil
   template <>
   struct JsonDecoder<GLTF::Mesh> : public JsonDecoderBase<GLTF::Mesh>
   {
-    static GLTF::Mesh Decode(json const& j)
+    static GLTF::Mesh Decode(Json const& j)
     {
       return
       {
@@ -166,7 +166,7 @@ namespace Coil
   template <>
   struct JsonDecoder<GLTF::Mesh::MeshPrimitive> : public JsonDecoderBase<GLTF::Mesh::MeshPrimitive>
   {
-    static GLTF::Mesh::MeshPrimitive Decode(json const& j)
+    static GLTF::Mesh::MeshPrimitive Decode(Json const& j)
     {
       return
       {
@@ -180,7 +180,7 @@ namespace Coil
   template <>
   struct JsonDecoder<GLTF::Node> : public JsonDecoderBase<GLTF::Node>
   {
-    static GLTF::Node Decode(json const& j)
+    static GLTF::Node Decode(Json const& j)
     {
       return
       {
@@ -196,7 +196,7 @@ namespace Coil
   template <>
   struct JsonDecoder<GLTF::Sampler> : public JsonDecoderBase<GLTF::Sampler>
   {
-    static GLTF::Sampler Decode(json const& j)
+    static GLTF::Sampler Decode(Json const& j)
     {
       return
       {
@@ -211,7 +211,7 @@ namespace Coil
   template <>
   struct JsonDecoder<GLTF::Scene> : public JsonDecoderBase<GLTF::Scene>
   {
-    static GLTF::Scene Decode(json const& j)
+    static GLTF::Scene Decode(Json const& j)
     {
       return
       {
@@ -223,7 +223,7 @@ namespace Coil
   template <>
   struct JsonDecoder<GLTF::Texture> : public JsonDecoderBase<GLTF::Texture>
   {
-    static GLTF::Texture Decode(json const& j)
+    static GLTF::Texture Decode(Json const& j)
     {
       return
       {
@@ -237,7 +237,7 @@ namespace Coil
   template <>
   struct JsonDecoder<GLTF> : public JsonDecoderBase<GLTF>
   {
-    static GLTF Decode(json const& j)
+    static GLTF Decode(Json const& j)
     {
       auto meshes = JsonDecodeField<std::vector<GLTF::Mesh>>(j, "meshes", {});
       auto meshesByName = IndexByName(meshes);
@@ -297,7 +297,7 @@ namespace Coil
     // read JSON chunk
     std::vector<uint8_t> jsonChunk = readChunk(0x4E4F534A /* JSON */);
     // parse & decode JSON
-    json const jsonRoot = JsonFromBuffer(jsonChunk);
+    Json const jsonRoot = JsonFromBuffer(jsonChunk);
     GLTF gltf = JsonDecoder<GLTF>::Decode(jsonRoot);
 
     // check if there should be binary chunk
@@ -306,7 +306,7 @@ namespace Coil
     {
       shouldBeBinaryChunk = jsonRoot.at("/buffers/0/uri"_json_pointer).is_null();
     }
-    catch(json::exception const&)
+    catch(Json::exception const&)
     {
       shouldBeBinaryChunk = true;
     }
