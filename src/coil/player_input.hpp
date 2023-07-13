@@ -72,7 +72,7 @@ namespace Coil
     class Base; // defined later
 
     template <PlayerInputActionType actionType>
-    using Member = std::tuple<>;
+    using Field = std::tuple<>;
   };
 
   // state adapter
@@ -91,7 +91,7 @@ namespace Coil
   struct PlayerInputActionSetStateAdapter
   {
     template <PlayerInputActionType actionType>
-    using Member = typename PlayerInputActionSetStateAdapterMember<actionType>::Type;
+    using Field = typename PlayerInputActionSetStateAdapterMember<actionType>::Type;
 
     template <template <typename> typename ActionSet>
     class Base
@@ -114,7 +114,7 @@ namespace Coil
 
     protected:
       template <PlayerInputActionType actionType, auto f>
-      constexpr Member<actionType> RegisterMember(char const* name)
+      constexpr Field<actionType> RegisterField(char const* name)
       {
         return {};
       }
@@ -140,7 +140,7 @@ namespace Coil
 
   protected:
     template <PlayerInputActionType actionType, auto f>
-    std::tuple<> RegisterMember(char const* name)
+    std::tuple<> RegisterField(char const* name)
     {
       GetMembers<actionType>().push_back(
       {
@@ -170,7 +170,7 @@ namespace Coil
     std::vector<
       std::tuple<
         char const*,
-        typename PlayerInputActionSetStateAdapter::Member<PlayerInputActionType::Button> ActionSet<PlayerInputActionSetStateAdapter>::*,
+        typename PlayerInputActionSetStateAdapter::Field<PlayerInputActionType::Button> ActionSet<PlayerInputActionSetStateAdapter>::*,
         PlayerInputManager::ButtonActionId
       >
     > _buttons;
@@ -178,7 +178,7 @@ namespace Coil
     std::vector<
       std::tuple<
         char const*,
-        typename PlayerInputActionSetStateAdapter::Member<PlayerInputActionType::Analog> ActionSet<PlayerInputActionSetStateAdapter>::*,
+        typename PlayerInputActionSetStateAdapter::Field<PlayerInputActionType::Analog> ActionSet<PlayerInputActionSetStateAdapter>::*,
         PlayerInputManager::AnalogActionId
       >
     > _analogs;

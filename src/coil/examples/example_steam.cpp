@@ -15,11 +15,11 @@
 
 using namespace Coil;
 
-COIL_ADAPT_STRUCT(InGameActionSet)
+COIL_META_STRUCT(InGameActionSet)
 {
-  COIL_ADAPT_STRUCT_MEMBER(PlayerInputActionType::Button, fire);
-  COIL_ADAPT_STRUCT_MEMBER(PlayerInputActionType::Button, exit);
-  COIL_ADAPT_STRUCT_MEMBER(PlayerInputActionType::Analog, move);
+  COIL_META_STRUCT_FIELD(PlayerInputActionType::Button, fire);
+  COIL_META_STRUCT_FIELD(PlayerInputActionType::Button, exit);
+  COIL_META_STRUCT_FIELD(PlayerInputActionType::Analog, move);
 };
 
 int COIL_ENTRY_POINT(std::vector<std::string>&& args)
