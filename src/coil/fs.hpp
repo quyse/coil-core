@@ -1,8 +1,10 @@
 #pragma once
 
-#include "base.hpp"
+#include "tasks.hpp"
+#include <concepts>
 #include <filesystem>
 #include <string>
+#include <string_view>
 
 namespace Coil
 {
@@ -92,6 +94,19 @@ namespace Coil
     File& _file;
     uint64_t _offset;
   };
+
+  class FileAssetLoader
+  {
+  public:
+    template <std::same_as<Buffer> Asset, typename AssetContext>
+    Task<Asset> LoadAsset(Book& book, AssetContext& assetContext) const
+    {
+      co_return File::MapRead(book, assetContext.GetParam("path"));
+    }
+
+    static constexpr std::string_view assetLoaderName = "file";
+  };
+  static_assert(IsAssetLoader<FileAssetLoader>);
 
   constexpr char const FsPathSeparator =
 #if defined(COIL_PLATFORM_WINDOWS)

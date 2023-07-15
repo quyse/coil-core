@@ -1,7 +1,8 @@
 #pragma once
 
-#include <vector>
+#include <concepts>
 #include <sstream>
+#include <vector>
 #include <version>
 #if defined(__cpp_lib_source_location)
 #include <source_location>
@@ -253,4 +254,46 @@ namespace Coil
   private:
     std::vector<uint8_t> _data;
   };
+
+  // serialization to/from string, to be specialized
+  template <typename T>
+  std::string ToString(T const& value);
+  template <typename T>
+  T FromString(std::string_view str);
+
+  // asset traits
+  // specialization must be created for every asset type
+  template <typename Asset>
+  struct AssetTraits
+  {
+    // default implementation is empty, so arbitrary types are not assets
+
+    /* what should be defined for asset types:
+
+    // asset type name
+    static constexpr std::string_view assetTypeName = "";
+
+    */
+  };
+
+  // whether type is asset
+  template <typename Asset>
+  concept IsAsset = std::copyable<Asset> && requires
+  {
+    { AssetTraits<Asset>::assetTypeName } -> std::convertible_to<std::string_view>;
+  };
+
+  // whether type is asset loader
+  template <typename AssetLoader>
+  concept IsAssetLoader = requires
+  {
+    { AssetLoader::assetLoaderName } -> std::convertible_to<std::string_view>;
+  };
+
+  template <>
+  struct AssetTraits<Buffer>
+  {
+    static constexpr std::string_view assetTypeName = "buffer";
+  };
+  static_assert(IsAsset<Buffer>);
 }

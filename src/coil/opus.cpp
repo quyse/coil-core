@@ -42,4 +42,12 @@ namespace Coil
     _buffer.resize(samplesCount * _channelsCount);
     return _buffer;
   }
+
+  OpusStreamSource::OpusStreamSource(Buffer const& buffer)
+  : _buffer(buffer) {}
+
+  OpusDecodeStream& OpusStreamSource::CreateStream(Book& book)
+  {
+    return book.Allocate<OpusDecodeStream>(book.Allocate<OggDecodeStream>(book.Allocate<BufferInputStream>(_buffer)));
+  }
 }

@@ -1,0 +1,25 @@
+{
+  "texture":
+  {
+    "loader": "texture",
+    "image":
+    {
+      "loader": "image_compress",
+      "image":
+      {
+        "loader": "image_png",
+        "buffer":
+        {
+          "loader": "file",
+          "path": "example.png"
+        }
+      }
+    },
+    "sampler":
+    {
+      "loader": "sampler",
+      "filter": "Linear",
+      "wrap": "Repeat"
+    }
+  }
+}

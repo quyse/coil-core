@@ -1,6 +1,10 @@
 #include <coil/appidentity.hpp>
+#include <coil/asset.hpp>
+#include <coil/asset_struct.hpp>
 #include <coil/entrypoint.hpp>
 #include <coil/fs.hpp>
+#include <coil/image_compress.hpp>
+#include <coil/image_png.hpp>
 #include <coil/player_input_combined.hpp>
 #include <coil/player_input_native.hpp>
 #include <coil/render.hpp>
@@ -22,9 +26,16 @@ COIL_META_STRUCT(InGameActionSet)
   COIL_META_STRUCT_FIELD(PlayerInputActionType::Analog, move);
 };
 
+COIL_META_STRUCT(Assets)
+{
+  COIL_META_STRUCT_FIELD(Coil::GraphicsImage*, texture);
+};
+
 int COIL_ENTRY_POINT(std::vector<std::string>&& args)
 {
   AppIdentity::GetInstance().Name() = "coil_core_example_steam";
+
+  TaskEngine::GetInstance().AddThread();
 
   Book book;
 
@@ -43,10 +54,25 @@ int COIL_ENTRY_POINT(std::vector<std::string>&& args)
   GraphicsDevice& graphicsDevice = graphicsSystem.CreateDefaultDevice(book);
 
   Book& graphicsBook = graphicsDevice.GetBook();
-  GraphicsPool& pool = graphicsDevice.CreatePool(graphicsBook, 16 * 1024 * 1024);
+  GraphicsPool& graphicsPool = graphicsDevice.CreatePool(graphicsBook, 16 * 1024 * 1024);
+
+  auto& graphicsAssetManager = book.Allocate<GraphicsAssetManager>(graphicsDevice, graphicsPool);
+
+  AssetManager assetManager =
+  {
+    FileAssetLoader(),
+    PngAssetLoader(),
+    ImageCompressAssetLoader(),
+    TextureAssetLoader(graphicsAssetManager),
+    SamplerAssetLoader(graphicsAssetManager),
+  };
+  assetManager.SetJsonContext(JsonFromBuffer(File::MapRead(book, "example_assets.json")));
+
+  Assets<AssetStructAdapter> assets;
+  assets.SelfLoad(book, assetManager).Get();
 
   Canvas canvas(graphicsDevice);
-  canvas.Init(graphicsBook, pool);
+  canvas.Init(graphicsBook, graphicsPool);
 
   GraphicsShader& shader = graphicsDevice.CreateShader(book, [&]() -> GraphicsShaderRoots
   {
@@ -90,7 +116,7 @@ int COIL_ENTRY_POINT(std::vector<std::string>&& args)
   GraphicsPipeline* pPipeline = nullptr;
   std::vector<GraphicsFramebuffer*> pFramebuffers;
 
-  GraphicsPresenter& graphicsPresenter = graphicsDevice.CreateWindowPresenter(book, pool, window,
+  GraphicsPresenter& graphicsPresenter = graphicsDevice.CreateWindowPresenter(book, graphicsPool, window,
     [&](GraphicsPresentConfig const& presentConfig, uint32_t imagesCount)
     {
       canvas.SetSize(presentConfig.size);
@@ -160,6 +186,7 @@ int COIL_ENTRY_POINT(std::vector<std::string>&& args)
       }
 
       GraphicsFrame& frame = graphicsPresenter.StartFrame();
+      graphicsAssetManager.RunContextTasks(frame.GetContext());
       frame.Pass(*pPass, *pFramebuffers[frame.GetImageIndex()], [&](GraphicsSubPassId subPassId, GraphicsContext& context)
       {
         renderContext.Begin(context);

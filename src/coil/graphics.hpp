@@ -1,13 +1,14 @@
 #pragma once
 
-#include "platform.hpp"
 #include "graphics_shaders.hpp"
 #include "image_format.hpp"
-#include <vector>
+#include "platform.hpp"
+#include "tasks.hpp"
 #include <map>
 #include <optional>
-#include <variant>
 #include <span>
+#include <variant>
+#include <vector>
 
 namespace Coil
 {
@@ -201,6 +202,8 @@ namespace Coil
     Wrap wrapV = Wrap::Repeat;
     Wrap wrapW = Wrap::Repeat;
   };
+  template <> GraphicsSamplerConfig::Filter FromString(std::string_view str);
+  template <> GraphicsSamplerConfig::Wrap FromString(std::string_view str);
 
   class GraphicsSampler
   {
@@ -384,4 +387,89 @@ namespace Coil
 
     void BindMesh(GraphicsMesh const& mesh);
   };
+
+  template <>
+  struct AssetTraits<GraphicsImage*>
+  {
+    static constexpr std::string_view assetTypeName = "graphics_image";
+  };
+  static_assert(IsAsset<GraphicsImage*>);
+
+  template <>
+  struct AssetTraits<GraphicsSampler*>
+  {
+    static constexpr std::string_view assetTypeName = "graphics_sampler";
+  };
+  static_assert(IsAsset<GraphicsSampler*>);
+
+  // graphics asset manager
+  class GraphicsAssetManager
+  {
+  public:
+    GraphicsAssetManager(GraphicsDevice& device, GraphicsPool& pool);
+
+    GraphicsDevice& GetDevice() const;
+    GraphicsPool& GetPool() const;
+
+    void AddContextTask(std::function<void(GraphicsContext&)>&& contextTask);
+    void RunContextTasks(GraphicsContext& context);
+
+  private:
+    GraphicsDevice& _device;
+    GraphicsPool& _pool;
+    std::vector<std::function<void(GraphicsContext&)>> _contextTasks;
+  };
+
+  class TextureAssetLoader
+  {
+  public:
+    TextureAssetLoader(GraphicsAssetManager& manager);
+
+    template <std::same_as<GraphicsImage*> Asset, typename AssetContext>
+    Task<Asset> LoadAsset(Book& book, AssetContext& assetContext) const
+    {
+      auto image = co_await assetContext.template LoadAssetParam<ImageBuffer>(book, "image");
+      auto* pSampler = co_await assetContext.template LoadAssetParam<GraphicsSampler*>(book, "sampler");
+      auto* pTexture = &_manager.GetDevice().CreateTexture(book, _manager.GetPool(), image.format, pSampler);
+      _manager.AddContextTask([pTexture, image](GraphicsContext& context)
+      {
+        context.SetTextureData(*pTexture, image);
+      });
+      co_return pTexture;
+    }
+
+    static constexpr std::string_view assetLoaderName = "texture";
+
+  private:
+    GraphicsAssetManager& _manager;
+  };
+  static_assert(IsAssetLoader<TextureAssetLoader>);
+
+  class SamplerAssetLoader
+  {
+  public:
+    SamplerAssetLoader(GraphicsAssetManager& manager);
+
+    template <std::same_as<GraphicsSampler*> Asset, typename AssetContext>
+    Task<Asset> LoadAsset(Book& book, AssetContext& assetContext) const
+    {
+      auto allFilter = assetContext.template GetFromStringParam<GraphicsSamplerConfig::Filter>("filter", GraphicsSamplerConfig::Filter::Nearest);
+      auto allWrap = assetContext.template GetFromStringParam<GraphicsSamplerConfig::Wrap>("wrap", GraphicsSamplerConfig::Wrap::Repeat);
+      co_return &_manager.GetDevice().CreateSampler(book,
+      {
+        .magFilter = assetContext.template GetFromStringParam<GraphicsSamplerConfig::Filter>("magFilter", allFilter),
+        .minFilter = assetContext.template GetFromStringParam<GraphicsSamplerConfig::Filter>("minFilter", allFilter),
+        .mipFilter = assetContext.template GetFromStringParam<GraphicsSamplerConfig::Filter>("mipFilter", allFilter),
+        .wrapU = assetContext.template GetFromStringParam<GraphicsSamplerConfig::Wrap>("wrapU", allWrap),
+        .wrapV = assetContext.template GetFromStringParam<GraphicsSamplerConfig::Wrap>("wrapV", allWrap),
+        .wrapW = assetContext.template GetFromStringParam<GraphicsSamplerConfig::Wrap>("wrapW", allWrap),
+      });
+    }
+
+    static constexpr std::string_view assetLoaderName = "sampler";
+
+  private:
+    GraphicsAssetManager& _manager;
+  };
+  static_assert(IsAssetLoader<SamplerAssetLoader>);
 }

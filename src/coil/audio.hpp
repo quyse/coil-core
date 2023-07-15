@@ -57,4 +57,27 @@ namespace Coil
     // resume or stop playing
     virtual void SetPlaying(bool playing) = 0;
   };
+
+  // audio stream factory
+  class AudioStreamSource
+  {
+  public:
+    virtual ~AudioStreamSource() {}
+
+    // create new stream playing audio from start
+    virtual AudioStream& CreateStream(Book& book) = 0;
+  };
+
+  // audio asset
+  struct AudioAsset
+  {
+    AudioStreamSource* source = nullptr;
+  };
+
+  template <>
+  struct AssetTraits<AudioAsset>
+  {
+    static constexpr std::string_view assetTypeName = "audio";
+  };
+  static_assert(IsAsset<AudioAsset>);
 }

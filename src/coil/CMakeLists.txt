@@ -142,6 +142,21 @@ endif()
 list(APPEND coil_core_all_libraries data)
 
 if(TRUE)
+  add_library(coil_core_asset INTERFACE)
+  set_property(TARGET coil_core_asset PROPERTY PUBLIC_HEADER
+    asset.hpp
+    asset_struct.hpp
+  )
+  target_link_libraries(coil_core_asset
+    INTERFACE
+      coil_core_json
+      coil_core_tasks
+  )
+  list(APPEND coil_core_libraries asset)
+endif()
+list(APPEND coil_core_all_libraries asset)
+
+if(TRUE)
   add_library(coil_core_fs STATIC
     fs.cpp
   )
@@ -150,7 +165,7 @@ if(TRUE)
   )
   target_link_libraries(coil_core_fs
     PUBLIC
-      coil_core_base
+      coil_core_tasks
     PRIVATE
       coil_core_unicode
       $<$<BOOL:${WIN32}>:coil_core_windows>
@@ -283,7 +298,6 @@ if(TRUE)
   target_link_libraries(coil_core_input
     PUBLIC
       coil_core_math
-      coil_core_util
     PRIVATE
       coil_core_unicode
   )
@@ -505,6 +519,7 @@ if(TARGET PNG::PNG)
   target_link_libraries(coil_core_image_png
     PUBLIC
       coil_core_image
+      coil_core_tasks
     PRIVATE
       PNG::PNG
   )
@@ -522,6 +537,7 @@ if(TARGET Squish::Squish)
   target_link_libraries(coil_core_image_compress
     PUBLIC
       coil_core_image
+      coil_core_tasks
     PRIVATE
       Squish::Squish
   )
@@ -786,6 +802,7 @@ if(TARGET coil_core_ogg AND TARGET Opus::opus)
     PUBLIC
       coil_core_audio
       coil_core_ogg
+      coil_core_tasks
     PRIVATE
       Opus::opus
   )
@@ -858,6 +875,8 @@ if(TARGET coil_core_steam)
     coil_core_appidentity
     coil_core_entrypoint_console
     coil_core_fs
+    coil_core_image_compress
+    coil_core_image_png
     coil_core_player_input_native
     coil_core_render
     coil_core_sdl

@@ -88,6 +88,34 @@ namespace Coil
     };
   }
 
+  template <> GraphicsSamplerConfig::Filter FromString(std::string_view str)
+  {
+    static std::unordered_map<std::string_view, GraphicsSamplerConfig::Filter> const values =
+    {{
+      { "Nearest", GraphicsSamplerConfig::Filter::Nearest },
+      { "Linear", GraphicsSamplerConfig::Filter::Linear },
+    }};
+    auto i = values.find(str);
+    if(i == values.end())
+      throw Exception() << "invalid sampler filter: " << str;
+    return i->second;
+  }
+
+  template <> GraphicsSamplerConfig::Wrap FromString(std::string_view str)
+  {
+    static std::unordered_map<std::string_view, GraphicsSamplerConfig::Wrap> const values =
+    {{
+      { "Repeat", GraphicsSamplerConfig::Wrap::Repeat },
+      { "RepeatMirror", GraphicsSamplerConfig::Wrap::RepeatMirror },
+      { "Clamp", GraphicsSamplerConfig::Wrap::Clamp },
+      { "Border", GraphicsSamplerConfig::Wrap::Border },
+    }};
+    auto i = values.find(str);
+    if(i == values.end())
+      throw Exception() << "invalid sampler wrap: " << str;
+    return i->second;
+  }
+
   GraphicsMesh::GraphicsMesh(GraphicsVertexBuffer& vertexBuffer, uint32_t verticesCount)
   : _vertexBuffer(vertexBuffer), _count(verticesCount) {}
 
@@ -112,4 +140,35 @@ namespace Coil
     BindVertexBuffer(0, mesh._vertexBuffer);
     BindIndexBuffer(mesh._pIndexBuffer);
   }
+
+  GraphicsAssetManager::GraphicsAssetManager(GraphicsDevice& device, GraphicsPool& pool)
+  : _device(device), _pool(pool) {}
+
+  GraphicsDevice& GraphicsAssetManager::GetDevice() const
+  {
+    return _device;
+  }
+
+  GraphicsPool& GraphicsAssetManager::GetPool() const
+  {
+    return _pool;
+  }
+
+  void GraphicsAssetManager::AddContextTask(std::function<void(GraphicsContext&)>&& contextTask)
+  {
+    _contextTasks.push_back(std::move(contextTask));
+  }
+
+  void GraphicsAssetManager::RunContextTasks(GraphicsContext& context)
+  {
+    for(size_t i = 0; i < _contextTasks.size(); ++i)
+      _contextTasks[i](context);
+    _contextTasks.clear();
+  }
+
+  TextureAssetLoader::TextureAssetLoader(GraphicsAssetManager& manager)
+  : _manager(manager) {}
+
+  SamplerAssetLoader::SamplerAssetLoader(GraphicsAssetManager& manager)
+  : _manager(manager) {}
 }

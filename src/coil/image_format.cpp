@@ -1,4 +1,5 @@
 #include "image_format.hpp"
+#include <unordered_map>
 
 namespace Coil
 {
@@ -165,6 +166,25 @@ namespace Coil
       }
       break;
     }
+  }
+
+  template <> PixelFormat::Compression FromString(std::string_view str)
+  {
+    static std::unordered_map<std::string_view, PixelFormat::Compression> const values =
+    {{
+      { "Bc1", PixelFormat::Compression::Bc1 },
+      { "Bc1Alpha", PixelFormat::Compression::Bc1Alpha },
+      { "Bc2", PixelFormat::Compression::Bc2 },
+      { "Bc3", PixelFormat::Compression::Bc3 },
+      { "Bc4", PixelFormat::Compression::Bc4 },
+      { "Bc4Signed", PixelFormat::Compression::Bc4Signed },
+      { "Bc5", PixelFormat::Compression::Bc5 },
+      { "Bc5Signed", PixelFormat::Compression::Bc5Signed },
+    }};
+    auto i = values.find(str);
+    if(i == values.end())
+      throw Exception() << "invalid pixel format compression: " << str;
+    return i->second;
   }
 
   PixelFormat const PixelFormats::uintR8(

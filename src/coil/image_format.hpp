@@ -13,7 +13,7 @@ namespace Coil
     {
       Uncompressed, Compressed
     };
-    Type type = Type::Uncompressed;
+    Type type;
     // What components are in pixel.
     enum class Components : uint8_t
     {
@@ -74,6 +74,7 @@ namespace Coil
     /** Valid only for type != typeUnknown. */
     bool srgb = false;
 
+    constexpr PixelFormat() = default;
     // Uncompressed format constructor.
     constexpr PixelFormat(Components components, Format format, Size size, bool srgb = false);
     // Compressed format constructor.
@@ -152,6 +153,8 @@ namespace Coil
     friend auto operator<=>(PixelFormat const&, PixelFormat const&) = default;
   };
 
+  template <> PixelFormat::Compression FromString(std::string_view str);
+
   struct PixelFormats
   {
     static PixelFormat const uintR8;
@@ -191,13 +194,13 @@ namespace Coil
     // W     H      0      2D texture WxH
     // W     H      1      3D texture WxHx1
     // W     H      D      3D texture WxHxD
-    int32_t width;
-    int32_t height;
-    int32_t depth;
+    int32_t width = 0;
+    int32_t height = 0;
+    int32_t depth = 0;
     // must be >= 1
-    int32_t mips;
+    int32_t mips = 1;
     // zero means non-array
-    int32_t count;
+    int32_t count = 0;
 
     ImageMetrics GetMetrics() const;
   };
@@ -207,4 +210,11 @@ namespace Coil
     ImageFormat format;
     Buffer buffer;
   };
+
+  template <>
+  struct AssetTraits<ImageBuffer>
+  {
+    static constexpr std::string_view assetTypeName = "image";
+  };
+  static_assert(IsAsset<ImageBuffer>);
 }

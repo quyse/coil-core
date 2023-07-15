@@ -241,7 +241,7 @@ namespace Coil
     }
   }
 
-  template <> InputKey FromString(std::string_view const& str)
+  template <> InputKey FromString(std::string_view str)
   {
     static std::unordered_map<std::string_view, InputKey> const keys =
     {
@@ -268,7 +268,7 @@ namespace Coil
     }
   }
 
-  template <> InputMouseButton FromString(std::string_view const& str)
+  template <> InputMouseButton FromString(std::string_view str)
   {
     static std::unordered_map<std::string_view, InputMouseButton> const buttons =
     {

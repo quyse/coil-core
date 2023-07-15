@@ -64,13 +64,6 @@ namespace Coil
       this->template RegisterField<type, COIL_META_MEMBER_PTR(name)>(label)
   // meta struct field
   #define COIL_META_STRUCT_FIELD(type, name) COIL_META_STRUCT_FIELD_LABEL(type, name, #name)
-
-
-  // serialization to/from string, to be specialized
-  template <typename T>
-  std::string ToString(T const& value);
-  template <typename T>
-  T FromString(std::string_view const& value);
 }
 
 namespace std

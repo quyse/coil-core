@@ -142,7 +142,7 @@ namespace Coil
       {
         SetResult([&]()
         {
-          _result = std::move(value);
+          _result.emplace(std::move(value));
         });
       }
 
@@ -150,7 +150,7 @@ namespace Coil
       {
         SetResult([&]()
         {
-          _result = std::current_exception();
+          _result.emplace(std::current_exception());
         });
       }
 

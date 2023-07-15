@@ -1,7 +1,6 @@
 #pragma once
 
 #include "math.hpp"
-#include "util.hpp"
 #include <variant>
 #include <bitset>
 
@@ -19,7 +18,7 @@ namespace Coil
   };
 
   template <> std::string ToString(InputKey const& key);
-  template <> InputKey FromString(std::string_view const& str);
+  template <> InputKey FromString(std::string_view str);
 
   // keyboard event
   struct InputKeyboardKeyEvent
@@ -41,7 +40,7 @@ namespace Coil
     Middle,
   };
   template <> std::string ToString(InputMouseButton const& key);
-  template <> InputMouseButton FromString(std::string_view const& str);
+  template <> InputMouseButton FromString(std::string_view str);
   struct InputMouseButtonEvent
   {
     InputMouseButton button;

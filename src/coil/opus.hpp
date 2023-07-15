@@ -2,6 +2,7 @@
 
 #include "audio.hpp"
 #include "ogg.hpp"
+#include "tasks.hpp"
 
 struct OpusDecoder;
 
@@ -29,4 +30,32 @@ namespace Coil
     OpusDecoder* _decoder = nullptr;
     std::vector<float> _buffer;
   };
+
+  class OpusStreamSource final : public AudioStreamSource
+  {
+  public:
+    OpusStreamSource(Buffer const& buffer);
+
+    OpusDecodeStream& CreateStream(Book& book) override;
+
+  private:
+    Buffer const _buffer;
+  };
+
+  class OpusAssetLoader
+  {
+  public:
+    template <std::same_as<AudioAsset> Asset, typename AssetContext>
+    Task<Asset> LoadAsset(Book& book, AssetContext& assetContext) const
+    {
+      auto buffer = co_await assetContext.template LoadAssetParam<Buffer>(book, "buffer");
+      co_return
+      {
+        .source = &book.Allocate<OpusStreamSource>(buffer),
+      };
+    }
+
+    static constexpr std::string_view assetLoaderName = "audio_opus";
+  };
+  static_assert(IsAssetLoader<OpusAssetLoader>);
 }
