@@ -1,8 +1,9 @@
 #pragma once
 
 #include "base.hpp"
-#include <utility>
+#include <concepts>
 #include <optional>
+#include <utility>
 #include <sqlite3.h>
 
 namespace Coil

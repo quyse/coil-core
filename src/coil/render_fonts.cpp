@@ -174,13 +174,14 @@ namespace Coil
       ivec2 textureLeftTop = glyphInfo.leftTop;
       ivec2 textureRightBottom = textureLeftTop + glyphInfo.size;
 
-      cache.Render(*_pGlyphTexture, *_pGlyphPipeline, *_pGlyphMesh, ShaderDataIdentityStruct<GlyphInstance>
+      cache.Render(*_pGlyphPipeline, *_pGlyphMesh, *_pGlyphTexture, ShaderDataIdentityStruct<GlyphInstance>
       {
         .position = vec4(positionLeftTop.x(), positionLeftTop.y(), positionRightBottom.x(), positionRightBottom.y()) * _invCanvasSize4 + vec4(-1.0f, -1.0f, -1.0f, -1.0f),
         .texcoord = vec4(textureLeftTop.x(), textureLeftTop.y(), textureRightBottom.x(), textureRightBottom.y()) * invTextureSize4,
         .color = color,
       });
     }
+
     _tempRenderGlyphs.clear();
   }
 }

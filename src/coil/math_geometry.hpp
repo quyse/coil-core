@@ -76,6 +76,19 @@ namespace Coil
     };
   }
 
+  // Scale projection matrix (equivalent to changing field-of-view).
+  template <typename T>
+  constexpr xmat<T, 4, 4> ProjectionScale(T scale)
+  {
+    return
+    {
+      scale, 0,     0, 0,
+      0,     scale, 0, 0,
+      0,     0,     1, 0,
+      0,     0,     0, 1,
+    };
+  }
+
   // Quaternion representing rotation around axis.
   template <typename T>
   constexpr xquat<T> QuatAxisRotation(xvec<T, 3> const& axis, T angle)

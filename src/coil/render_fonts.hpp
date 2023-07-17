@@ -35,9 +35,9 @@ namespace Coil
     };
 
     using Cache = RenderCache<
-      RenderImageKnob<0, 1>,
       RenderPipelineKnob,
       RenderMeshKnob,
+      RenderImageKnob<0, 1>,
       RenderInstanceDataKnob<ShaderDataIdentityStruct<GlyphInstance>>
     >;
 

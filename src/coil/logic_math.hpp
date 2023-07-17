@@ -33,7 +33,7 @@ namespace Coil
       {
         if(std::abs(_speed) > _maxSpeed)
         {
-          _speed = _speed * (_maxSpeed / abs(_speed));
+          _speed = _speed * (_maxSpeed / std::abs(_speed));
         }
       }
       else
