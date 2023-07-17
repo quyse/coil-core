@@ -45,14 +45,11 @@ namespace Coil
   class OpusAssetLoader
   {
   public:
-    template <std::same_as<AudioAsset> Asset, typename AssetContext>
+    template <std::same_as<AudioStreamSource*> Asset, typename AssetContext>
     Task<Asset> LoadAsset(Book& book, AssetContext& assetContext) const
     {
       auto buffer = co_await assetContext.template LoadAssetParam<Buffer>(book, "buffer");
-      co_return
-      {
-        .source = &book.Allocate<OpusStreamSource>(buffer),
-      };
+      co_return &book.Allocate<OpusStreamSource>(buffer);
     }
 
     static constexpr std::string_view assetLoaderName = "audio_opus";

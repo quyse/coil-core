@@ -68,16 +68,10 @@ namespace Coil
     virtual AudioStream& CreateStream(Book& book) = 0;
   };
 
-  // audio asset
-  struct AudioAsset
-  {
-    AudioStreamSource* source = nullptr;
-  };
-
   template <>
-  struct AssetTraits<AudioAsset>
+  struct AssetTraits<AudioStreamSource*>
   {
     static constexpr std::string_view assetTypeName = "audio";
   };
-  static_assert(IsAsset<AudioAsset>);
+  static_assert(IsAsset<AudioStreamSource*>);
 }
