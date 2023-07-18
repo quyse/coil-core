@@ -46,4 +46,19 @@ namespace Coil
   public:
     virtual VideoFrame ReadFrame() = 0;
   };
+
+  class VideoStreamSource
+  {
+  public:
+    virtual ~VideoStreamSource() {}
+
+    virtual VideoStream& CreateStream(Book& book) = 0;
+  };
+
+  template <>
+  struct AssetTraits<VideoStreamSource*>
+  {
+    static constexpr std::string_view assetTypeName = "video";
+  };
+  static_assert(IsAsset<VideoStreamSource*>);
 }

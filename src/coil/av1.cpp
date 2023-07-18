@@ -90,4 +90,12 @@ namespace Coil
       return VideoFrame::ColorRange::Unknown;
     }
   }
+
+  Av1DecodeStreamSource::Av1DecodeStreamSource(PacketInputStreamSource& inputStreamSource)
+  : _inputStreamSource(inputStreamSource) {}
+
+  Av1DecodeStream& Av1DecodeStreamSource::CreateStream(Book& book)
+  {
+    return book.Allocate<Av1DecodeStream>(_inputStreamSource.CreateStream(book));
+  }
 }
