@@ -104,6 +104,14 @@ namespace Coil
     return size;
   }
 
+  BufferInputStreamSource::BufferInputStreamSource(Buffer const& buffer)
+  : _buffer(buffer) {}
+
+  BufferInputStream& BufferInputStreamSource::CreateStream(Book& book)
+  {
+    return book.Allocate<BufferInputStream>(_buffer);
+  }
+
   BufferOutputStream::BufferOutputStream(Buffer const& buffer)
   : _buffer(buffer) {}
 

@@ -210,6 +210,14 @@ namespace Coil
     virtual size_t Read(Buffer const& buffer) = 0;
   };
 
+  // Source of input streams.
+  // Allows to create streams multiple times.
+  class InputStreamSource
+  {
+  public:
+    virtual InputStream& CreateStream(Book& book) = 0;
+  };
+
   // Output stream.
   class OutputStream
   {
@@ -221,7 +229,7 @@ namespace Coil
   };
 
   // Input stream reading from buffer.
-  class BufferInputStream : public InputStream
+  class BufferInputStream final : public InputStream
   {
   public:
     BufferInputStream(Buffer const& buffer);
@@ -232,8 +240,19 @@ namespace Coil
     Buffer _buffer;
   };
 
+  class BufferInputStreamSource final : public InputStreamSource
+  {
+  public:
+    BufferInputStreamSource(Buffer const& buffer);
+
+    BufferInputStream& CreateStream(Book& book) override;
+
+  private:
+    Buffer const _buffer;
+  };
+
   // Output stream writing into buffer.
-  class BufferOutputStream : public OutputStream
+  class BufferOutputStream final : public OutputStream
   {
   public:
     BufferOutputStream(Buffer const& buffer);
@@ -244,7 +263,7 @@ namespace Coil
     Buffer _buffer;
   };
 
-  class MemoryStream : public OutputStream
+  class MemoryStream final : public OutputStream
   {
   public:
     void Write(Buffer const& buffer) override;
@@ -253,6 +272,23 @@ namespace Coil
 
   private:
     std::vector<uint8_t> _data;
+  };
+
+  // Packetized input stream.
+  class PacketInputStream
+  {
+  public:
+    // read one packet from stream, empty buffer if EOF
+    // buffer is valid only until next read
+    virtual Buffer ReadPacket() = 0;
+  };
+
+  // Source of packetized input stream.
+  // Allows creating stream multiple times.
+  class PacketInputStreamSource
+  {
+  public:
+    virtual PacketInputStream& CreateStream(Book& book) = 0;
   };
 
   // serialization to/from string, to be specialized
@@ -296,4 +332,18 @@ namespace Coil
     static constexpr std::string_view assetTypeName = "buffer";
   };
   static_assert(IsAsset<Buffer>);
+
+  template <>
+  struct AssetTraits<InputStreamSource*>
+  {
+    static constexpr std::string_view assetTypeName = "input_stream_source";
+  };
+  static_assert(IsAsset<InputStreamSource*>);
+
+  template <>
+  struct AssetTraits<PacketInputStreamSource*>
+  {
+    static constexpr std::string_view assetTypeName = "packet_input_stream_source";
+  };
+  static_assert(IsAsset<PacketInputStreamSource*>);
 }

@@ -3,7 +3,7 @@
 
 namespace Coil
 {
-  OpusDecodeStream::OpusDecodeStream(OggDecodeStream& inputStream)
+  OpusDecodeStream::OpusDecodeStream(PacketInputStream& inputStream)
   : _inputStream(inputStream)
   {
     _packet = _inputStream.ReadPacket();
@@ -43,11 +43,11 @@ namespace Coil
     return _buffer;
   }
 
-  OpusStreamSource::OpusStreamSource(Buffer const& buffer)
-  : _buffer(buffer) {}
+  OpusDecodeStreamSource::OpusDecodeStreamSource(PacketInputStreamSource& inputStreamSource)
+  : _inputStreamSource(inputStreamSource) {}
 
-  OpusDecodeStream& OpusStreamSource::CreateStream(Book& book)
+  OpusDecodeStream& OpusDecodeStreamSource::CreateStream(Book& book)
   {
-    return book.Allocate<OpusDecodeStream>(book.Allocate<OggDecodeStream>(book.Allocate<BufferInputStream>(_buffer)));
+    return book.Allocate<OpusDecodeStream>(_inputStreamSource.CreateStream(book));
   }
 }

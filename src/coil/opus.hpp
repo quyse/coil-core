@@ -1,17 +1,16 @@
 #pragma once
 
 #include "audio.hpp"
-#include "ogg.hpp"
 #include "tasks.hpp"
 
 struct OpusDecoder;
 
 namespace Coil
 {
-  class OpusDecodeStream : public AudioStream
+  class OpusDecodeStream final : public AudioStream
   {
   public:
-    OpusDecodeStream(OggDecodeStream& inputStream);
+    OpusDecodeStream(PacketInputStream& inputStream);
     ~OpusDecodeStream();
 
     AudioFormat GetFormat() const override;
@@ -24,35 +23,37 @@ namespace Coil
     static constexpr int32_t maxPacketFramesCount = samplingRate * 3 / 25;
 
   private:
-    OggDecodeStream& _inputStream;
+    PacketInputStream& _inputStream;
     Buffer _packet;
     int32_t _channelsCount;
     OpusDecoder* _decoder = nullptr;
     std::vector<float> _buffer;
   };
 
-  class OpusStreamSource final : public AudioStreamSource
+  class OpusDecodeStreamSource final : public AudioStreamSource
   {
   public:
-    OpusStreamSource(Buffer const& buffer);
+    OpusDecodeStreamSource(PacketInputStreamSource& inputStreamSource);
 
     OpusDecodeStream& CreateStream(Book& book) override;
 
   private:
-    Buffer const _buffer;
+    PacketInputStreamSource& _inputStreamSource;
   };
 
   class OpusAssetLoader
   {
   public:
-    template <std::same_as<AudioStreamSource*> Asset, typename AssetContext>
+    template <typename Asset, typename AssetContext>
+    requires std::convertible_to<OpusDecodeStreamSource*, Asset>
     Task<Asset> LoadAsset(Book& book, AssetContext& assetContext) const
     {
-      auto buffer = co_await assetContext.template LoadAssetParam<Buffer>(book, "buffer");
-      co_return &book.Allocate<OpusStreamSource>(buffer);
+      co_return &book.Allocate<OpusDecodeStreamSource>(
+        *co_await assetContext.template LoadAssetParam<PacketInputStreamSource*>(book, "source")
+      );
     }
 
-    static constexpr std::string_view assetLoaderName = "audio_opus";
+    static constexpr std::string_view assetLoaderName = "opus";
   };
   static_assert(IsAssetLoader<OpusAssetLoader>);
 }

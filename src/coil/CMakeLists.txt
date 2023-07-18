@@ -784,14 +784,14 @@ if(TARGET Ogg::ogg)
   )
   target_link_libraries(coil_core_ogg
     PUBLIC
-      coil_core_base
+      coil_core_tasks
       Ogg::ogg
   )
   list(APPEND coil_core_libraries ogg)
 endif()
 list(APPEND coil_core_all_libraries ogg)
 
-if(TARGET coil_core_ogg AND TARGET Opus::opus)
+if(TARGET Opus::opus)
   add_library(coil_core_opus STATIC
     opus.cpp
   )
@@ -801,7 +801,6 @@ if(TARGET coil_core_ogg AND TARGET Opus::opus)
   target_link_libraries(coil_core_opus
     PUBLIC
       coil_core_audio
-      coil_core_ogg
       coil_core_tasks
     PRIVATE
       Opus::opus

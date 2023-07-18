@@ -61,4 +61,12 @@ namespace Coil
       }
     }
   }
+
+  OggDecodeStreamSource::OggDecodeStreamSource(InputStreamSource& inputStreamSource)
+  : _inputStreamSource(inputStreamSource) {}
+
+  OggDecodeStream& OggDecodeStreamSource::CreateStream(Book& book)
+  {
+    return book.Allocate<OggDecodeStream>(_inputStreamSource.CreateStream(book));
+  }
 }

@@ -65,7 +65,7 @@ namespace Coil
   };
 
   // Input stream which reads part of a file.
-  class FileInputStream : public InputStream
+  class FileInputStream final : public InputStream
   {
   public:
     FileInputStream(File& file, uint64_t offset = 0);
@@ -81,7 +81,7 @@ namespace Coil
     uint64_t _size;
   };
 
-  class FileOutputStream : public OutputStream
+  class FileOutputStream final : public OutputStream
   {
   public:
     FileOutputStream(File& file, uint64_t offset = 0);
@@ -98,10 +98,19 @@ namespace Coil
   class FileAssetLoader
   {
   public:
-    template <std::same_as<Buffer> Asset, typename AssetContext>
+    template <typename Asset, typename AssetContext>
+    requires std::same_as<Asset, Buffer> || std::convertible_to<BufferInputStreamSource*, Asset>
     Task<Asset> LoadAsset(Book& book, AssetContext& assetContext) const
     {
-      co_return File::MapRead(book, assetContext.GetParam("path"));
+      auto buffer = File::MapRead(book, assetContext.GetParam("path"));
+      if constexpr(std::same_as<Asset, Buffer>)
+      {
+        co_return buffer;
+      }
+      else
+      {
+        co_return &book.Allocate<BufferInputStreamSource>(buffer);
+      }
     }
 
     static constexpr std::string_view assetLoaderName = "file";
