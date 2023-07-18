@@ -737,6 +737,21 @@ if(TRUE)
 endif()
 list(APPEND coil_core_all_libraries audio)
 
+if(TRUE)
+  add_library(coil_core_video STATIC
+    video.cpp
+  )
+  set_property(TARGET coil_core_video PROPERTY PUBLIC_HEADER
+    video.hpp
+  )
+  target_link_libraries(coil_core_video
+    PUBLIC
+      coil_core_image
+  )
+  list(APPEND coil_core_libraries video)
+endif()
+list(APPEND coil_core_all_libraries video)
+
 if(WIN32)
   add_library(coil_core_wincoreaudio STATIC
     wincoreaudio.cpp
@@ -791,6 +806,22 @@ if(TARGET Ogg::ogg)
 endif()
 list(APPEND coil_core_all_libraries ogg)
 
+if(TARGET Webm::Webm)
+  add_library(coil_core_webm STATIC
+    webm.cpp
+  )
+  set_property(TARGET coil_core_webm PROPERTY PUBLIC_HEADER
+    webm.hpp
+  )
+  target_link_libraries(coil_core_webm
+    PUBLIC
+      coil_core_tasks
+      Webm::Webm
+  )
+  list(APPEND coil_core_libraries webm)
+endif()
+list(APPEND coil_core_all_libraries webm)
+
 if(TARGET Opus::opus)
   add_library(coil_core_opus STATIC
     opus.cpp
@@ -808,6 +839,23 @@ if(TARGET Opus::opus)
   list(APPEND coil_core_libraries opus)
 endif()
 list(APPEND coil_core_all_libraries opus)
+
+if(TARGET libgav1::libgav1)
+  add_library(coil_core_av1 STATIC
+    av1.cpp
+  )
+  set_property(TARGET coil_core_av1 PROPERTY PUBLIC_HEADER
+    av1.hpp
+  )
+  target_link_libraries(coil_core_av1
+    PUBLIC
+      coil_core_tasks
+      coil_core_video
+      libgav1::libgav1
+  )
+  list(APPEND coil_core_libraries av1)
+endif()
+list(APPEND coil_core_all_libraries av1)
 
 if(TARGET Steam::Steam)
   add_library(coil_core_steam STATIC

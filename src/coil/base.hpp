@@ -208,6 +208,10 @@ namespace Coil
     // Read some data, up to size of the buffer.
     // Always fills the buffer fully, unless there's not enough data.
     virtual size_t Read(Buffer const& buffer) = 0;
+    // Skip some data.
+    // Always skips requested amount, unless there's not enough data.
+    // Default implementation just reads the data.
+    virtual size_t Skip(size_t size);
   };
 
   // Source of input streams.
@@ -235,6 +239,7 @@ namespace Coil
     BufferInputStream(Buffer const& buffer);
 
     size_t Read(Buffer const& buffer) override;
+    size_t Skip(size_t size) override;
 
   private:
     Buffer _buffer;

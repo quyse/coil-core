@@ -20,7 +20,9 @@
 , libxkbcommon
 , pulseaudio
 , libogg
+, libwebm
 , libopus
+, libgav1
 , steam-sdk
 }:
 
@@ -46,7 +48,9 @@ stdenv.mkDerivation {
     freetype
     harfbuzz
     libogg
+    libwebm
     libopus
+    libgav1
     steam-sdk
   ] ++ lib.optionals stdenv.hostPlatform.isLinux [
     wayland

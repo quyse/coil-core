@@ -72,6 +72,7 @@ namespace Coil
     FileInputStream(File& file, uint64_t offset, uint64_t size);
 
     size_t Read(Buffer const& buffer) override;
+    size_t Skip(size_t size) override;
 
     static FileInputStream& Open(Book& book, std::string const& name);
 

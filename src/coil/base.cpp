@@ -80,6 +80,22 @@ namespace Coil
     return std::move(e);
   }
 
+  size_t InputStream::Skip(size_t size)
+  {
+    uint8_t bufferData[0x1000];
+    size_t totalSkippedSize = 0;
+    while(size)
+    {
+      size_t sizeToSkip = std::min(size, sizeof(bufferData));
+      Buffer buffer(bufferData, sizeToSkip);
+      size_t skippedSize = Read(buffer);
+      if(!skippedSize) break;
+      totalSkippedSize += skippedSize;
+      size -= skippedSize;
+    }
+    return totalSkippedSize;
+  }
+
   void OutputStream::WriteAllFrom(InputStream& inputStream)
   {
     uint8_t bufferData[0x1000];
@@ -99,6 +115,14 @@ namespace Coil
   {
     size_t size = std::min(buffer.size, _buffer.size);
     memcpy(buffer.data, _buffer.data, size);
+    _buffer.data = (uint8_t*)_buffer.data + size;
+    _buffer.size -= size;
+    return size;
+  }
+
+  size_t BufferInputStream::Skip(size_t size)
+  {
+    size = std::min(size, _buffer.size);
     _buffer.data = (uint8_t*)_buffer.data + size;
     _buffer.size -= size;
     return size;

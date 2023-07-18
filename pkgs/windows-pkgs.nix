@@ -125,6 +125,41 @@ lib.makeExtensible (self: with self; {
       "-DOPUS_X86_MAY_HAVE_AVX=OFF"
     ];
   };
+  libwebm = mkCmakePkg rec {
+    inherit (pkgs.libwebm) pname version src;
+    cmakeFlags = [
+      "-DBUILD_SHARED_LIBS=ON"
+      "-DENABLE_WEBM_PARSER=ON"
+      "-DENABLE_WEBMINFO=OFF"
+      "-DENABLE_SAMPLE_PROGRAMS=OFF"
+    ];
+  };
+  libgav1 = mkCmakePkg rec {
+    inherit (pkgs.libgav1) pname version src;
+    postPatch = ''
+      sed -ie 's?-Wall??;s?-Wextra??' cmake/libgav1_build_definitions.cmake
+      sed -ie 's?__declspec(dllimport)??' src/gav1/symbol_visibility.h
+      cat <<'EOF' > cmake/libgav1_install.cmake
+      macro(libgav1_setup_install_target)
+        include(GNUInstallDirs)
+        install(
+          FILES ''${libgav1_api_includes}
+          DESTINATION "''${CMAKE_INSTALL_INCLUDEDIR}/gav1"
+        )
+        install(
+          TARGETS libgav1_shared
+        )
+      endmacro()
+      EOF
+    '';
+    cmakeFlags = [
+      "-DBUILD_SHARED_LIBS=ON"
+      # eliminate abseil dependency
+      "-DLIBGAV1_THREADPOOL_USE_STD_MUTEX=1"
+      "-DLIBGAV1_ENABLE_EXAMPLES=0"
+      "-DLIBGAV1_ENABLE_TESTS=0"
+    ];
+  };
   steam = if coil.toolchain-steam != null then coil.toolchain-steam.sdk.overrideAttrs (attrs: {
     installPhase = (attrs.installPhase or "") + (finalizePkg {
       buildInputs = [];
@@ -146,7 +181,9 @@ lib.makeExtensible (self: with self; {
       freetype
       harfbuzz
       ogg
+      libwebm
       opus
+      libgav1
     ] ++ lib.optional (steam != null) steam;
     cmakeFlags = [
       "-DCOIL_CORE_DONT_REQUIRE_LIBS=${dontRequireLibsList}"

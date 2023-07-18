@@ -332,6 +332,13 @@ namespace Coil
     return read;
   }
 
+  size_t FileInputStream::Skip(size_t size)
+  {
+    size = std::min(size, _size - _offset);
+    _offset += size;
+    return size;
+  }
+
   FileInputStream& FileInputStream::Open(Book& book, std::string const& name)
   {
     return book.Allocate<FileInputStream>(File::OpenRead(book, name));

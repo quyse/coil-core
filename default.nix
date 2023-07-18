@@ -41,6 +41,46 @@ rec {
       ];
     };
 
+    libwebm = stdenv.mkDerivation rec {
+      pname = "libwebm";
+      version = "1.0.0.30";
+      src = pkgs.fetchgit {
+        url = "https://chromium.googlesource.com/webm/libwebm";
+        rev = "libwebm-${version}";
+        hash = "sha256-Yc1whR+liBimHxrJBgztM7mZxU9QvKwG5x/HkEuB5FY=";
+      };
+      nativeBuildInputs = [
+        cmake
+        ninja
+      ];
+      cmakeFlags = [
+        "-DENABLE_WEBM_PARSER=ON"
+      ];
+    };
+
+    libgav1 = stdenv.mkDerivation rec {
+      pname = "libgav1";
+      version = "0.18.0";
+      src = pkgs.fetchgit {
+        url = "https://chromium.googlesource.com/codecs/libgav1";
+        rev = "v${version}";
+        hash = "sha256-tp79z7oasdu0/BIdcDs5qdxoRmntSgkovroRAPnqzEk=";
+      };
+      nativeBuildInputs = [
+        cmake
+        ninja
+      ];
+      cmakeFlags = [
+        # https://github.com/NixOS/nixpkgs/issues/144170
+        "-DCMAKE_INSTALL_INCLUDEDIR=include"
+        "-DCMAKE_INSTALL_LIBDIR=lib"
+        # eliminate abseil dependency
+        "-DLIBGAV1_THREADPOOL_USE_STD_MUTEX=1"
+        "-DLIBGAV1_ENABLE_EXAMPLES=0"
+        "-DLIBGAV1_ENABLE_TESTS=0"
+      ];
+    };
+
     inherit (llvmPackages_16) openmp;
 
     steam-sdk = if coil.toolchain-steam != null then coil.toolchain-steam.sdk else null;
@@ -70,10 +110,14 @@ rec {
       "libxkbcommon-dev"
       "libpulse-dev"
       "libogg-dev"
+      "libwebm-dev"
       "libopus-dev"
+      "libgav1-dev"
     ];
     coil-core = pkgs.vmTools.runInLinuxImage ((pkgs.callPackage ./coil-core.nix {
       libsquish = null;
+      libwebm = null;
+      libgav1 = null;
       steam-sdk = if coil.toolchain-steam != null then coil.toolchain-steam.sdk else null;
     }).overrideAttrs (attrs: {
       propagatedBuildInputs = [];
