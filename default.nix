@@ -17,9 +17,11 @@ rec {
         "-DCOIL_CORE_DONT_REQUIRE_LIBS=${dontRequireLibsList}"
       ];
       nativeBuildInputs = attrs.nativeBuildInputs ++ [
-        clang_16
+        clang
       ];
     });
+
+    clang = self.clang_16;
 
     libsquish = stdenv.mkDerivation rec {
       pname = "libsquish";
