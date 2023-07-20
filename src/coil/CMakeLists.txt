@@ -274,8 +274,6 @@ if(TRUE)
   add_library(coil_core_localization INTERFACE)
   set_property(TARGET coil_core_localization PROPERTY PUBLIC_HEADER
     localization.hpp
-    localization_en.hpp
-    localization_ru.hpp
   )
   target_link_libraries(coil_core_localization
     INTERFACE
