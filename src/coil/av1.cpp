@@ -83,7 +83,7 @@ namespace Coil
     switch(colorRange)
     {
     case libgav1::kColorRangeStudio:
-      return VideoFrame::ColorRange::Studio;
+      return VideoFrame::ColorRange::Narrow;
     case libgav1::kColorRangeFull:
       return VideoFrame::ColorRange::Full;
     default:

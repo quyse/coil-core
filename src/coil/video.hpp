@@ -19,7 +19,7 @@ namespace Coil
     enum class ColorRange
     {
       Unknown,
-      Studio, // Y [16..235], UV [16..240]
+      Narrow, // Y [16..235], UV [16..240]
       Full, // [0..255]
     };
 

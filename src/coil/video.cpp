@@ -4,37 +4,45 @@ namespace
 {
   using namespace Coil;
 
-  // only support BT.709 for now
-  constexpr mat4x4 transformYUV2RGB =
-    mat4x4
-    {
-      255.0f / 2.0f, 0,             0,             255.0f / 2.0f,
-      0,             255.0f / 2.0f, 0,             255.0f / 2.0f,
-      0,             0,             255.0f / 2.0f, 255.0f / 2.0f,
-      0,             0,             0,             1,
-    } *
-    mat4x4
-    {
-      1.0f,     0.0f,     1.5748f, 0,
-      1.0f,    -0.1873f, -0.4681f, 0,
-      1.0f,     1.8556f,  0.0f,    0,
-      0,        0,        0,       1,
-    } *
-    mat4x4
-    {
-      2.0f / 255.0f, 0,             0,             -1,
-      0,             2.0f / 255.0f, 0,             -1,
-      0,             0,             2.0f / 255.0f, -1,
-      0,             0,             0,              1,
-    }
-  ;
-  // transform ColorRange::Studio to full range
-  constexpr mat4x4 transformStudioToFull =
+  // transforms from/to quantized values
+  constexpr mat4x4 transformFromQuantized =
   {
-    255.0f / (235.0f - 16.0f), 0,                         0,                         -16.0f * 255.0f / (235.0f - 16.0f),
-    0,                         255.0f / (240.0f - 16.0f), 0,                         -16.0f * 255.0f / (240.0f - 16.0f),
-    0,                         0,                         255.0f / (240.0f - 16.0f), -16.0f * 255.0f / (240.0f - 16.0f),
-    0,                         0,                         0,                         1,
+    1.0f / 255.0f, 0,             0,             0,
+    0,             1.0f / 255.0f, 0,             0,
+    0,             0,             1.0f / 255.0f, 0,
+    0,             0,             0,             1,
+  };
+  constexpr mat4x4 transformToQuantized =
+  {
+    255, 0,   0,   0,
+    0,   255, 0,   0,
+    0,   0,   255, 0,
+    0,   0,   0,   1,
+  };
+  // transforms for color range
+  // https://registry.khronos.org/vulkan/specs/1.3-extensions/html/chap16.html#textures-sampler-YCbCr-conversion-rangeexpand
+  constexpr mat4x4 transformColorRangeNarrow =
+  {
+    255.0f / (235.0f - 16.0f), 0,                         0,                          -16.0f / (235.0f - 16.0f),
+    0,                         255.0f / (240.0f - 16.0f), 0,                         -128.0f / (240.0f - 16.0f),
+    0,                         0,                         255.0f / (240.0f - 16.0f), -128.0f / (240.0f - 16.0f),
+    0,                         0,                         0,                          1,
+  };
+  constexpr mat4x4 transformColorRangeFull =
+  {
+    1, 0, 0,  0,
+    0, 1, 0, -128.0f / 255.0f,
+    0, 0, 1, -128.0f / 255.0f,
+    0, 0, 0,  1,
+  };
+  // BT.709 transform
+  // https://registry.khronos.org/DataFormat/specs/1.3/dataformat.1.3.html#MODEL_BT709
+  constexpr mat4x4 transformBT709 =
+  {
+    1,  0,                      1.5748f,               0,
+    1, -0.13397432f / 0.7152f, -0.33480248f / 0.7152f, 0,
+    1,  1.8556f,                0,                     0,
+    0,  0,                      0,                     1,
   };
 }
 
@@ -55,15 +63,16 @@ namespace Coil
 
         switch(colorRange)
         {
-        case ColorRange::Studio:
+        case ColorRange::Narrow:
           {
-            static constinit mat4x4 t = transformYUV2RGB * transformStudioToFull;
+            static constinit mat4x4 t = transformToQuantized * transformBT709 * transformColorRangeNarrow * transformFromQuantized;
             transform = t;
           }
           break;
         case ColorRange::Full:
           {
-            transform = transformYUV2RGB;
+            static constinit mat4x4 t = transformToQuantized * transformBT709 * transformColorRangeFull * transformFromQuantized;
+            transform = t;
           }
           break;
         default:
