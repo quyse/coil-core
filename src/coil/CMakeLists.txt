@@ -652,6 +652,7 @@ if(TARGET Freetype::Freetype AND TARGET harfbuzz::harfbuzz)
   target_link_libraries(coil_core_fthb
     PUBLIC
       coil_core_fonts
+      coil_core_tasks
       Freetype::Freetype
       harfbuzz::harfbuzz
   )

@@ -290,4 +290,12 @@ namespace Coil
       throw Exception("packing FreeType/Harfbuzz glyphs failed") << exception;
     }
   }
+
+  FtHbFontSource::FtHbFontSource(Buffer const& buffer)
+  : _buffer(buffer) {}
+
+  FtHbFont& FtHbFontSource::CreateFont(Book& book, int32_t size, FontVariableStyle const& style)
+  {
+    return FtHbFont::Load(book, _buffer, size, style);
+  }
 }

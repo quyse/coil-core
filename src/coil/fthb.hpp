@@ -1,6 +1,7 @@
 #pragma once
 
 #include "fonts.hpp"
+#include "tasks.hpp"
 #include <unordered_map>
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -27,4 +28,30 @@ namespace Coil
 
     mutable std::unordered_map<LanguageTag, hb_language_t> _languagesCache;
   };
+
+  class FtHbFontSource : public FontSource
+  {
+  public:
+    FtHbFontSource(Buffer const& buffer);
+
+    // FontSource's methods
+    FtHbFont& CreateFont(Book& book, int32_t size, FontVariableStyle const& style) override;
+
+  private:
+    Buffer const& _buffer;
+  };
+
+  class FtHbAssetLoader
+  {
+  public:
+    template <typename Asset, typename AssetContext>
+    requires std::convertible_to<FtHbFontSource*, Asset>
+    Task<Asset> LoadAsset(Book& book, AssetContext& assetContext) const
+    {
+      co_return &book.Allocate<FtHbFontSource>(co_await assetContext.template LoadAssetParam<Buffer>(book, "buffer"));
+    }
+
+    static constexpr std::string_view assetLoaderName = "fthb";
+  };
+  static_assert(IsAssetLoader<FtHbAssetLoader>);
 }

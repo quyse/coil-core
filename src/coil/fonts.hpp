@@ -93,4 +93,17 @@ namespace Coil
 
     static std::tuple<GlyphsPacking, RawImage2D<uint8_t>> PackGlyphs(std::vector<Glyph> const& glyphs, ivec2 const& size = { 4096, 4096 }, ivec2 const& offsetPrecision = { 1, 1 });
   };
+
+  class FontSource
+  {
+  public:
+    virtual Font& CreateFont(Book& book, int32_t size, FontVariableStyle const& style = {}) = 0;
+  };
+
+  template <>
+  struct AssetTraits<FontSource*>
+  {
+    static constexpr std::string_view assetTypeName = "font";
+  };
+  static_assert(IsAsset<FontSource*>);
 }
