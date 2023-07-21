@@ -2,6 +2,7 @@
 
 #include "base.hpp"
 #include <string>
+#include <string_view>
 #include <istream>
 #include <ostream>
 #include <bit>
@@ -52,7 +53,7 @@ namespace Coil
     // Write number in shortened format.
     void WriteNumber(uint64_t value);
     // Write string.
-    void WriteString(std::string const& value);
+    void WriteString(std::string_view value);
 
     // Write gap - align to specified boundary.
     template <size_t alignment>

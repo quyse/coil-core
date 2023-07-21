@@ -147,13 +147,13 @@ namespace Coil
     }
   }
 
-  void FontRenderer::PrepareRender(Font const& font, std::string const& text, LanguageInfo const& languageInfo, vec2 const& textOffset)
+  void FontRenderer::PrepareRender(Font const& font, std::string_view text, LanguageInfo const& languageInfo, vec2 const& textOffset)
   {
     _glyphCache.ShapeText(font, text, languageInfo, textOffset, _tempRenderGlyphs);
     _tempRenderGlyphs.clear();
   }
 
-  void FontRenderer::Render(Cache& cache, Font const& font, std::string const& text, LanguageInfo const& languageInfo, vec2 const& textOffset, vec4 const& color)
+  void FontRenderer::Render(Cache& cache, Font const& font, std::string_view text, LanguageInfo const& languageInfo, vec2 const& textOffset, vec4 const& color)
   {
     _glyphCache.ShapeText(font, text, languageInfo, textOffset, _tempRenderGlyphs);
 

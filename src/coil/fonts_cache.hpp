@@ -26,7 +26,7 @@ namespace Coil
 
     ivec2 GetSize() const;
 
-    void ShapeText(Font const& font, std::string const& text, LanguageInfo const& languageInfo, vec2 const& textOffset, std::vector<RenderGlyph>& renderGlyphs);
+    void ShapeText(Font const& font, std::string_view text, LanguageInfo const& languageInfo, vec2 const& textOffset, std::vector<RenderGlyph>& renderGlyphs);
 
     // recreate image if needed
     bool Update();

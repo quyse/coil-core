@@ -130,22 +130,22 @@ namespace Coil
 #endif
   }
 
-  File& File::Open(Book& book, std::string const& name, FileAccessMode accessMode, FileOpenMode openMode)
+  File& File::Open(Book& book, std::string_view name, FileAccessMode accessMode, FileOpenMode openMode)
   {
     return book.Allocate<File>(DoOpen(name, accessMode, openMode));
   }
 
-  File& File::OpenRead(Book& book, std::string const& name)
+  File& File::OpenRead(Book& book, std::string_view name)
   {
     return Open(book, name, FileAccessMode::ReadOnly, FileOpenMode::MustExist);
   }
 
-  File& File::OpenWrite(Book& book, std::string const& name)
+  File& File::OpenWrite(Book& book, std::string_view name)
   {
     return Open(book, name, FileAccessMode::WriteOnly, FileOpenMode::ExistAndTruncateOrCreate);
   }
 
-  Buffer File::Map(Book& book, std::string const& name, FileAccessMode accessMode, FileOpenMode openMode)
+  Buffer File::Map(Book& book, std::string_view name, FileAccessMode accessMode, FileOpenMode openMode)
   {
     try
     {
@@ -215,17 +215,17 @@ namespace Coil
     }
   }
 
-  Buffer File::MapRead(Book& book, std::string const& name)
+  Buffer File::MapRead(Book& book, std::string_view name)
   {
     return Map(book, name, FileAccessMode::ReadOnly, FileOpenMode::MustExist);
   }
 
-  Buffer File::MapWrite(Book& book, std::string const& name)
+  Buffer File::MapWrite(Book& book, std::string_view name)
   {
     return Map(book, name, FileAccessMode::WriteOnly, FileOpenMode::ExistAndTruncateOrCreate);
   }
 
-  void File::Write(std::string const& name, Buffer const& buffer)
+  void File::Write(std::string_view name, Buffer const& buffer)
   {
     File(DoOpen(name, FileAccessMode::WriteOnly, FileOpenMode::ExistAndTruncateOrCreate)).Write(0, buffer);
   }
@@ -242,7 +242,7 @@ namespace Coil
   }
 
 #if defined(COIL_PLATFORM_WINDOWS)
-  void* File::DoOpen(std::string const& name, FileAccessMode accessMode, FileOpenMode openMode)
+  void* File::DoOpen(std::string_view name, FileAccessMode accessMode, FileOpenMode openMode)
   {
     std::wstring s;
     Unicode::Convert<char, char16_t>(name.begin(), name.end(), s);
@@ -284,7 +284,7 @@ namespace Coil
     return hFile;
   }
 #elif defined(COIL_PLATFORM_POSIX)
-  int File::DoOpen(std::string const& name, FileAccessMode accessMode, FileOpenMode openMode)
+  int File::DoOpen(std::string_view name, FileAccessMode accessMode, FileOpenMode openMode)
   {
     int flags = 0;
     switch(accessMode)
@@ -313,7 +313,7 @@ namespace Coil
       flags |= O_CREAT | O_EXCL;
       break;
     }
-    int fd = ::open(name.c_str(), flags, 0644);
+    int fd = ::open(std::string(name).c_str(), flags, 0644);
     if(fd < 0)
       throw Exception("opening file failed: ") << name;
     return fd;
@@ -339,7 +339,7 @@ namespace Coil
     return size;
   }
 
-  FileInputStream& FileInputStream::Open(Book& book, std::string const& name)
+  FileInputStream& FileInputStream::Open(Book& book, std::string_view name)
   {
     return book.Allocate<FileInputStream>(File::OpenRead(book, name));
   }
@@ -353,26 +353,26 @@ namespace Coil
     _offset += buffer.size;
   }
 
-  FileOutputStream& FileOutputStream::Open(Book& book, std::string const& name)
+  FileOutputStream& FileOutputStream::Open(Book& book, std::string_view name)
   {
     return book.Allocate<FileOutputStream>(File::OpenWrite(book, name));
   }
 
-  std::string GetFsPathName(std::string const& path)
+  std::string_view GetFsPathName(std::string_view path)
   {
     size_t i;
     for(i = path.length(); i > 0 && path[i - 1] != FsPathSeparator; --i);
     return path.substr(i);
   }
 
-  std::string GetFsPathDirectory(std::string const& path)
+  std::string_view GetFsPathDirectory(std::string_view path)
   {
     size_t i;
     for(i = path.length() - 1; i > 0 && path[i] != FsPathSeparator; --i);
     return path.substr(0, i);
   }
 
-  std::filesystem::path GetNativeFsPath(std::string const& path)
+  std::filesystem::path GetNativeFsPath(std::string_view path)
   {
     if constexpr(std::same_as<std::filesystem::path::string_type, std::string>)
     {

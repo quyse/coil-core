@@ -41,8 +41,8 @@ namespace Coil
       RenderInstanceDataKnob<ShaderDataIdentityStruct<GlyphInstance>>
     >;
 
-    void PrepareRender(Font const& font, std::string const& text, LanguageInfo const& languageInfo, vec2 const& textOffset);
-    void Render(Cache& cache, Font const& font, std::string const& text, LanguageInfo const& languageInfo, vec2 const& textOffset, vec4 const& color);
+    void PrepareRender(Font const& font, std::string_view text, LanguageInfo const& languageInfo, vec2 const& textOffset);
+    void Render(Cache& cache, Font const& font, std::string_view text, LanguageInfo const& languageInfo, vec2 const& textOffset, vec4 const& color);
 
   private:
     static auto const& GetGlyphVertexLayout();

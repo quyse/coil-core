@@ -11,7 +11,7 @@ namespace Coil
     return _size;
   }
 
-  void FontGlyphCache::ShapeText(Font const& font, std::string const& text, LanguageInfo const& languageInfo, vec2 const& textOffset, std::vector<RenderGlyph>& renderGlyphs)
+  void FontGlyphCache::ShapeText(Font const& font, std::string_view text, LanguageInfo const& languageInfo, vec2 const& textOffset, std::vector<RenderGlyph>& renderGlyphs)
   {
     font.Shape(text, languageInfo, _tempShapedGlyphs);
     for(size_t i = 0; i < _tempShapedGlyphs.size(); ++i)

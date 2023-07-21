@@ -37,7 +37,7 @@ namespace Coil
     Write(bytes, i);
   }
 
-  void StreamWriter::WriteString(std::string const& value)
+  void StreamWriter::WriteString(std::string_view value)
   {
     WriteNumber(value.length());
     Write(value.data(), value.length());

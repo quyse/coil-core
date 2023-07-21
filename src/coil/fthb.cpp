@@ -146,7 +146,7 @@ namespace Coil
     return book.Allocate<FtHbFont>(ftFace, hbFont, hbBuffer, size);
   }
 
-  void FtHbFont::Shape(std::string const& text, LanguageInfo const& languageInfo, std::vector<ShapedGlyph>& shapedGlyphs) const
+  void FtHbFont::Shape(std::string_view text, LanguageInfo const& languageInfo, std::vector<ShapedGlyph>& shapedGlyphs) const
   {
     // get language
     hb_language_t language;
@@ -181,7 +181,7 @@ namespace Coil
       hb_buffer_set_direction(_hbBuffer, HB_DIRECTION_RTL);
       break;
     }
-    hb_buffer_add_utf8(_hbBuffer, text.c_str(), (int)text.length(), 0, (int)text.length());
+    hb_buffer_add_utf8(_hbBuffer, text.data(), (int)text.length(), 0, (int)text.length());
     hb_shape(_hbFont, _hbBuffer, nullptr, 0);
     hb_buffer_normalize_glyphs(_hbBuffer);
 

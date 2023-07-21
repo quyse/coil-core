@@ -17,7 +17,7 @@ namespace Coil
 
     static FtHbFont& Load(Book& book, Buffer const& buffer, int32_t size, FontVariableStyle const& style = {});
 
-    void Shape(std::string const& text, LanguageInfo const& languageInfo, std::vector<ShapedGlyph>& shapedGlyphs) const override;
+    void Shape(std::string_view text, LanguageInfo const& languageInfo, std::vector<ShapedGlyph>& shapedGlyphs) const override;
     std::vector<Glyph> CreateGlyphs(std::vector<GlyphWithOffset> const& glyphsNeeded, ivec2 const& offsetPrecision) const override;
 
   private:

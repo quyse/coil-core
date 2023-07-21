@@ -3,6 +3,7 @@
 #include "image.hpp"
 #include "localization.hpp"
 #include <optional>
+#include <string_view>
 #include <tuple>
 #include <vector>
 
@@ -88,7 +89,7 @@ namespace Coil
       uint32_t characterIndex;
     };
 
-    virtual void Shape(std::string const& text, LanguageInfo const& languageInfo, std::vector<ShapedGlyph>& shapedGlyphs) const = 0;
+    virtual void Shape(std::string_view text, LanguageInfo const& languageInfo, std::vector<ShapedGlyph>& shapedGlyphs) const = 0;
     virtual std::vector<Glyph> CreateGlyphs(std::vector<GlyphWithOffset> const& glyphsNeeded, ivec2 const& offsetPrecision = { 1, 1 }) const = 0;
 
     static std::tuple<GlyphsPacking, RawImage2D<uint8_t>> PackGlyphs(std::vector<Glyph> const& glyphs, ivec2 const& size = { 4096, 4096 }, ivec2 const& offsetPrecision = { 1, 1 });
