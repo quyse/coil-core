@@ -59,4 +59,5 @@ stdenv.mkDerivation {
     pulseaudio
   ];
   doCheck = true;
+  meta.license = lib.licenses.mit;
 }

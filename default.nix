@@ -41,6 +41,7 @@ rec {
       cmakeFlags = [
         "-DBUILD_SHARED_LIBS=ON"
       ];
+      meta.license = lib.licenses.mit;
     };
 
     libwebm = stdenv.mkDerivation rec {
@@ -58,6 +59,7 @@ rec {
       cmakeFlags = [
         "-DENABLE_WEBM_PARSER=ON"
       ];
+      meta.license = lib.licenses.bsd3;
     };
 
     libgav1 = stdenv.mkDerivation rec {
@@ -81,6 +83,7 @@ rec {
         "-DLIBGAV1_ENABLE_EXAMPLES=0"
         "-DLIBGAV1_ENABLE_TESTS=0"
       ];
+      meta.license = lib.licenses.asl20;
     };
 
     inherit (llvmPackages_16) openmp;

@@ -9,16 +9,16 @@ lib.makeExtensible (self: with self; {
   inherit (msvc) mkCmakePkg finalizePkg;
 
   nlohmann_json = mkCmakePkg {
-    inherit (pkgs.nlohmann_json) pname version src;
+    inherit (pkgs.nlohmann_json) pname version src meta;
     cmakeFlags = [
       "-DJSON_BuildTests=OFF"
     ];
   };
   vulkan-headers = mkCmakePkg {
-    inherit (pkgs.vulkan-headers) pname version src;
+    inherit (pkgs.vulkan-headers) pname version src meta;
   };
   vulkan-loader = mkCmakePkg {
-    inherit (pkgs.vulkan-loader) pname version src;
+    inherit (pkgs.vulkan-loader) pname version src meta;
     buildInputs = [
       vulkan-headers
     ];
@@ -27,10 +27,10 @@ lib.makeExtensible (self: with self; {
     ];
   };
   spirv-headers = mkCmakePkg {
-    inherit (pkgs.spirv-headers) pname version src;
+    inherit (pkgs.spirv-headers) pname version src meta;
   };
   zstd = mkCmakePkg {
-    inherit (pkgs.zstd) pname version src;
+    inherit (pkgs.zstd) pname version src meta;
     postPatch = ''
       # remove unsupported option
       grep -Fv -- '-z noexecstack' < build/cmake/CMakeModules/AddZstdCompilationFlags.cmake > build/cmake/CMakeModules/AddZstdCompilationFlags.cmake.new
@@ -44,16 +44,16 @@ lib.makeExtensible (self: with self; {
     sourceDir = "build/cmake";
   };
   SDL2 = mkCmakePkg {
-    inherit (pkgs.SDL2) pname version src;
+    inherit (pkgs.SDL2) pname version src meta;
     cmakeFlags = [
       "-DBUILD_SHARED_LIBS=ON"
     ];
   };
   zlib = mkCmakePkg {
-    inherit (pkgs.zlib) pname version src;
+    inherit (pkgs.zlib) pname version src meta;
   };
   libpng = mkCmakePkg {
-    inherit (pkgs.libpng) pname version src;
+    inherit (pkgs.libpng) pname version src meta;
     buildInputs = [
       zlib
     ];
@@ -64,13 +64,13 @@ lib.makeExtensible (self: with self; {
     ];
   };
   libsquish = mkCmakePkg rec {
-    inherit (pkgs.libsquish) pname version src sourceRoot;
+    inherit (pkgs.libsquish) pname version src sourceRoot meta;
     cmakeFlags = [
       "-DBUILD_SQUISH_WITH_OPENMP=OFF"
     ];
   };
   sqlite = mkCmakePkg {
-    inherit (pkgs.sqlite) pname version src;
+    inherit (pkgs.sqlite) pname version src meta;
     postPatch = ''
       ln -s ${pkgs.writeText "sqlite-CMakeLists.txt" ''
         cmake_minimum_required(VERSION 3.19)
@@ -86,7 +86,7 @@ lib.makeExtensible (self: with self; {
     '';
   };
   freetype = mkCmakePkg {
-    inherit (pkgs.freetype) pname version src;
+    inherit (pkgs.freetype) pname version src meta;
     buildInputs = [
       libpng
     ];
@@ -95,7 +95,7 @@ lib.makeExtensible (self: with self; {
     ];
   };
   harfbuzz = mkCmakePkg rec {
-    inherit (pkgs.harfbuzz) pname version src;
+    inherit (pkgs.harfbuzz) pname version src meta;
     buildInputs = [
       freetype
     ];
@@ -105,7 +105,7 @@ lib.makeExtensible (self: with self; {
     ];
   };
   ogg = mkCmakePkg {
-    inherit (pkgs.libogg) pname version src;
+    inherit (pkgs.libogg) pname version src meta;
     cmakeFlags = [
       "-DBUILD_SHARED_LIBS=ON"
     ];
@@ -124,9 +124,10 @@ lib.makeExtensible (self: with self; {
       "-DOPUS_X86_MAY_HAVE_SSE4_1=OFF"
       "-DOPUS_X86_MAY_HAVE_AVX=OFF"
     ];
+    meta.license = lib.licenses.bsd3;
   };
   libwebm = mkCmakePkg rec {
-    inherit (pkgs.libwebm) pname version src;
+    inherit (pkgs.libwebm) pname version src meta;
     cmakeFlags = [
       "-DBUILD_SHARED_LIBS=ON"
       "-DENABLE_WEBM_PARSER=ON"
@@ -135,7 +136,7 @@ lib.makeExtensible (self: with self; {
     ];
   };
   libgav1 = mkCmakePkg rec {
-    inherit (pkgs.libgav1) pname version src;
+    inherit (pkgs.libgav1) pname version src meta;
     postPatch = ''
       sed -ie 's?-Wall??;s?-Wextra??' cmake/libgav1_build_definitions.cmake
       sed -ie 's?__declspec(dllimport)??' src/gav1/symbol_visibility.h
@@ -166,8 +167,7 @@ lib.makeExtensible (self: with self; {
     });
   }) else null;
   coil-core = mkCmakePkg {
-    name = "coil-core";
-    inherit (pkgs.coil-core) src;
+    inherit (pkgs.coil-core) name src meta;
     buildInputs = [
       nlohmann_json
       vulkan-headers
