@@ -550,6 +550,20 @@ namespace Coil
     std::same_as<typename VectorTraits<T>::Scalar, float>;
   };
 
+  // reverse mapping
+  template <typename T, size_t n>
+  struct ScalarOrVectorHelper
+  {
+    using Type = xvec<T, n>;
+  };
+  template <typename T>
+  struct ScalarOrVectorHelper<T, 1>
+  {
+    using Type = T;
+  };
+  template <typename T, size_t n>
+  using ScalarOrVector = typename ScalarOrVectorHelper<T, n>::Type;
+
   // convenience synonyms
 
   template <size_t n>

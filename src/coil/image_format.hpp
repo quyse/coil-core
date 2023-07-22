@@ -179,6 +179,9 @@ namespace Coil
       int32_t depth;
       uint32_t size;
       uint32_t offset;
+      // buffer size (for block formats it's rounded up from width/height)
+      int32_t bufferWidth;
+      int32_t bufferHeight;
     };
     std::vector<Mip> mips;
     uint32_t imageSize;

@@ -1680,21 +1680,21 @@ namespace Coil
 
     auto buf = AllocateBuffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT, textureSize);
 
-    for(int32_t i = 0; i < count; ++i)
+    for(int32_t imageIndex = 0; imageIndex < count; ++imageIndex)
     {
-      for(size_t j = 0; j < metrics.mips.size(); ++j)
+      for(size_t mipIndex = 0; mipIndex < metrics.mips.size(); ++mipIndex)
       {
-        auto const& mip = metrics.mips[j];
+        auto const& mip = metrics.mips[mipIndex];
         regions.push_back(
         {
-          .bufferOffset = buf.bufferOffset + i * metrics.imageSize + mip.offset,
-          .bufferRowLength = (uint32_t)mip.width,
-          .bufferImageHeight = (uint32_t)mip.height,
+          .bufferOffset = buf.bufferOffset + imageIndex * metrics.imageSize + mip.offset,
+          .bufferRowLength = (uint32_t)mip.bufferWidth,
+          .bufferImageHeight = (uint32_t)mip.bufferHeight,
           .imageSubresource =
           {
             .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-            .mipLevel = (uint32_t)j,
-            .baseArrayLayer = (uint32_t)i,
+            .mipLevel = (uint32_t)mipIndex,
+            .baseArrayLayer = (uint32_t)imageIndex,
             .layerCount = 1,
           },
           .imageOffset =

@@ -392,6 +392,22 @@ endif()
 list(APPEND coil_core_all_libraries image)
 
 if(TRUE)
+  add_library(coil_core_image_transform STATIC
+    image_transform.cpp
+  )
+  set_property(TARGET coil_core_image_transform PROPERTY PUBLIC_HEADER
+    image_transform.hpp
+  )
+  target_link_libraries(coil_core_image_transform
+    PUBLIC
+      coil_core_image
+      coil_core_tasks
+  )
+  list(APPEND coil_core_libraries image_transform)
+endif()
+list(APPEND coil_core_all_libraries image_transform)
+
+if(TRUE)
   add_library(coil_core_render STATIC
     render.cpp
     render_canvas.cpp

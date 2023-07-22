@@ -5,6 +5,9 @@
 
 namespace Coil
 {
+  template <typename T, size_t n>
+  class RawImage;
+
   // view of typed uncompressed image of given dimensionality
   template <typename T, size_t n>
   struct RawImageSlice
@@ -104,6 +107,31 @@ namespace Coil
         blend(pixels[dstOffset], image.pixels[srcOffset]);
       }, dot(dst, pitch), dot(src, image.pitch));
     }
+
+    template <typename S>
+    RawImage<T, n> DownSample(ivec<n> factor) const
+    {
+      ivec<n> newSize = this->size / factor;
+      RawImage<T, n> newImage(newSize);
+
+      typename VectorTraits<S>::Scalar factorVolume = 1;
+      for(size_t i = 0; i < n; ++i)
+        factorVolume *= factor(i);
+
+      ProcessHelper<ivec<n>> sumHelper(factor, this->pitch);
+      ProcessHelper<ivec<n>, ivec<n>>(newSize, newImage.pitch, this->pitch * factor).template Process<n - 1>([&](int32_t dstOffset, int32_t srcOffset)
+      {
+        S s = {};
+        sumHelper.template Process<n - 1>([&](int32_t offset)
+        {
+          s += (S)this->pixels[offset];
+        }, srcOffset);
+        newImage.pixels[dstOffset] = (T)(s / factorVolume);
+      }, int32_t{}, int32_t{});
+
+      return std::move(newImage);
+    }
+
   };
 
   template <typename T>
@@ -150,30 +178,6 @@ namespace Coil
     {
       swap(static_cast<RawImageSlice<T, n>&>(a), static_cast<RawImageSlice<T, n>&>(b));
       swap(a._pixels, b._pixels);
-    }
-
-    template <typename S>
-    RawImage DownSample(ivec<n> factor) const
-    {
-      ivec<n> newSize = this->size / factor;
-      RawImage newImage(newSize);
-
-      S factorVolume = 1;
-      for(size_t i = 0; i < n; ++i)
-        factorVolume *= factor(i);
-
-      typename RawImage::template ProcessHelper<ivec<n>> sumHelper(factor, this->pitch);
-      typename RawImage::template ProcessHelper<ivec<n>, ivec<n>>(newSize, newImage.pitch, this->pitch * factor).template Process<n - 1>([&](int32_t dstOffset, int32_t srcOffset)
-      {
-        S s = {};
-        sumHelper.template Process<n - 1>([&](int32_t offset)
-        {
-          s += this->pixels[offset];
-        }, srcOffset);
-        newImage.pixels[dstOffset] = (T)(s / factorVolume);
-      }, int32_t{}, int32_t{});
-
-      return std::move(newImage);
     }
 
   private:

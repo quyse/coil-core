@@ -248,15 +248,17 @@ namespace Coil
       {
       case PixelFormat::Type::Uncompressed:
         mip.size = mip.width * mip.height * mip.depth * metrics.pixelSize;
+        mip.bufferWidth = mip.width;
+        mip.bufferHeight = mip.height;
         break;
       case PixelFormat::Type::Compressed:
         {
           auto compressionMetrics = PixelFormat::GetCompressionMetrics(format.compression);
-          mip.size =
-            ((mip.width + compressionMetrics.blockWidth - 1) / compressionMetrics.blockWidth) *
-            ((mip.height + compressionMetrics.blockHeight - 1) / compressionMetrics.blockHeight) *
-            mip.depth *
-            compressionMetrics.blockSize;
+          int32_t blockWidth = (mip.width + compressionMetrics.blockWidth - 1) / compressionMetrics.blockWidth;
+          int32_t blockHeight = (mip.height + compressionMetrics.blockHeight - 1) / compressionMetrics.blockHeight;
+          mip.size = blockWidth * blockHeight * mip.depth * compressionMetrics.blockSize;
+          mip.bufferWidth = blockWidth * compressionMetrics.blockWidth;
+          mip.bufferHeight = blockHeight * compressionMetrics.blockHeight;
         }
         break;
       }
