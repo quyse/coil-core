@@ -1,4 +1,4 @@
-#include "asset_gltf.hpp"
+#include "gltf.hpp"
 #include "data.hpp"
 #include "json.hpp"
 

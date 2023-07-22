@@ -1,7 +1,7 @@
 #pragma once
 
-#include "asset_mesh.hpp"
-#include "asset_gltf.hpp"
+#include "gltf.hpp"
+#include "mesh.hpp"
 #include <limits>
 
 namespace Coil

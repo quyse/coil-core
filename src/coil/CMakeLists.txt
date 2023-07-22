@@ -576,37 +576,37 @@ endif()
 list(APPEND coil_core_all_libraries compress_zstd)
 
 if(TRUE)
-  add_library(coil_core_asset_mesh INTERFACE)
-  set_property(TARGET coil_core_asset_mesh PROPERTY PUBLIC_HEADER
-    asset_mesh.hpp
+  add_library(coil_core_mesh INTERFACE)
+  set_property(TARGET coil_core_mesh PROPERTY PUBLIC_HEADER
+    mesh.hpp
   )
-  target_link_libraries(coil_core_asset_mesh
+  target_link_libraries(coil_core_mesh
     INTERFACE
       coil_core_math
   )
-  list(APPEND coil_core_libraries asset_mesh)
+  list(APPEND coil_core_libraries mesh)
 endif()
-list(APPEND coil_core_all_libraries asset_mesh)
+list(APPEND coil_core_all_libraries mesh)
 
 if(TARGET coil_core_json)
-  add_library(coil_core_asset_gltf STATIC
-    asset_gltf.cpp
+  add_library(coil_core_gltf STATIC
+    gltf.cpp
   )
-  set_property(TARGET coil_core_asset_gltf PROPERTY PUBLIC_HEADER
-    asset_gltf.hpp
-    asset_gltf_cache.hpp
+  set_property(TARGET coil_core_gltf PROPERTY PUBLIC_HEADER
+    gltf.hpp
+    gltf_cache.hpp
   )
-  target_link_libraries(coil_core_asset_gltf
+  target_link_libraries(coil_core_gltf
     PUBLIC
-      coil_core_asset_mesh
       coil_core_math
+      coil_core_mesh
     PRIVATE
       coil_core_data
       coil_core_json
   )
-  list(APPEND coil_core_libraries asset_gltf)
+  list(APPEND coil_core_libraries gltf)
 endif()
-list(APPEND coil_core_all_libraries asset_gltf)
+list(APPEND coil_core_all_libraries gltf)
 
 if(TARGET SQLite::SQLite3)
   add_library(coil_core_sqlite STATIC
