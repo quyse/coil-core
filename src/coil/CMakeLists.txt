@@ -142,19 +142,19 @@ endif()
 list(APPEND coil_core_all_libraries data)
 
 if(TRUE)
-  add_library(coil_core_asset INTERFACE)
-  set_property(TARGET coil_core_asset PROPERTY PUBLIC_HEADER
-    asset.hpp
-    asset_struct.hpp
+  add_library(coil_core_assets INTERFACE)
+  set_property(TARGET coil_core_assets PROPERTY PUBLIC_HEADER
+    assets.hpp
+    assets_struct.hpp
   )
-  target_link_libraries(coil_core_asset
+  target_link_libraries(coil_core_assets
     INTERFACE
       coil_core_json
       coil_core_tasks
   )
-  list(APPEND coil_core_libraries asset)
+  list(APPEND coil_core_libraries assets)
 endif()
-list(APPEND coil_core_all_libraries asset)
+list(APPEND coil_core_all_libraries assets)
 
 if(TRUE)
   add_library(coil_core_fs STATIC

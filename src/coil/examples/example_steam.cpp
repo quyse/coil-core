@@ -1,6 +1,6 @@
 #include <coil/appidentity.hpp>
-#include <coil/asset.hpp>
-#include <coil/asset_struct.hpp>
+#include <coil/assets.hpp>
+#include <coil/assets_struct.hpp>
 #include <coil/entrypoint.hpp>
 #include <coil/fs.hpp>
 #include <coil/image_compress.hpp>
