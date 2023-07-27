@@ -38,7 +38,7 @@ namespace Coil
     FtHbFont& CreateFont(Book& book, int32_t size, FontVariableStyle const& style) override;
 
   private:
-    Buffer const& _buffer;
+    Buffer _buffer;
   };
 
   class FtHbAssetLoader
