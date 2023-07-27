@@ -23,7 +23,6 @@ namespace Coil
               if(_state[event.key] == event.isPressed) return false;
               // otherwise apply state
               _state[event.key] = event.isPressed;
-              _ProcessKeyboardVirtualEvents(event);
               return true;
             }
             if constexpr(std::same_as<E2, InputKeyboardCharacterEvent>)
@@ -89,47 +88,6 @@ namespace Coil
   void InputFrame::AddEvent(InputEvent const& event)
   {
     _events.push_back(event);
-  }
-
-  void InputFrame::_ProcessKeyboardVirtualEvents(InputKeyboardKeyEvent const& event)
-  {
-    InputKey virtualKey;
-    bool newPressed;
-    switch(event.key)
-    {
-    case InputKey::ShiftL:
-    case InputKey::ShiftR:
-      virtualKey = InputKey::Shift;
-      newPressed = _state[InputKey::ShiftL] || _state[InputKey::ShiftR];
-      break;
-    case InputKey::ControlL:
-    case InputKey::ControlR:
-      virtualKey = InputKey::Control;
-      newPressed = _state[InputKey::ControlL] || _state[InputKey::ControlR];
-      break;
-    case InputKey::AltL:
-    case InputKey::AltR:
-      virtualKey = InputKey::Alt;
-      newPressed = _state[InputKey::AltL] || _state[InputKey::AltR];
-      break;
-    default:
-      return;
-    }
-
-    bool oldPressed = _state[virtualKey];
-
-    if(newPressed != oldPressed)
-    {
-      InputEvent virtualEvent = InputKeyboardEvent
-      {
-        InputKeyboardKeyEvent
-        {
-          .key = virtualKey,
-          .isPressed = newPressed,
-        }
-      };
-      _events.push_back(virtualEvent);
-    }
   }
 
   InputControllerId InputController::GetId() const

@@ -151,8 +151,6 @@ namespace Coil
     void AddEvent(InputEvent const& event);
 
   private:
-    void _ProcessKeyboardVirtualEvents(InputKeyboardKeyEvent const& event);
-
     std::vector<InputEvent> _events;
     size_t _nextEvent = 0;
     InputState _state;
