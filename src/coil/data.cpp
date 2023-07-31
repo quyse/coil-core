@@ -71,6 +71,14 @@ namespace Coil
     _read += size;
   }
 
+  void StreamReader::Skip(size_t size)
+  {
+    size_t skipped = _stream.Skip(size);
+    if(skipped != size)
+      throw Exception("StreamReader: unexpected end of stream");
+    _read += size;
+  }
+
   uint64_t StreamReader::ReadNumber()
   {
     uint64_t value = 0;

@@ -78,6 +78,7 @@ namespace Coil
     StreamReader(InputStream& stream);
 
     void Read(void* data, size_t size);
+    void Skip(size_t size);
 
     // Read primitive data.
     template <typename T>
