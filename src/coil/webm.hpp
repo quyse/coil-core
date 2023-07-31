@@ -82,12 +82,5 @@ namespace Coil
   };
   static_assert(IsAssetLoader<WebmTrackAssetLoader>);
 
-  template <>
-  struct AssetTraits<WebmTrackDecodeStreamSource*>
-  {
-    static constexpr std::string_view assetTypeName = "webm_decode_track_stream_source";
-  };
-  static_assert(IsAsset<WebmTrackDecodeStreamSource*>);
-
   template <> MediaType FromString(std::string_view str);
 }
