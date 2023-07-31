@@ -1,11 +1,11 @@
 #pragma once
 
-#include "base.hpp"
+#include "tasks.hpp"
 #include <zstd.h>
 
 namespace Coil
 {
-  class ZstdCompressStream : public OutputStream
+  class ZstdCompressStream final : public OutputStream
   {
   public:
     ZstdCompressStream(OutputStream& outputStream);
@@ -21,7 +21,7 @@ namespace Coil
     ZSTD_CStream* _stream = nullptr;
   };
 
-  class ZstdDecompressStream : public InputStream
+  class ZstdDecompressStream final : public InputStream
   {
   public:
     ZstdDecompressStream(InputStream& inputStream);
@@ -40,4 +40,31 @@ namespace Coil
       .pos = 0,
     };
   };
+
+  class ZstdDecompressStreamSource final : public InputStreamSource
+  {
+  public:
+    ZstdDecompressStreamSource(InputStreamSource& source);
+
+    InputStream& CreateStream(Book& book) override;
+
+  private:
+    InputStreamSource& _source;
+  };
+
+  class ZstdAssetLoader
+  {
+  public:
+    template <typename Asset, typename AssetContext>
+    requires std::convertible_to<ZstdDecompressStreamSource*, Asset>
+    Task<Asset> LoadAsset(Book& book, AssetContext& assetContext) const
+    {
+      co_return &book.Allocate<ZstdDecompressStreamSource>(
+        *co_await assetContext.template LoadAssetParam<InputStreamSource*>(book, "source")
+      );
+    }
+
+    static constexpr std::string_view assetLoaderName = "zstd";
+  };
+  static_assert(IsAssetLoader<ZstdAssetLoader>);
 }

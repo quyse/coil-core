@@ -568,7 +568,7 @@ if(TARGET zstd::libzstd_shared)
   )
   target_link_libraries(coil_core_compress_zstd
     PUBLIC
-      coil_core_base
+      coil_core_tasks
       zstd::libzstd_shared
   )
   list(APPEND coil_core_libraries compress_zstd)

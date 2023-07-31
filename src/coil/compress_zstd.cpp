@@ -98,4 +98,12 @@ namespace Coil
     }
     return outBuffer.pos;
   }
+
+  ZstdDecompressStreamSource::ZstdDecompressStreamSource(InputStreamSource& source)
+  : _source(source) {}
+
+  InputStream& ZstdDecompressStreamSource::CreateStream(Book& book)
+  {
+    return book.Allocate<ZstdDecompressStream>(_source.CreateStream(book));
+  }
 }
