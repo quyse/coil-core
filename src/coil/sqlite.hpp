@@ -89,6 +89,8 @@ namespace Coil
     {
     public:
       Query(sqlite3_stmt* stmt);
+      Query(Query const&) = delete;
+      Query(Query&&) = delete;
       ~Query();
 
       // perform operation not returning result (expects SQLITE_DONE)
@@ -128,6 +130,8 @@ namespace Coil
     {
     public:
       Transaction(SqliteDb& db);
+      Transaction(Transaction const&) = delete;
+      Transaction(Transaction&&) = delete;
       ~Transaction();
 
       void Commit();
@@ -145,20 +149,34 @@ namespace Coil
       Create = 2,
     };
 
+    class DbHandle
+    {
+    public:
+      DbHandle() = default;
+      DbHandle(sqlite3* _db);
+      DbHandle(DbHandle const&) = delete;
+      DbHandle(DbHandle&& db) noexcept;
+      ~DbHandle();
+
+      operator sqlite3*() const;
+
+    private:
+      sqlite3* _db = nullptr;
+    };
+
   private:
-    SqliteDb(sqlite3* db);
+    SqliteDb(DbHandle&& db);
   public:
     SqliteDb(SqliteDb const&) = delete;
-    SqliteDb(SqliteDb&& db) noexcept;
-    ~SqliteDb();
 
     static SqliteDb Open(char const* fileName, OpenFlags flags = (OpenFlags)OpenFlag::Write | (OpenFlags)OpenFlag::Create);
 
     Statement CreateStatement(char const* sql);
     Transaction CreateTransaction();
+    void Exec(char const* sql);
 
   private:
-    sqlite3* _db = nullptr;
+    DbHandle _db;
     Statement _stmtSavepoint, _stmtRelease, _stmtRollback;
   };
 }

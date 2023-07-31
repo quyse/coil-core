@@ -84,7 +84,7 @@ namespace Coil
 
   void SqliteDb::Query::operator()()
   {
-    CheckError<SQLITE_DONE>(sqlite3_step(_stmt));
+    while(Next().has_value());
   }
 
   std::optional<SqliteDb::Result> SqliteDb::Query::Next()
@@ -106,6 +106,7 @@ namespace Coil
 
   SqliteDb::Statement::~Statement()
   {
+    // null is ok
     sqlite3_finalize(_stmt);
   }
 
@@ -144,28 +145,31 @@ namespace Coil
     _finished = true;
   }
 
-  SqliteDb::SqliteDb(sqlite3* db)
-  : _db(db)
-  , _stmtSavepoint(CreateStatement("SAVEPOINT T"))
-  , _stmtRelease(CreateStatement("RELEASE T"))
-  , _stmtRollback(CreateStatement("ROLLBACK TO T"))
-  {}
+  SqliteDb::DbHandle::DbHandle(sqlite3* db)
+  : _db(db) {}
 
-  SqliteDb::SqliteDb(SqliteDb&& db) noexcept
-  : _stmtSavepoint(std::move(db._stmtSavepoint))
-  , _stmtRelease(std::move(db._stmtRelease))
-  , _stmtRollback(std::move(db._stmtRollback))
+  SqliteDb::DbHandle::DbHandle(DbHandle&& db) noexcept
   {
     std::swap(_db, db._db);
   }
 
-  SqliteDb::~SqliteDb()
+  SqliteDb::DbHandle::~DbHandle()
   {
-    if(_db)
-    {
-      sqlite3_close_v2(_db);
-    }
+    // null is ok
+    sqlite3_close_v2(_db);
   }
+
+  SqliteDb::DbHandle::operator sqlite3*() const
+  {
+    return _db;
+  }
+
+  SqliteDb::SqliteDb(DbHandle&& db)
+  : _db(std::move(db))
+  , _stmtSavepoint(CreateStatement("SAVEPOINT T"))
+  , _stmtRelease(CreateStatement("RELEASE T"))
+  , _stmtRollback(CreateStatement("ROLLBACK TO T"))
+  {}
 
   SqliteDb SqliteDb::Open(char const* fileName, OpenFlags flags)
   {
@@ -178,9 +182,9 @@ namespace Coil
     // make sure it is wrapped
     sqlite3* dbHandle = nullptr;
     int r = sqlite3_open_v2(fileName, &dbHandle, flagsValue, nullptr);
-    SqliteDb db(dbHandle);
+    DbHandle db(dbHandle);
     CheckError(r);
-    return std::move(db);
+    return db;
   }
 
   SqliteDb::Statement SqliteDb::CreateStatement(char const* sql)
@@ -193,5 +197,10 @@ namespace Coil
   SqliteDb::Transaction SqliteDb::CreateTransaction()
   {
     return *this;
+  }
+
+  void SqliteDb::Exec(char const* sql)
+  {
+    CheckError(sqlite3_exec(_db, sql, nullptr, nullptr, nullptr));
   }
 }
