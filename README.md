@@ -43,12 +43,12 @@ Some WIP documentation.
 
 [NixOS](https://nixos.org/) is the main development platform, and the Nix configuration is the easiest to use. It contains the following CI-tested attributes:
 
-* `coil-core` - built using [nixpkgs](https://github.com/NixOS/nixpkgs) dependencies, for use on NixOS
+* `coil-core-nixos` - built using [nixpkgs](https://github.com/NixOS/nixpkgs) dependencies, for use on NixOS
 * `coil-core-ubuntu` - built using Ubuntu LTS
 * `coil-core-windows` - Windows build, using MSVC/clang toolchain
 
 ### Building without Nix
 
-Building without Nix is not officially blessed, but should be doable. Build configuration is done with CMake. See [default.nix](default.nix) for the list of third-party dependencies. Clang or MSVC-clang is usually required (GCC does not work), e.g. `cmake -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang ...`.
+Even non-NixOS builds are automated using Nix, so building without Nix is not officially supported. Build configuration is done with CMake. See `ubuntu-pkgs` attribute in [default.nix](default.nix) for the list of third-party dependencies. Recent Clang or MSVC-clang is probably required (other compilers are not tested), e.g. `cmake -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang ...`.
 
-`COIL_CORE_REQUIRE_LIBS` CMake variable can be used to require only selected subset of engine libraries, e.g. for the case when not all dependencies are available. By default all libraries are required to build, and configuration will fail if some third-party dependency is not available. Use `-DCOIL_CORE_REQUIRE_LIBS=` to configure as many libraries as possible without failing if unable to do so for some of them.
+`COIL_CORE_REQUIRE_LIBS` CMake variable can be used to require only selected subset of engine libraries, e.g. for the case when not all dependencies are available. By default all libraries are required to build, and configuration will fail if some third-party dependency is not available. Use empty value (`-DCOIL_CORE_REQUIRE_LIBS=`) to configure as many libraries as possible without failing if some of them cannot be configured.
