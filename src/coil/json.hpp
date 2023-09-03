@@ -3,6 +3,7 @@
 #include "math.hpp"
 #include <concepts>
 #include <optional>
+#include <ranges>
 #include <unordered_map>
 #include <vector>
 #include <nlohmann/json.hpp>
@@ -245,4 +246,12 @@ namespace Coil
   Json JsonFromBuffer(Buffer const& buffer);
   // serialize JSON into buffer
   std::string JsonToString(Json const& j);
+
+  // deserialize JSON from range
+  // supported are ranges of char (UTF-8), char16_t (UTF-16), and char32_t (UTF-32)
+  template <std::ranges::input_range Range>
+  Json JsonFromRange(Range const& range)
+  {
+    return Json::parse(std::ranges::cbegin(range), std::ranges::cend(range));
+  }
 }
