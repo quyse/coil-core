@@ -1,6 +1,7 @@
 #pragma once
 
 #include <coroutine>
+#include <iterator>
 #include <optional>
 
 namespace Coil
@@ -33,6 +34,11 @@ namespace Coil
         _value = std::move(value);
         return {};
       }
+      std::suspend_always yield_value(T const& value)
+      {
+        _value = value;
+        return {};
+      }
       void return_void() {}
 
     private:
@@ -43,27 +49,103 @@ namespace Coil
 
     std::optional<T> operator()() const
     {
-      if(_coroutine.done()) return {};
-      _coroutine();
-      return _coroutine.promise()._value;
+      auto& promise = _coroutine.promise();
+      promise._value = {};
+      if(!_coroutine.done())
+      {
+        _coroutine();
+      }
+      return promise._value;
+    }
+
+    Generator(Generator const&) = delete;
+    Generator(Generator&& other)
+    {
+      *this = std::move(other);
+    }
+    Generator& operator=(Generator const&) = delete;
+    Generator& operator=(Generator&& other)
+    {
+      std::swap(_coroutine, other._coroutine);
+      return *this;
+    }
+
+    ~Generator()
+    {
+      if(_coroutine)
+      {
+        _coroutine.destroy();
+      }
+    }
+
+    class Iterator
+    {
+    public:
+      Iterator(Generator const& generator)
+      : _pGenerator(&generator)
+      {
+        Step();
+      }
+      // sentinel
+      Iterator() = default;
+      Iterator(Iterator const&) = default;
+      Iterator(Iterator&&) = default;
+      Iterator& operator=(Iterator const&) = default;
+      Iterator& operator=(Iterator&&) = default;
+
+      Iterator& operator++()
+      {
+        Step();
+        return *this;
+      }
+      Iterator operator++(int)
+      {
+        Iterator i = *this;
+        Step();
+        return std::move(i);
+      }
+
+      T const& operator*() const
+      {
+        return _value.value();
+      }
+
+      friend bool operator==(Iterator const& a, Iterator const& b)
+      {
+        return a._value.has_value() == b._value.has_value();
+      }
+
+      using difference_type = ptrdiff_t;
+      using value_type = T;
+      using pointer = value_type*;
+      using reference = value_type&;
+      using iterator_category = std::forward_iterator_tag;
+      using iterator_concept = std::forward_iterator_tag;
+
+    private:
+      void Step()
+      {
+        _value = (*_pGenerator)();
+      }
+
+      Generator const* _pGenerator = nullptr;
+      std::optional<T> _value;
+    };
+
+    // range methods
+    Iterator begin() const
+    {
+      return *this;
+    }
+    Iterator end() const
+    {
+      return {};
     }
 
   private:
     Generator(std::coroutine_handle<promise_type> coroutine)
     : _coroutine(coroutine) {}
 
-    Generator(Generator const&) = delete;
-    Generator(Generator&&) = default;
-    Generator& operator=(Generator const&) = delete;
-    Generator& operator=(Generator&&) = default;
-
-  public:
-    ~Generator()
-    {
-      _coroutine.destroy();
-    }
-
-  private:
-    std::coroutine_handle<promise_type> const _coroutine;
+    std::coroutine_handle<promise_type> _coroutine;
   };
 }
