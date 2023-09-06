@@ -2,12 +2,14 @@
 , pkgs ? pkgsFun {}
 , lib ? pkgs.lib
 , coil
+, features ? null
 }:
 
 rec {
   # NixOS build
   nixos-pkgs = pkgs.extend (self: super: with self; {
     coil-core = (callPackage ./coil-core.nix {
+      inherit features;
     }).overrideAttrs (attrs: {
       cmakeFlags = (attrs.cmakeFlags or []) ++ [
         # force clang
@@ -120,6 +122,7 @@ rec {
       "libgav1-dev"
     ];
     coil-core = pkgs.vmTools.runInLinuxImage ((pkgs.callPackage ./coil-core.nix {
+      inherit features;
       libsquish = null;
       libwebm = null;
       libgav1 = null;
