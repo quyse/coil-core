@@ -1,7 +1,9 @@
 #pragma once
 
+#include <algorithm>
 #include <concepts>
 #include <sstream>
+#include <string_view>
 #include <vector>
 #include <version>
 #if defined(__cpp_lib_source_location)
@@ -295,6 +297,53 @@ namespace Coil
   public:
     virtual PacketInputStream& CreateStream(Book& book) = 0;
   };
+
+
+  // text literal
+  // can be used as non-type template argument
+  template <size_t N>
+  struct Literal
+  {
+    template <size_t M>
+    constexpr Literal(char const(&s)[M]) requires (N <= M)
+    {
+      std::copy_n(s, N, this->s);
+    }
+    constexpr Literal(char const* s)
+    {
+      std::copy_n(s, N, this->s);
+    }
+
+    friend std::ostream& operator<<(std::ostream& s, Literal const& l)
+    {
+      return s << std::string_view(l.s, l.n);
+    }
+
+    char s[N];
+    static constexpr size_t n = N;
+  };
+  template <size_t M>
+  Literal(char const(&s)[M]) -> Literal<M - 1>;
+
+  // custom literal
+  template <Literal l>
+  consteval auto operator""_l()
+  {
+    return l;
+  }
+
+  // compile-time multicharacter literal
+  // (simple 'abcd' has implementation-defined value and produces compile warnings)
+  template <Literal l>
+  consteval auto operator""_c()
+  {
+    uint32_t r = 0;
+    for(size_t i = 0; i < l.n; ++i)
+      r = (r << 8) | l.s[i];
+    return r;
+  }
+  static_assert("ABCD"_c == 0x41424344);
+
 
   // serialization to/from string, to be specialized
   template <typename T>

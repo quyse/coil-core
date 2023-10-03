@@ -1,13 +1,13 @@
 #pragma once
 
 #include "base.hpp"
+#include <algorithm>
+#include <array>
+#include <limits>
 #include <ostream>
 #include <string_view>
 #include <tuple>
-#include <array>
-#include <algorithm>
 #include <variant>
-#include <limits>
 
 namespace Coil
 {
@@ -52,58 +52,6 @@ namespace Coil
   private:
     T const _value;
   };
-
-  // text literal
-  // can be used as non-type template argument
-  template <size_t N>
-  struct Literal
-  {
-    template <size_t M>
-    constexpr Literal(char const(&s)[M]) requires (N <= M)
-    {
-      std::copy_n(s, N, this->s);
-    }
-    constexpr Literal(char const* s)
-    {
-      std::copy_n(s, N, this->s);
-    }
-
-    using Args = std::tuple<>;
-    static constexpr std::array<size_t, 0> const argsIndices = {};
-    constexpr auto Resolve(Args const&) const
-    {
-      return *this;
-    }
-
-    friend std::ostream& operator<<(std::ostream& s, Literal const& l)
-    {
-      return s << std::string_view(l.s, l.n);
-    }
-
-    char s[N];
-    static constexpr size_t n = N;
-  };
-  template <size_t M>
-  Literal(char const(&s)[M]) -> Literal<M - 1>;
-
-  // custom literal
-  template <Literal l>
-  consteval auto operator""_l()
-  {
-    return l;
-  }
-
-  // compile-time multicharacter literal
-  // (simple 'abcd' has implementation-defined value and produces compile warnings)
-  template <Literal l>
-  consteval auto operator""_c()
-  {
-    uint32_t r = 0;
-    for(size_t i = 0; i < l.n; ++i)
-      r = (r << 8) | l.s[i];
-    return r;
-  }
-  static_assert("ABCD"_c == 0x41424344);
 
   // compile-time text literal
   template <Literal l>
