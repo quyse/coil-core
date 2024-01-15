@@ -48,11 +48,11 @@ rec {
 
     libwebm = stdenv.mkDerivation rec {
       pname = "libwebm";
-      version = "1.0.0.30";
+      version = "1.0.0.31";
       src = pkgs.fetchgit {
         url = "https://chromium.googlesource.com/webm/libwebm";
         rev = "libwebm-${version}";
-        hash = "sha256-Yc1whR+liBimHxrJBgztM7mZxU9QvKwG5x/HkEuB5FY=";
+        hash = "sha256-+ayX33rcX/jkewsW8WrGalTe9X44qFBHOrIYTteOQzc=";
       };
       nativeBuildInputs = [
         cmake
@@ -66,11 +66,11 @@ rec {
 
     libgav1 = stdenv.mkDerivation rec {
       pname = "libgav1";
-      version = "0.18.0";
+      version = "0.19.0";
       src = pkgs.fetchgit {
         url = "https://chromium.googlesource.com/codecs/libgav1";
         rev = "v${version}";
-        hash = "sha256-tp79z7oasdu0/BIdcDs5qdxoRmntSgkovroRAPnqzEk=";
+        hash = "sha256-kuDXv8H24UwyrOK0cAsTSvMPFCkPI8qUcj5u9WwgfkU=";
       };
       nativeBuildInputs = [
         cmake
