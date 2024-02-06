@@ -268,13 +268,21 @@ namespace Coil::Unicode
     : Iterator<char32_t, To, Iterator<From, char32_t, FromIterator>>(it) {}
   };
 
-  // conversion from iterator into container with back-inserter
+  // conversion from iterator pair into container with back-inserter
   template <typename From, typename To, std::input_iterator FromIterator, typename Container>
   void Convert(FromIterator begin, FromIterator end, Container& r)
   {
     std::back_insert_iterator j(r);
     Iterator<From, To, FromIterator> iend = end;
     for(Iterator<From, To, FromIterator> i = begin; i < iend; ++i)
+      *j++ = *i;
+  }
+  // conversion from iterator to null-terminated string into container with back-inserter
+  template <typename From, typename To, std::input_iterator FromIterator, typename Container>
+  void Convert(FromIterator begin, Container& r)
+  {
+    std::back_insert_iterator j(r);
+    for(Iterator<From, To, FromIterator> i = begin; *i; ++i)
       *j++ = *i;
   }
 }
