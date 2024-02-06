@@ -171,17 +171,17 @@ namespace Coil
 #endif
 
     template <typename T>
-    explicit Exception(T const& value
+    explicit Exception(T&& value
 #if defined(__cpp_lib_source_location)
       , std::source_location location = std::source_location::current()
 #endif
     )
     {
-      std::move(*this)
+      *this
 #if defined(__cpp_lib_source_location)
         << location.file_name() << ':' << location.line() << ' ' << location.function_name() << ": "
 #endif
-        << value;
+        << std::forward<T>(value);
     }
 
     Exception(Exception const&) = delete;
@@ -189,10 +189,17 @@ namespace Coil
 
     std::string GetMessage() const;
 
-    friend Exception&& operator<<(Exception&& e, Exception const& inner);
+    friend Exception& operator<<(Exception& e, Exception const& inner);
+    friend Exception operator<<(Exception&& e, Exception const& inner);
 
     template <typename T>
-    friend Exception&& operator<<(Exception&& e, T const& value)
+    friend Exception& operator<<(Exception& e, T const& value)
+    {
+      e._message << value;
+      return e;
+    }
+    template <typename T>
+    friend Exception operator<<(Exception&& e, T const& value)
     {
       e._message << value;
       return std::move(e);

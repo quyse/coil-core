@@ -65,7 +65,7 @@ namespace Coil
 #if defined(__cpp_lib_source_location)
   Exception::Exception(std::source_location location)
   {
-    std::move(*this) << location.file_name() << ':' << location.line() << ' ' << location.function_name() << ": ";
+    *this << location.file_name() << ':' << location.line() << ' ' << location.function_name() << ": ";
   }
 #endif
 
@@ -74,7 +74,12 @@ namespace Coil
     return _message.str();
   }
 
-  Exception&& operator<<(Exception&& e, Exception const& inner)
+  Exception& operator<<(Exception& e, Exception const& inner)
+  {
+    e._message << '\n' << inner._message.str();
+    return e;
+  }
+  Exception operator<<(Exception&& e, Exception const& inner)
   {
     e._message << '\n' << inner._message.str();
     return std::move(e);
