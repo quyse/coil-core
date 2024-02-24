@@ -430,7 +430,7 @@ int COIL_ENTRY_POINT(std::vector<std::string>&& args)
   };
 
   // read global config
-  auto config = JsonDecoder<LocalizationConfig>::Decode(JsonFromBuffer(File::MapRead(book, localizationConfigFileName)));
+  auto config = JsonDecoder<LocalizationConfig>::Decode(JsonFromBuffer(File::MapRead(book, std::move(localizationConfigFileName))));
 
   size_t langsCount = config.langs.size();
   std::vector<std::string> langsIds;

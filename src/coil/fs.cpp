@@ -38,6 +38,146 @@ namespace
 
 namespace Coil
 {
+  FsPathInput::FsPathInput(char const* path)
+  {
+    if constexpr(std::same_as<std::filesystem::path::value_type, char>)
+    {
+      _path = path;
+    }
+    if constexpr(std::same_as<std::filesystem::path::value_type, wchar_t>)
+    {
+      std::wstring wpath;
+      Unicode::Convert<char, char16_t>(path, wpath);
+      _path = std::filesystem::path{std::move(wpath)};
+    }
+  }
+
+  FsPathInput::FsPathInput(std::string const& path)
+  {
+    if constexpr(std::same_as<std::filesystem::path::value_type, char>)
+    {
+      _path = std::filesystem::path{path};
+    }
+    if constexpr(std::same_as<std::filesystem::path::value_type, wchar_t>)
+    {
+      std::wstring wpath;
+      Unicode::Convert<char, char16_t>(path.begin(), path.end(), wpath);
+      _path = std::filesystem::path{std::move(wpath)};
+    }
+  }
+
+  FsPathInput::FsPathInput(std::string&& path)
+  {
+    if constexpr(std::same_as<std::filesystem::path::value_type, char>)
+    {
+      _path = std::filesystem::path{std::move(path)};
+    }
+    if constexpr(std::same_as<std::filesystem::path::value_type, wchar_t>)
+    {
+      std::wstring wpath;
+      Unicode::Convert<char, char16_t>(path.begin(), path.end(), wpath);
+      _path = std::filesystem::path{std::move(wpath)};
+    }
+  }
+
+  FsPathInput::FsPathInput(std::string_view path)
+  {
+    if constexpr(std::same_as<std::filesystem::path::value_type, char>)
+    {
+      _path = std::filesystem::path{path};
+    }
+    if constexpr(std::same_as<std::filesystem::path::value_type, wchar_t>)
+    {
+      std::wstring wpath;
+      Unicode::Convert<char, char16_t>(path.begin(), path.end(), wpath);
+      _path = std::filesystem::path{std::move(wpath)};
+    }
+  }
+
+  FsPathInput::FsPathInput(std::filesystem::path const& path)
+  : _path(path) {}
+
+  FsPathInput::FsPathInput(std::filesystem::path&& path)
+  : _path(std::move(path)) {}
+
+  std::filesystem::path::value_type const* FsPathInput::GetCStr() const
+  {
+    return std::visit([this](auto const& path) -> std::filesystem::path::value_type const*
+    {
+      if constexpr(std::same_as<std::decay_t<decltype(path)>, std::filesystem::path::value_type const*>)
+      {
+        return path;
+      }
+      else
+      {
+        return path.c_str();
+      }
+    }, _path);
+  }
+
+  std::filesystem::path FsPathInput::GetNativePath() const&
+  {
+    return std::visit([this](auto const& path) -> std::filesystem::path
+    {
+      if constexpr(std::same_as<std::decay_t<decltype(path)>, std::filesystem::path::value_type const*>)
+      {
+        return { path };
+      }
+      else
+      {
+        return path;
+      }
+    }, _path);
+  }
+  std::filesystem::path FsPathInput::GetNativePath() &&
+  {
+    return std::visit([this](auto&& path) -> std::filesystem::path
+    {
+      if constexpr(std::same_as<std::decay_t<decltype(path)>, std::filesystem::path::value_type const*>)
+      {
+        return { path };
+      }
+      else
+      {
+        return std::move(path);
+      }
+    }, std::move(_path));
+  }
+
+  std::string FsPathInput::GetString() const
+  {
+    return std::visit([this](auto const& path) -> std::string
+    {
+      if constexpr(std::same_as<std::decay_t<decltype(path)>, std::filesystem::path::value_type const*>)
+      {
+        if constexpr(std::same_as<std::filesystem::path::value_type, char>)
+        {
+          return path;
+        }
+        if constexpr(std::same_as<std::filesystem::path::value_type, wchar_t>)
+        {
+          std::string spath;
+          Unicode::Convert<char16_t, char>(path, spath);
+          return spath;
+        }
+      }
+      else
+      {
+        if constexpr(std::same_as<std::filesystem::path::value_type, char>)
+        {
+          return path.string();
+        }
+        if constexpr(std::same_as<std::filesystem::path::value_type, wchar_t>)
+        {
+          std::string spath;
+          Unicode::Convert<char16_t, char>(path.c_str(), spath);
+          return spath;
+        }
+      }
+    }, _path);
+  }
+
+
 #if defined(COIL_PLATFORM_WINDOWS)
   File::File(void* hFile)
   : _hFile(hFile) {}
@@ -130,26 +270,26 @@ namespace Coil
 #endif
   }
 
-  File& File::Open(Book& book, std::string_view name, FileAccessMode accessMode, FileOpenMode openMode)
+  File& File::Open(Book& book, FsPathInput const& path, FileAccessMode accessMode, FileOpenMode openMode)
   {
-    return book.Allocate<File>(DoOpen(name, accessMode, openMode));
+    return book.Allocate<File>(DoOpen(path, accessMode, openMode));
   }
 
-  File& File::OpenRead(Book& book, std::string_view name)
+  File& File::OpenRead(Book& book, FsPathInput const& path)
   {
-    return Open(book, name, FileAccessMode::ReadOnly, FileOpenMode::MustExist);
+    return Open(book, path, FileAccessMode::ReadOnly, FileOpenMode::MustExist);
   }
 
-  File& File::OpenWrite(Book& book, std::string_view name)
+  File& File::OpenWrite(Book& book, FsPathInput const& path)
   {
-    return Open(book, name, FileAccessMode::WriteOnly, FileOpenMode::ExistAndTruncateOrCreate);
+    return Open(book, path, FileAccessMode::WriteOnly, FileOpenMode::ExistAndTruncateOrCreate);
   }
 
-  Buffer File::Map(Book& book, std::string_view name, FileAccessMode accessMode, FileOpenMode openMode)
+  Buffer File::Map(Book& book, FsPathInput const& path, FileAccessMode accessMode, FileOpenMode openMode)
   {
     try
     {
-      File file = DoOpen(name, accessMode, openMode);
+      File file = DoOpen(path, accessMode, openMode);
 #if defined(COIL_PLATFORM_WINDOWS)
       // create mapping
       uint64_t size = file.GetSize();
@@ -211,23 +351,23 @@ namespace Coil
     }
     catch(Exception const& exception)
     {
-      throw Exception("mapping file failed: ") << name << exception;
+      throw Exception("mapping file failed: ") << path.GetString() << exception;
     }
   }
 
-  Buffer File::MapRead(Book& book, std::string_view name)
+  Buffer File::MapRead(Book& book, FsPathInput const& path)
   {
-    return Map(book, name, FileAccessMode::ReadOnly, FileOpenMode::MustExist);
+    return Map(book, path, FileAccessMode::ReadOnly, FileOpenMode::MustExist);
   }
 
-  Buffer File::MapWrite(Book& book, std::string_view name)
+  Buffer File::MapWrite(Book& book, FsPathInput const& path)
   {
-    return Map(book, name, FileAccessMode::WriteOnly, FileOpenMode::ExistAndTruncateOrCreate);
+    return Map(book, path, FileAccessMode::WriteOnly, FileOpenMode::ExistAndTruncateOrCreate);
   }
 
-  void File::Write(std::string_view name, Buffer const& buffer)
+  void File::Write(FsPathInput const& path, Buffer const& buffer)
   {
-    File(DoOpen(name, FileAccessMode::WriteOnly, FileOpenMode::ExistAndTruncateOrCreate)).Write(0, buffer);
+    File(DoOpen(path, FileAccessMode::WriteOnly, FileOpenMode::ExistAndTruncateOrCreate)).Write(0, buffer);
   }
 
   void File::Seek(uint64_t offset)
@@ -242,11 +382,8 @@ namespace Coil
   }
 
 #if defined(COIL_PLATFORM_WINDOWS)
-  void* File::DoOpen(std::string_view name, FileAccessMode accessMode, FileOpenMode openMode)
+  void* File::DoOpen(FsPathInput const& path, FileAccessMode accessMode, FileOpenMode openMode)
   {
-    std::wstring s;
-    Unicode::Convert<char, char16_t>(name.begin(), name.end(), s);
-
     DWORD desiredAccess = 0;
     switch(accessMode)
     {
@@ -278,13 +415,13 @@ namespace Coil
       break;
     }
 
-    HANDLE hFile = ::CreateFileW(s.c_str(), desiredAccess, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, creationDisposition, 0, NULL);
+    HANDLE hFile = ::CreateFileW(path.GetCStr(), desiredAccess, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, creationDisposition, 0, NULL);
     if(hFile == INVALID_HANDLE_VALUE)
-      throw Exception("opening file failed: ") << name;
+      throw Exception("opening file failed: ") << path.GetString();
     return hFile;
   }
 #elif defined(COIL_PLATFORM_POSIX)
-  int File::DoOpen(std::string_view name, FileAccessMode accessMode, FileOpenMode openMode)
+  int File::DoOpen(FsPathInput const& path, FileAccessMode accessMode, FileOpenMode openMode)
   {
     int flags = 0;
     switch(accessMode)
@@ -313,9 +450,9 @@ namespace Coil
       flags |= O_CREAT | O_EXCL;
       break;
     }
-    int fd = ::open(std::string(name).c_str(), flags, 0644);
+    int fd = ::open(path.GetCStr(), flags, 0644);
     if(fd < 0)
-      throw Exception("opening file failed: ") << name;
+      throw Exception("opening file failed: ") << path.GetString();
     return fd;
   }
 #endif
@@ -339,9 +476,9 @@ namespace Coil
     return size;
   }
 
-  FileInputStream& FileInputStream::Open(Book& book, std::string_view name)
+  FileInputStream& FileInputStream::Open(Book& book, FsPathInput const& path)
   {
-    return book.Allocate<FileInputStream>(File::OpenRead(book, name));
+    return book.Allocate<FileInputStream>(File::OpenRead(book, path));
   }
 
   FileOutputStream::FileOutputStream(File& file, uint64_t offset)
@@ -353,9 +490,9 @@ namespace Coil
     _offset += buffer.size;
   }
 
-  FileOutputStream& FileOutputStream::Open(Book& book, std::string_view name)
+  FileOutputStream& FileOutputStream::Open(Book& book, FsPathInput const& path)
   {
-    return book.Allocate<FileOutputStream>(File::OpenWrite(book, name));
+    return book.Allocate<FileOutputStream>(File::OpenWrite(book, path));
   }
 
   std::string_view GetFsPathName(std::string_view path)
@@ -370,19 +507,5 @@ namespace Coil
     size_t i;
     for(i = path.length() - 1; i > 0 && path[i] != FsPathSeparator; --i);
     return path.substr(0, i);
-  }
-
-  std::filesystem::path GetNativeFsPath(std::string_view path)
-  {
-    if constexpr(std::same_as<std::filesystem::path::string_type, std::string>)
-    {
-      return path;
-    }
-    else if constexpr(std::same_as<std::filesystem::path::string_type, std::wstring>)
-    {
-      std::wstring s;
-      Unicode::Convert<char, char16_t>(path.begin(), path.end(), s);
-      return std::move(s);
-    }
   }
 }

@@ -23,6 +23,30 @@ namespace Coil
     MustCreate,
   };
 
+  // stores path as a pointer to null-terminated string or actual storage
+  class FsPathInput
+  {
+  public:
+    FsPathInput(char const* path);
+    FsPathInput(std::string const& path);
+    FsPathInput(std::string&& path);
+    FsPathInput(std::string_view path);
+    FsPathInput(std::filesystem::path const& path);
+    FsPathInput(std::filesystem::path&& path);
+
+    FsPathInput(FsPathInput const&) = delete;
+    FsPathInput(FsPathInput&&) = delete;
+
+    std::filesystem::path::value_type const* GetCStr() const;
+    std::filesystem::path GetNativePath() const&;
+    std::filesystem::path GetNativePath() &&;
+
+    std::string GetString() const;
+
+  private:
+    std::variant<std::filesystem::path::value_type const*, std::filesystem::path> _path;
+  };
+
   class File
   {
   public:
@@ -40,25 +64,25 @@ namespace Coil
     void Write(uint64_t offset, Buffer const& buffer);
     uint64_t GetSize() const;
 
-    static File& Open(Book& book, std::string_view name, FileAccessMode accessMode, FileOpenMode openMode);
-    static File& OpenRead(Book& book, std::string_view name);
-    static File& OpenWrite(Book& book, std::string_view name);
+    static File& Open(Book& book, FsPathInput const& path, FileAccessMode accessMode, FileOpenMode openMode);
+    static File& OpenRead(Book& book, FsPathInput const& path);
+    static File& OpenWrite(Book& book, FsPathInput const& path);
 
-    static Buffer Map(Book& book, std::string_view name, FileAccessMode accessMode, FileOpenMode openMode);
-    static Buffer MapRead(Book& book, std::string_view name);
-    static Buffer MapWrite(Book& book, std::string_view name);
+    static Buffer Map(Book& book, FsPathInput const& path, FileAccessMode accessMode, FileOpenMode openMode);
+    static Buffer MapRead(Book& book, FsPathInput const& path);
+    static Buffer MapWrite(Book& book, FsPathInput const& path);
 
-    static void Write(std::string_view name, Buffer const& buffer);
+    static void Write(FsPathInput const& path, Buffer const& buffer);
 
   private:
     void Seek(uint64_t offset);
 #if defined(COIL_PLATFORM_WINDOWS)
     // not using Windows HANDLE to not include windows.h
-    static void* DoOpen(std::string_view name, FileAccessMode accessMode, FileOpenMode openMode);
+    static void* DoOpen(FsPathInput const& path, FileAccessMode accessMode, FileOpenMode openMode);
 
     void* _hFile = nullptr;
 #elif defined(COIL_PLATFORM_POSIX)
-    static int DoOpen(std::string_view name, FileAccessMode accessMode, FileOpenMode openMode);
+    static int DoOpen(FsPathInput const& path, FileAccessMode accessMode, FileOpenMode openMode);
 
     int _fd = -1;
 #endif
@@ -74,7 +98,7 @@ namespace Coil
     size_t Read(Buffer const& buffer) override;
     size_t Skip(size_t size) override;
 
-    static FileInputStream& Open(Book& book, std::string_view name);
+    static FileInputStream& Open(Book& book, FsPathInput const& path);
 
   private:
     File& _file;
@@ -89,7 +113,7 @@ namespace Coil
 
     void Write(Buffer const& buffer) override;
 
-    static FileOutputStream& Open(Book& book, std::string_view name);
+    static FileOutputStream& Open(Book& book, FsPathInput const& path);
 
   private:
     File& _file;
@@ -130,7 +154,4 @@ namespace Coil
   std::string_view GetFsPathName(std::string_view path);
   // Get directory from path.
   std::string_view GetFsPathDirectory(std::string_view path);
-
-  // Convert path to native C++ path type.
-  std::filesystem::path GetNativeFsPath(std::string_view path);
 }

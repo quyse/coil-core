@@ -11,7 +11,7 @@ int COIL_ENTRY_POINT(std::vector<std::string>&& args)
   Book book;
 
   std::cout << "file: " << args[0] << "\n";
-  auto& inputStream = FileInputStream::Open(book, args[0]);
+  auto& inputStream = FileInputStream::Open(book, std::move(args[0]));
   MemoryStream sourceStream;
   sourceStream.WriteAllFrom(inputStream);
   std::cout << "source size: " << sourceStream.ToBuffer().size << "\n";
