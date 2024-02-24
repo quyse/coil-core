@@ -180,7 +180,7 @@ namespace Coil
 
       book.Allocate<FileMapping>(pMapping, size);
 
-      return Buffer(pMapping, size);
+      return Buffer(pMapping, (size_t)size);
 #elif defined(COIL_PLATFORM_POSIX)
       uint64_t size = file.GetSize();
       if((size_t)size != size)
@@ -206,7 +206,7 @@ namespace Coil
 
       book.Allocate<FileMapping>(pMapping, size);
 
-      return { pMapping, size };
+      return { pMapping, (size_t)size };
 #endif
     }
     catch(Exception const& exception)
@@ -334,7 +334,7 @@ namespace Coil
 
   size_t FileInputStream::Skip(size_t size)
   {
-    size = std::min(size, _size - _offset);
+    size = (size_t)std::min<uint64_t>(size, _size - _offset);
     _offset += size;
     return size;
   }
