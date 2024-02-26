@@ -85,6 +85,17 @@ lib.makeExtensible (self: with self; {
       ''} CMakeLists.txt
     '';
   };
+  mbedtls = mkCmakePkg {
+    inherit (pkgs.mbedtls) pname version src meta;
+    cmakeFlags = [
+      "-DMBEDTLS_FATAL_WARNINGS=OFF"
+      "-DENABLE_PROGRAMS=OFF"
+      "-DENABLE_TESTING=OFF"
+    ];
+    postPatch = ''
+      echo '#undef MBEDTLS_AESNI_C' >> include/mbedtls/mbedtls_config.h
+    '';
+  };
   freetype = mkCmakePkg {
     inherit (pkgs.freetype) pname version src meta;
     buildInputs = [
@@ -178,6 +189,7 @@ lib.makeExtensible (self: with self; {
       libpng
       libsquish
       sqlite
+      mbedtls
       freetype
       harfbuzz
       ogg

@@ -12,6 +12,7 @@
 , nlohmann_json
 , zstd
 , sqlite
+, mbedtls
 , libpng
 , libsquish
 , freetype
@@ -42,6 +43,7 @@ in stdenv.mkDerivation {
     nlohmann_json
     zstd
     sqlite
+    mbedtls
   ]
   ++ lib.optionals (hasFeature "graphics") [
     SDL2

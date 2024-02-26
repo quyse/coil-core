@@ -108,6 +108,7 @@ rec {
       "nlohmann-json3-dev"
       "libzstd-dev"
       "libsqlite3-dev"
+      "libmbedtls-dev"
       "libpng-dev"
       "libsquish-dev"
       "libfreetype-dev"

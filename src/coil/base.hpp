@@ -5,6 +5,7 @@
 #include <sstream>
 #include <string_view>
 #include <vector>
+#include <array>
 #include <version>
 #if defined(__cpp_lib_source_location)
 #include <source_location>
@@ -350,6 +351,24 @@ namespace Coil
     return r;
   }
   static_assert("ABCD"_c == 0x41424344);
+
+  // compile-time hex byte array literal
+  template <Literal l>
+  consteval std::array<uint8_t, l.n / 2> operator""_hex()
+  {
+    static_assert(l.n % 2 == 0);
+    std::array<uint8_t, l.n / 2> r = {};
+    for(size_t i = 0; i < l.n; ++i)
+    {
+      uint8_t c;
+      if(l.s[i] >= '0' && l.s[i] <= '9') c = l.s[i] - '0';
+      else if(l.s[i] >= 'a' && l.s[i] <= 'f') c = l.s[i] - 'a' + 10;
+      else if(l.s[i] >= 'A' && l.s[i] <= 'F') c = l.s[i] - 'A' + 10;
+      else throw "literal is not hex";
+      r[i / 2] |= (i % 2) ? c : (c << 4);
+    }
+    return r;
+  }
 
 
   // serialization to/from string, to be specialized

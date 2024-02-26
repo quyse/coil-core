@@ -624,6 +624,24 @@ if(TARGET SQLite::SQLite3)
 endif()
 list(APPEND coil_core_all_libraries sqlite)
 
+if(TARGET MbedTLS::mbedcrypto)
+  add_library(coil_core_crypto STATIC
+    crypto_mbedtls.cpp
+  )
+  set_property(TARGET coil_core_crypto PROPERTY PUBLIC_HEADER
+    crypto.hpp
+    crypto_base.hpp
+    crypto_mbedtls.hpp
+  )
+  target_link_libraries(coil_core_crypto
+    PUBLIC
+      coil_core_base
+      MbedTLS::mbedcrypto
+  )
+  list(APPEND coil_core_libraries crypto)
+endif()
+list(APPEND coil_core_all_libraries crypto)
+
 if(TRUE)
   add_library(coil_core_fonts STATIC
     fonts.cpp
@@ -1080,6 +1098,17 @@ if(BUILD_TESTING)
       coil_core_sqlite
     )
     add_test(NAME test_sqlite COMMAND test_sqlite)
+  endif()
+
+  if(TARGET coil_core_crypto)
+    add_executable(test_crypto
+      test_crypto.cpp
+    )
+    target_link_libraries(test_crypto
+      coil_core_crypto
+      coil_core_entrypoint_console
+    )
+    add_test(NAME test_crypto COMMAND test_crypto)
   endif()
 
 
