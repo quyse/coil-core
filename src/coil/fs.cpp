@@ -95,10 +95,10 @@ namespace Coil
   }
 
   FsPathInput::FsPathInput(std::filesystem::path const& path)
-  : _path(path) {}
+  : _path{path.c_str()} {}
 
   FsPathInput::FsPathInput(std::filesystem::path&& path)
-  : _path(std::move(path)) {}
+  : _path{std::move(path)} {}
 
   std::filesystem::path::value_type const* FsPathInput::GetCStr() const
   {
