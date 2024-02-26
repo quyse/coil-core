@@ -23,6 +23,13 @@ namespace Coil
     MustCreate,
   };
 
+  enum class FileAdviseMode
+  {
+    None,
+    Sequential,
+    Random,
+  };
+
   // stores path as a pointer to null-terminated string or actual storage
   class FsPathInput
   {
@@ -64,13 +71,13 @@ namespace Coil
     void Write(uint64_t offset, Buffer const& buffer);
     uint64_t GetSize() const;
 
-    static File& Open(Book& book, FsPathInput const& path, FileAccessMode accessMode, FileOpenMode openMode);
-    static File& OpenRead(Book& book, FsPathInput const& path);
-    static File& OpenWrite(Book& book, FsPathInput const& path);
+    static File& Open(Book& book, FsPathInput const& path, FileAccessMode accessMode, FileOpenMode openMode, FileAdviseMode adviseMode = FileAdviseMode::None);
+    static File& OpenRead(Book& book, FsPathInput const& path, FileAdviseMode adviseMode = FileAdviseMode::None);
+    static File& OpenWrite(Book& book, FsPathInput const& path, FileAdviseMode adviseMode = FileAdviseMode::None);
 
-    static Buffer Map(Book& book, FsPathInput const& path, FileAccessMode accessMode, FileOpenMode openMode);
-    static Buffer MapRead(Book& book, FsPathInput const& path);
-    static Buffer MapWrite(Book& book, FsPathInput const& path);
+    static Buffer Map(Book& book, FsPathInput const& path, FileAccessMode accessMode, FileOpenMode openMode, FileAdviseMode adviseMode = FileAdviseMode::None);
+    static Buffer MapRead(Book& book, FsPathInput const& path, FileAdviseMode adviseMode = FileAdviseMode::None);
+    static Buffer MapWrite(Book& book, FsPathInput const& path, FileAdviseMode adviseMode = FileAdviseMode::None);
 
     static void Write(FsPathInput const& path, Buffer const& buffer);
 
@@ -78,11 +85,11 @@ namespace Coil
     void Seek(uint64_t offset);
 #if defined(COIL_PLATFORM_WINDOWS)
     // not using Windows HANDLE to not include windows.h
-    static void* DoOpen(FsPathInput const& path, FileAccessMode accessMode, FileOpenMode openMode);
+    static void* DoOpen(FsPathInput const& path, FileAccessMode accessMode, FileOpenMode openMode, FileAdviseMode adviseMode);
 
     void* _hFile = nullptr;
 #elif defined(COIL_PLATFORM_POSIX)
-    static int DoOpen(FsPathInput const& path, FileAccessMode accessMode, FileOpenMode openMode);
+    static int DoOpen(FsPathInput const& path, FileAccessMode accessMode, FileOpenMode openMode, FileAdviseMode adviseMode);
 
     int _fd = -1;
 #endif

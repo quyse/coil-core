@@ -270,26 +270,26 @@ namespace Coil
 #endif
   }
 
-  File& File::Open(Book& book, FsPathInput const& path, FileAccessMode accessMode, FileOpenMode openMode)
+  File& File::Open(Book& book, FsPathInput const& path, FileAccessMode accessMode, FileOpenMode openMode, FileAdviseMode adviseMode)
   {
-    return book.Allocate<File>(DoOpen(path, accessMode, openMode));
+    return book.Allocate<File>(DoOpen(path, accessMode, openMode, adviseMode));
   }
 
-  File& File::OpenRead(Book& book, FsPathInput const& path)
+  File& File::OpenRead(Book& book, FsPathInput const& path, FileAdviseMode adviseMode)
   {
-    return Open(book, path, FileAccessMode::ReadOnly, FileOpenMode::MustExist);
+    return Open(book, path, FileAccessMode::ReadOnly, FileOpenMode::MustExist, adviseMode);
   }
 
-  File& File::OpenWrite(Book& book, FsPathInput const& path)
+  File& File::OpenWrite(Book& book, FsPathInput const& path, FileAdviseMode adviseMode)
   {
-    return Open(book, path, FileAccessMode::WriteOnly, FileOpenMode::ExistAndTruncateOrCreate);
+    return Open(book, path, FileAccessMode::WriteOnly, FileOpenMode::ExistAndTruncateOrCreate, adviseMode);
   }
 
-  Buffer File::Map(Book& book, FsPathInput const& path, FileAccessMode accessMode, FileOpenMode openMode)
+  Buffer File::Map(Book& book, FsPathInput const& path, FileAccessMode accessMode, FileOpenMode openMode, FileAdviseMode adviseMode)
   {
     try
     {
-      File file = DoOpen(path, accessMode, openMode);
+      File file = DoOpen(path, accessMode, openMode, adviseMode);
 #if defined(COIL_PLATFORM_WINDOWS)
       // create mapping
       uint64_t size = file.GetSize();
@@ -355,19 +355,19 @@ namespace Coil
     }
   }
 
-  Buffer File::MapRead(Book& book, FsPathInput const& path)
+  Buffer File::MapRead(Book& book, FsPathInput const& path, FileAdviseMode adviseMode)
   {
-    return Map(book, path, FileAccessMode::ReadOnly, FileOpenMode::MustExist);
+    return Map(book, path, FileAccessMode::ReadOnly, FileOpenMode::MustExist, adviseMode);
   }
 
-  Buffer File::MapWrite(Book& book, FsPathInput const& path)
+  Buffer File::MapWrite(Book& book, FsPathInput const& path, FileAdviseMode adviseMode)
   {
-    return Map(book, path, FileAccessMode::WriteOnly, FileOpenMode::ExistAndTruncateOrCreate);
+    return Map(book, path, FileAccessMode::WriteOnly, FileOpenMode::ExistAndTruncateOrCreate, adviseMode);
   }
 
   void File::Write(FsPathInput const& path, Buffer const& buffer)
   {
-    File(DoOpen(path, FileAccessMode::WriteOnly, FileOpenMode::ExistAndTruncateOrCreate)).Write(0, buffer);
+    File(DoOpen(path, FileAccessMode::WriteOnly, FileOpenMode::ExistAndTruncateOrCreate, FileAdviseMode::Sequential)).Write(0, buffer);
   }
 
   void File::Seek(uint64_t offset)
@@ -382,7 +382,7 @@ namespace Coil
   }
 
 #if defined(COIL_PLATFORM_WINDOWS)
-  void* File::DoOpen(FsPathInput const& path, FileAccessMode accessMode, FileOpenMode openMode)
+  void* File::DoOpen(FsPathInput const& path, FileAccessMode accessMode, FileOpenMode openMode, FileAdviseMode adviseMode)
   {
     DWORD desiredAccess = 0;
     switch(accessMode)
@@ -415,15 +415,29 @@ namespace Coil
       break;
     }
 
-    HANDLE hFile = ::CreateFileW(path.GetCStr(), desiredAccess, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, creationDisposition, 0, NULL);
+    DWORD flags = 0;
+    switch(adviseMode)
+    {
+    case FileAdviseMode::None:
+      break;
+    case FileAdviseMode::Sequential:
+      flags |= FILE_FLAG_SEQUENTIAL_SCAN;
+      break;
+    case FileAdviseMode::Random:
+      flags |= FILE_FLAG_RANDOM_ACCESS;
+      break;
+    }
+
+    HANDLE hFile = ::CreateFileW(path.GetCStr(), desiredAccess, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, creationDisposition, flags, NULL);
     if(hFile == INVALID_HANDLE_VALUE)
       throw Exception("opening file failed: ") << path.GetString();
     return hFile;
   }
 #elif defined(COIL_PLATFORM_POSIX)
-  int File::DoOpen(FsPathInput const& path, FileAccessMode accessMode, FileOpenMode openMode)
+  int File::DoOpen(FsPathInput const& path, FileAccessMode accessMode, FileOpenMode openMode, FileAdviseMode adviseMode)
   {
     int flags = 0;
+
     switch(accessMode)
     {
     case FileAccessMode::ReadOnly:
@@ -436,6 +450,7 @@ namespace Coil
       flags |= O_RDWR;
       break;
     }
+
     switch(openMode)
     {
     case FileOpenMode::MustExist:
@@ -450,9 +465,28 @@ namespace Coil
       flags |= O_CREAT | O_EXCL;
       break;
     }
+
     int fd = ::open(path.GetCStr(), flags, 0644);
     if(fd < 0)
       throw Exception("opening file failed: ") << path.GetString();
+
+    int advice = POSIX_FADV_NORMAL;
+    switch(adviseMode)
+    {
+    case FileAdviseMode::None:
+      break;
+    case FileAdviseMode::Sequential:
+      advice = POSIX_FADV_SEQUENTIAL;
+      break;
+    case FileAdviseMode::Random:
+      advice = POSIX_FADV_RANDOM;
+      break;
+    }
+    if(advice != POSIX_FADV_NORMAL)
+    {
+      ::posix_fadvise(fd, 0, 0, advice);
+    }
+
     return fd;
   }
 #endif
@@ -478,7 +512,7 @@ namespace Coil
 
   FileInputStream& FileInputStream::Open(Book& book, FsPathInput const& path)
   {
-    return book.Allocate<FileInputStream>(File::OpenRead(book, path));
+    return book.Allocate<FileInputStream>(File::OpenRead(book, path, FileAdviseMode::Sequential));
   }
 
   FileOutputStream::FileOutputStream(File& file, uint64_t offset)
@@ -492,7 +526,7 @@ namespace Coil
 
   FileOutputStream& FileOutputStream::Open(Book& book, FsPathInput const& path)
   {
-    return book.Allocate<FileOutputStream>(File::OpenWrite(book, path));
+    return book.Allocate<FileOutputStream>(File::OpenWrite(book, path, FileAdviseMode::Sequential));
   }
 
   std::string_view GetFsPathName(std::string_view path)
