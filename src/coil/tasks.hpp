@@ -17,7 +17,7 @@
 namespace Coil
 {
   template <typename R>
-  class Task;
+  class [[nodiscard]] Task;
 
   template <typename R>
   class TaskPromise;
@@ -138,6 +138,13 @@ namespace Coil
     public:
       Result() : _latch(1) {}
 
+      void SetValue(Value const& value)
+      {
+        SetResult([&]()
+        {
+          _result.emplace(value);
+        });
+      }
       void SetValue(Value&& value)
       {
         SetResult([&]()
@@ -258,6 +265,10 @@ namespace Coil
   class TaskPromise : public TaskPromiseBase2<R>
   {
   public:
+    void return_value(R const& value)
+    {
+      this->_pResult->SetValue(value);
+    }
     void return_value(R&& value)
     {
       this->_pResult->SetValue(std::move(value));

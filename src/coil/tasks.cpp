@@ -35,7 +35,7 @@ namespace Coil
         {
           return !_coroutines.empty();
         })) break;
-        auto coroutine = std::move(_coroutines.front());
+        std::coroutine_handle<> coroutine = _coroutines.front();
         _coroutines.pop();
         lock.unlock();
 
@@ -57,7 +57,7 @@ namespace Coil
     {
       std::unique_lock lock(_mutex);
       if(_coroutines.empty()) break;
-      auto coroutine = std::move(_coroutines.front());
+      std::coroutine_handle<> coroutine = _coroutines.front();
       _coroutines.pop();
       lock.unlock();
 

@@ -1,5 +1,5 @@
 #include "entrypoint.hpp"
-#include "tasks.hpp"
+#include "tasks_sync.hpp"
 #include "math.hpp"
 #include <iostream>
 using namespace Coil;
@@ -135,6 +135,35 @@ public:
         }());
       }
     }
+
+    // semaphores
+    {
+      // n tasks, each acquires and releases semaphore m times
+      size_t const n = 100;
+      size_t const m = 100;
+      auto s = std::make_shared<Semaphore>(3);
+      struct Test
+      {
+        static Task<void> f(std::shared_ptr<Semaphore> s, size_t index)
+        {
+          for(size_t i = 0; i < m; ++i)
+          {
+            co_await s->Acquire();
+            s->Release();
+          }
+        }
+      };
+      std::vector<Task<void>> tasks;
+      tasks.reserve(n);
+      for(size_t i = 0; i < n; ++i)
+        tasks.push_back(Test::f(s, i));
+      AddTest([](std::vector<Task<void>> tasks) -> Task<bool>
+      {
+        for(size_t i = 0; i < tasks.size(); ++i)
+          co_await tasks[i];
+        co_return true;
+      }(std::move(tasks)));
+    }
   }
 
   ivec2 Run()
@@ -163,13 +192,15 @@ int COIL_ENTRY_POINT(std::vector<std::string>&& args)
 {
   ivec2 counts;
 
-  // run tests on single thread
-  TaskEngine::GetInstance().AddThread();
-  counts += Tester(1).Run();
-
-  // run tests on two threads
-  TaskEngine::GetInstance().AddThread();
-  counts += Tester(2).Run();
+  // run tests on increasing number of threads
+  size_t threadsCounts[] = { 1, 2, 4 };
+  size_t currentThreadsCount = 0;
+  for(size_t i = 0; i < sizeof(threadsCounts) / sizeof(threadsCounts[0]); ++i)
+  {
+    for(size_t j = currentThreadsCount; j < threadsCounts[i]; ++j)
+      TaskEngine::GetInstance().AddThread();
+    counts += Tester(threadsCounts[i]).Run();
+  }
 
   if(counts.x() == counts.y())
   {

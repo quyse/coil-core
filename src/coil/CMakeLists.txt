@@ -215,6 +215,7 @@ if(TRUE)
   )
   set_property(TARGET coil_core_tasks PROPERTY PUBLIC_HEADER
     tasks.hpp
+    tasks_sync.hpp
   )
   target_link_libraries(coil_core_tasks
     PUBLIC
