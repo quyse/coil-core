@@ -1,8 +1,12 @@
 #include "entrypoint.hpp"
 #include "tasks_sync.hpp"
+#include "tasks_streams.hpp"
 #include "math.hpp"
+#include <random>
 #include <iostream>
 using namespace Coil;
+
+std::mt19937 rnd;
 
 class Tester
 {
@@ -163,6 +167,62 @@ public:
           co_await tasks[i];
         co_return true;
       }(std::move(tasks)));
+    }
+
+    // suspendable pipe
+    {
+      struct Test
+      {
+        static Task<bool> Run(size_t size, size_t maxChunkSize)
+        {
+          auto pPipe = std::make_shared<SuspendablePipe>(maxChunkSize, false);
+
+          Task<void> readTask = RunRead(size, maxChunkSize, pPipe);
+          Task<void> writeTask = RunWrite(size, maxChunkSize, pPipe);
+
+          co_await readTask;
+          co_await writeTask;
+
+          co_return true;
+        }
+
+        static Task<void> RunRead(size_t size, size_t maxChunkSize, std::shared_ptr<SuspendableInputStream> inputStream)
+        {
+          std::vector<uint8_t> buf(maxChunkSize);
+          size_t readSize = 0;
+          while(size)
+          {
+            size_t chunkSize = rnd() % maxChunkSize + 1;
+            size_t read = co_await inputStream->Read(Buffer(buf.data(), chunkSize));
+            if(read > chunkSize || read > size) throw "unexpected too big read";
+            if(read == 0) throw "unexpected zero read";
+            for(size_t i = 0; i < read; ++i)
+              if(buf[i] != (uint8_t)((readSize + i) % 251))
+                throw "wrong data read";
+            readSize += read;
+            size -= read;
+          }
+        }
+
+        static Task<void> RunWrite(size_t size, size_t maxChunkSize, std::shared_ptr<SuspendableOutputStream> outputStream)
+        {
+          std::vector<uint8_t> buf(maxChunkSize);
+          size_t writtenSize = 0;
+          while(writtenSize < size)
+          {
+            size_t chunkSize = std::min(size - writtenSize, rnd() % maxChunkSize + 1);
+            for(size_t i = 0; i < chunkSize; ++i)
+              buf[i] = (uint8_t)((writtenSize + i) % 251);
+            co_await outputStream->Write(Buffer(buf.data(), chunkSize));
+            writtenSize += chunkSize;
+          }
+        }
+      };
+
+      AddTest(Test::Run(0x10000, 10));
+      AddTest(Test::Run(0x10000, 100));
+      AddTest(Test::Run(0x10000, 1000));
+      AddTest(Test::Run(0x10000, 100000));
     }
   }
 
