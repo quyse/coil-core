@@ -152,4 +152,25 @@ namespace Coil
   private:
     std::istream& _stream;
   };
+
+  // circular byte queue
+  class CircularMemoryBuffer
+  {
+  public:
+    // actual data size
+    size_t GetDataSize() const;
+    // buffer size
+    size_t GetBufferSize() const;
+    // consume data from circular buffer
+    // returns size actually read
+    size_t Read(Buffer const& buffer);
+    // push data into circular buffer
+    // auto-expands if necessary
+    void Write(Buffer const& buffer);
+
+  private:
+    std::vector<uint8_t> _buffer;
+    size_t _start = 0;
+    size_t _size = 0;
+  };
 }

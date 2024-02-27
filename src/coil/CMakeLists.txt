@@ -1014,6 +1014,17 @@ install(DIRECTORY
 # tests
 if(BUILD_TESTING)
 
+  if(TARGET coil_core_data)
+    add_executable(test_data
+      test_data.cpp
+    )
+    target_link_libraries(test_data
+      coil_core_data
+      coil_core_entrypoint_console
+    )
+    add_test(NAME test_data COMMAND test_data)
+  endif()
+
   if(TARGET coil_core_math_determ)
     add_executable(test_math_determ
       test_math_determ.cpp

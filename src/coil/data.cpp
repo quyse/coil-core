@@ -8,6 +8,7 @@ namespace Coil
     value = ((value & 0xFF) << 24) | ((value & 0xFF00) << 8) | ((value & 0xFF0000) >> 8) | ((value & 0xFF000000) >> 24);
   }
 
+
   StreamWriter::StreamWriter(OutputStream& stream)
   : _stream(stream) {}
 
@@ -59,6 +60,7 @@ namespace Coil
       Write(data, alignment);
     }
   }
+
 
   StreamReader::StreamReader(InputStream& stream)
   : _stream(stream) {}
@@ -124,6 +126,7 @@ namespace Coil
     }
   }
 
+
   StdStreamOutputStream::StdStreamOutputStream(std::ostream& stream)
   : _stream(stream) {}
 
@@ -133,6 +136,7 @@ namespace Coil
     if(_stream.fail()) throw Exception("failed to write to std stream");
   }
 
+
   StdStreamInputStream::StdStreamInputStream(std::istream& stream)
   : _stream(stream) {}
 
@@ -141,5 +145,74 @@ namespace Coil
     _stream.read((char*)buffer.data, (std::streamsize)buffer.size);
     if(_stream.fail()) throw Exception("failed to read from std stream");
     return _stream.gcount();
+  }
+
+
+  size_t CircularMemoryBuffer::GetDataSize() const
+  {
+    return _size;
+  }
+
+  size_t CircularMemoryBuffer::GetBufferSize() const
+  {
+    return _buffer.size();
+  }
+
+  size_t CircularMemoryBuffer::Read(Buffer const& buffer)
+  {
+    // total size to read
+    size_t toRead = std::min(_size, buffer.size);
+    // first part
+    size_t toRead1 = std::min(toRead, _buffer.size() - _start);
+    std::copy_n(_buffer.data() + _start, toRead1, (uint8_t*)buffer.data);
+    _start += toRead1;
+    if(_start >= _buffer.size()) _start -= _buffer.size();
+    // second part
+    size_t toRead2 = toRead - toRead1;
+    std::copy_n(_buffer.data(), toRead2, (uint8_t*)buffer.data + toRead1);
+    _start += toRead2;
+
+    _size -= toRead;
+
+    // return total size read
+    return toRead;
+  }
+
+  void CircularMemoryBuffer::Write(Buffer const& buffer)
+  {
+    // expand buffer if necessary
+    {
+      size_t oldBufferSize = _buffer.size();
+      if(GetDataSize() + buffer.size > _buffer.size())
+      {
+        _buffer.resize(GetDataSize() + buffer.size);
+        // if data was wrapped around, need to move it a bit
+        size_t end = _start + _size;
+        if(end > oldBufferSize)
+        {
+          end -= oldBufferSize;
+          // first part of [0, end) range must be moved after second part
+          size_t toMove = std::min(end, _buffer.size() - oldBufferSize);
+          std::copy_n(_buffer.data(), toMove, _buffer.data() + oldBufferSize);
+          // second part of [0, end) range must be moved back to the beginning
+          std::copy_n(_buffer.data() + toMove, end - toMove, _buffer.data());
+        }
+      }
+    }
+
+    // now buffer is enough, write data
+
+    size_t end = _start + _size;
+    if(end >= _buffer.size()) end -= _buffer.size();
+    // first part
+    size_t toWrite1 = std::min(_buffer.size() - end, buffer.size); // no need to limit by _start, as we know there's enough space
+    std::copy_n((uint8_t const*)buffer.data, toWrite1, _buffer.data() + end);
+    end += toWrite1;
+    if(end >= _buffer.size()) end = 0;
+    // second part
+    size_t toWrite2 = buffer.size - toWrite1;
+    std::copy_n((uint8_t const*)buffer.data + toWrite1, buffer.size - toWrite1, _buffer.data());
+
+    _size += buffer.size;
   }
 }
