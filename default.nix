@@ -23,7 +23,6 @@ rec {
       ];
     });
 
-    clang = self.clang_16;
 
     libsquish = stdenv.mkDerivation rec {
       pname = "libsquish";
@@ -88,7 +87,7 @@ rec {
       meta.license = lib.licenses.asl20;
     };
 
-    inherit (llvmPackages_16) openmp;
+    inherit (llvmPackages) openmp;
 
     steam-sdk = if coil.toolchain-steam != null then coil.toolchain-steam.sdk else null;
   });
