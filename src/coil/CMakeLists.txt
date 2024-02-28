@@ -893,6 +893,22 @@ if(TARGET libgav1::libgav1)
 endif()
 list(APPEND coil_core_all_libraries av1)
 
+if(TARGET CURL::libcurl)
+  add_library(coil_core_curl STATIC
+    curl.cpp
+  )
+  set_property(TARGET coil_core_curl PROPERTY PUBLIC_HEADER
+    curl.hpp
+  )
+  target_link_libraries(coil_core_curl
+    PUBLIC
+      coil_core_tasks
+      CURL::libcurl
+  )
+  list(APPEND coil_core_libraries curl)
+endif()
+list(APPEND coil_core_all_libraries curl)
+
 if(TARGET Steam::Steam)
   add_library(coil_core_steam STATIC
     steam.cpp

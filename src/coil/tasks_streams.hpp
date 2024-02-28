@@ -26,6 +26,7 @@ namespace Coil
   public:
     // write some data
     // writes whole buffer or nothing
+    // empty buffer indicates end
     virtual bool TryWrite(Buffer const& buffer) = 0;
 
     // wait until it's possible to write specific amount of data
@@ -58,5 +59,6 @@ namespace Coil
     CircularMemoryBuffer _buffer;
     ConditionVariable _readerVar;
     ConditionVariable _writerVar;
+    bool _ended = false;
   };
 }

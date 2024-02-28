@@ -62,6 +62,27 @@ namespace Coil
       TaskEngine::GetInstance().Queue(coroutine);
     }
 
+    void NotifyAll()
+    {
+      std::vector<std::coroutine_handle<>> waiters;
+
+      std::unique_lock<std::mutex> lock{_mutex};
+      if(_waiters.empty()) return;
+
+      waiters.reserve(_waiters.size());
+      while(!_waiters.empty())
+      {
+        waiters.push_back(_waiters.front());
+        _waiters.pop();
+      }
+      lock.unlock();
+
+      for(size_t i = 0; i < waiters.size(); ++i)
+      {
+        TaskEngine::GetInstance().Queue(waiters[i]);
+      }
+    }
+
   private:
     std::mutex _mutex;
     std::queue<std::coroutine_handle<>> _waiters;

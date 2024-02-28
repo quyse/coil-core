@@ -25,6 +25,7 @@
 , libwebm
 , libopus
 , libgav1
+, curl
 , steam-sdk
 }: let
 
@@ -62,6 +63,9 @@ in stdenv.mkDerivation {
   ++ lib.optionals (hasFeature "video") [
     libwebm
     libgav1
+  ]
+  ++ lib.optionals (hasFeature "network") [
+    curl
   ]
   ++ lib.optionals (hasFeature "steam") [
     steam-sdk

@@ -17,6 +17,7 @@ find_package(Ogg)
 find_package(Webm)
 find_package(Opus)
 find_package(libgav1)
+find_package(CURL)
 find_package(Steam)
 
 pkg_search_module(WaylandClient IMPORTED_TARGET wayland-client)

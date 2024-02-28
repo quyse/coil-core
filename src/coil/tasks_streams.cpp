@@ -44,6 +44,11 @@ namespace Coil
       // notify writer
       _writerVar.NotifyOne();
     }
+    else
+    {
+      // indicate end if needed
+      if(_ended) return {};
+    }
 
     return read;
   }
@@ -59,20 +64,28 @@ namespace Coil
 
   bool SuspendablePipe::TryWrite(Buffer const& buffer)
   {
-    if(!buffer.size) return true;
-
     std::unique_lock lock{_mutex};
 
-    // error if input buffer if bigger than requested buffer size, and expansion is not allowed
-    if(buffer.size > _bufferSize && !_allowBufferExpansion)
-      throw Exception("write to suspendable pipe is too big");
+    // if it's a write
+    if(buffer.size)
+    {
+      // error if input buffer if bigger than requested buffer size, and expansion is not allowed
+      if(buffer.size > _bufferSize && !_allowBufferExpansion)
+        throw Exception("write to suspendable pipe is too big");
 
-    // if there's no place for the data
-    if(!(_buffer.GetDataSize() + buffer.size <= _bufferSize))
-      return false;
+      // if there's no place for the data
+      if(!(_buffer.GetDataSize() + buffer.size <= _bufferSize))
+        return false;
 
-    // otherwise there's space, write data
-    _buffer.Write(buffer);
+      // otherwise there's space, write data
+      _buffer.Write(buffer);
+    }
+    // otherwise it's indication of end
+    else
+    {
+      // record end
+      _ended = true;
+    }
 
     lock.unlock();
     // notify reader

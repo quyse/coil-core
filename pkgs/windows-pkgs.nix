@@ -172,6 +172,31 @@ lib.makeExtensible (self: with self; {
       "-DLIBGAV1_ENABLE_TESTS=0"
     ];
   };
+  curl = mkCmakePkg {
+    inherit (pkgs.curl) pname version src;
+    buildInputs = [
+      c-ares
+      mbedtls
+      zlib
+      zstd
+    ];
+    cmakeFlags = [
+      "-DBUILD_CURL_EXE=OFF"
+      "-DBUILD_SHARED_LIBS=ON"
+      "-DENABLE_ARES=ON"
+      "-DENABLE_UNICODE=ON"
+      "-DCURL_LTO=ON"
+      "-DUSE_ZLIB=ON"
+      "-DCURL_ZSTD=ON"
+      "-DCURL_USE_MBEDTLS=ON"
+    ];
+    meta = pkgs.curl.meta // {
+      outputsToInstall = null;
+    };
+  };
+  c-ares = mkCmakePkg {
+    inherit (pkgs.c-ares) pname version src meta;
+  };
   steam = if coil.toolchain-steam != null then coil.toolchain-steam.sdk.overrideAttrs (attrs: {
     installPhase = (attrs.installPhase or "") + (finalizePkg {
       buildInputs = [];
@@ -196,6 +221,7 @@ lib.makeExtensible (self: with self; {
       libwebm
       opus
       libgav1
+      curl
     ] ++ lib.optional (steam != null) steam;
     cmakeFlags = [
       "-DCOIL_CORE_DONT_REQUIRE_LIBS=${dontRequireLibsList}"

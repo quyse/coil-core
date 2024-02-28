@@ -120,6 +120,7 @@ rec {
       "libwebm-dev"
       "libopus-dev"
       "libgav1-dev"
+      "libcurl4-openssl-dev"
     ];
     coil-core = pkgs.vmTools.runInLinuxImage ((pkgs.callPackage ./coil-core.nix {
       inherit features;
