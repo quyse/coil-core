@@ -31,7 +31,7 @@ COIL_META_STRUCT(Assets)
   COIL_META_STRUCT_FIELD(Coil::GraphicsImage*, texture);
 };
 
-int COIL_ENTRY_POINT(std::vector<std::string>&& args)
+int COIL_ENTRY_POINT(std::vector<std::string> args)
 {
   AppIdentity::GetInstance().Name() = "coil_core_example_steam";
 

@@ -131,7 +131,7 @@ void check_hash(char const* msg, uint32_t expected)
   g_hashSum = 0;
 }
 
-int COIL_ENTRY_POINT(std::vector<std::string>&& args)
+int COIL_ENTRY_POINT(std::vector<std::string> args)
 {
   uint32_t okCount = 0, totalCount = 0;
 

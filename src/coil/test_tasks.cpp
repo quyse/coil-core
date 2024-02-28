@@ -248,7 +248,7 @@ private:
   std::vector<Task<bool>> _tests;
 };
 
-int COIL_ENTRY_POINT(std::vector<std::string>&& args)
+int COIL_ENTRY_POINT(std::vector<std::string> args)
 {
   ivec2 counts;
 

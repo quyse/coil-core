@@ -66,7 +66,7 @@ bool TestSeries(size_t count, size_t opCount, size_t maxLen)
   return true;
 }
 
-int COIL_ENTRY_POINT(std::vector<std::string>&& args)
+int COIL_ENTRY_POINT(std::vector<std::string> args)
 {
   if(!TestSeries(100, 1000, 10)) return 1;
   if(!TestSeries(100, 1000, 100)) return 1;

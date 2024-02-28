@@ -121,7 +121,7 @@ bool Test()
   return true;
 }
 
-int COIL_ENTRY_POINT(std::vector<std::string>&& args)
+int COIL_ENTRY_POINT(std::vector<std::string> args)
 {
   if(!Test<int32_t>()) return 1;
   if(!Test<uint32_t>()) return 1;

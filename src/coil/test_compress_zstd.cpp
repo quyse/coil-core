@@ -6,7 +6,7 @@
 
 using namespace Coil;
 
-int COIL_ENTRY_POINT(std::vector<std::string>&& args)
+int COIL_ENTRY_POINT(std::vector<std::string> args)
 {
   Book book;
 

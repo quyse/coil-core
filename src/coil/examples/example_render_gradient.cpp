@@ -9,7 +9,7 @@
 
 using namespace Coil;
 
-int COIL_ENTRY_POINT(std::vector<std::string>&& args)
+int COIL_ENTRY_POINT(std::vector<std::string> args)
 {
   AppIdentity::GetInstance().Name() = "coil_core_example_render_gradient";
 

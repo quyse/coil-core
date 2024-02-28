@@ -362,7 +362,7 @@ private:
   std::ostringstream _initStream;
 };
 
-int COIL_ENTRY_POINT(std::vector<std::string>&& args)
+int COIL_ENTRY_POINT(std::vector<std::string> args)
 {
   std::string workingDir = ".";
   std::string localizationConfigFileName;
