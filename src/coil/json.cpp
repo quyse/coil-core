@@ -8,9 +8,9 @@ namespace Coil
     {
       return Json::parse((uint8_t const*)buffer.data, (uint8_t const*)buffer.data + buffer.size);
     }
-    catch(Json::exception const&)
+    catch(Json::exception const& e)
     {
-      throw Exception("JSON from buffer failed");
+      throw Exception("JSON from buffer failed: ") << e.what();
     }
   }
 
@@ -20,9 +20,9 @@ namespace Coil
     {
       return j.dump();
     }
-    catch(Json::exception const&)
+    catch(Json::exception const& e)
     {
-      throw Exception("JSON to string failed");
+      throw Exception("JSON to string failed: ") << e.what();
     }
   }
 }
