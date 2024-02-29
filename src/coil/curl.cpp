@@ -137,6 +137,11 @@ namespace Coil
     curl_easy_setopt(_curl, CURLOPT_READDATA, this);
     curl_easy_setopt(_curl, CURLOPT_WRITEFUNCTION, &StaticWriteCallback);
     curl_easy_setopt(_curl, CURLOPT_WRITEDATA, this);
+    // run configuration
+    if(info.configure)
+    {
+      info.configure(_curl);
+    }
   }
 
   CurlManager::Request::~Request()

@@ -22,6 +22,9 @@ namespace Coil
     struct RequestInfo
     {
       std::string url;
+      // optional configuration function
+      std::function<void(CURL*)> configure;
+      // HTTP headers
       std::vector<std::string> headers;
       // curl's default window size is used here
       size_t requestBufferSize = 32 * 1024 * 1024;
