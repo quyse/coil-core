@@ -19,6 +19,9 @@ namespace Coil
     // read some non-zero amount of data, suspend if needed
     // returns zero on stream end
     Task<size_t> Read(Buffer const& buffer);
+
+    // read all up to the end
+    Task<std::vector<uint8_t>> ReadAll();
   };
 
   class SuspendableOutputStream

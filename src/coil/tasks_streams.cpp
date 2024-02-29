@@ -20,6 +20,38 @@ namespace Coil
     }
   }
 
+  Task<std::vector<uint8_t>> SuspendableInputStream::ReadAll()
+  {
+    std::vector<uint8_t> buffer;
+    for(;;)
+    {
+      // extend buffer a bit
+      size_t const chunkSize = 4096;
+      size_t size = buffer.size();
+      buffer.resize(size + chunkSize);
+
+      std::optional<size_t> maybeRead = TryRead(Buffer(buffer.data() + size, chunkSize));
+      // if stream ended, return
+      if(!maybeRead.has_value())
+      {
+        buffer.resize(size);
+        co_return std::move(buffer);
+      }
+      // if some data is read
+      if(maybeRead.value())
+      {
+        // resize buffer back to correct size
+        buffer.resize(size + maybeRead.value());
+      }
+      // otherwise wait
+      else
+      {
+        buffer.resize(size);
+        co_await WaitForRead();
+      }
+    }
+  }
+
   Task<void> SuspendableOutputStream::Write(Buffer const& buffer)
   {
     while(!TryWrite(buffer))
