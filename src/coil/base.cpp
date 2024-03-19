@@ -1,5 +1,4 @@
 #include "base.hpp"
-#include <cstring>
 
 namespace Coil
 {
@@ -47,6 +46,7 @@ namespace Coil
     return data;
   }
 
+
   Memory::Memory(uint8_t* const data)
   : _data(data) {}
 
@@ -61,6 +61,7 @@ namespace Coil
     book.Allocate<Memory>(data);
     return { data, size };
   }
+
 
 #if defined(__cpp_lib_source_location)
   Exception::Exception(std::source_location location)
@@ -85,6 +86,7 @@ namespace Coil
     return std::move(e);
   }
 
+
   size_t InputStream::Skip(size_t size)
   {
     uint8_t bufferData[0x1000];
@@ -101,6 +103,7 @@ namespace Coil
     return totalSkippedSize;
   }
 
+
   void OutputStream::WriteAllFrom(InputStream& inputStream)
   {
     uint8_t bufferData[0x1000];
@@ -111,57 +114,5 @@ namespace Coil
       if(!size) break;
       Write(Buffer(buffer.data, size));
     }
-  }
-
-  BufferInputStream::BufferInputStream(Buffer const& buffer)
-  : _buffer(buffer) {}
-
-  size_t BufferInputStream::Read(Buffer const& buffer)
-  {
-    size_t size = std::min(buffer.size, _buffer.size);
-    memcpy(buffer.data, _buffer.data, size);
-    _buffer.data = (uint8_t*)_buffer.data + size;
-    _buffer.size -= size;
-    return size;
-  }
-
-  size_t BufferInputStream::Skip(size_t size)
-  {
-    size = std::min(size, _buffer.size);
-    _buffer.data = (uint8_t*)_buffer.data + size;
-    _buffer.size -= size;
-    return size;
-  }
-
-  BufferInputStreamSource::BufferInputStreamSource(Buffer const& buffer)
-  : _buffer(buffer) {}
-
-  BufferInputStream& BufferInputStreamSource::CreateStream(Book& book)
-  {
-    return book.Allocate<BufferInputStream>(_buffer);
-  }
-
-  BufferOutputStream::BufferOutputStream(Buffer const& buffer)
-  : _buffer(buffer) {}
-
-  void BufferOutputStream::Write(Buffer const& buffer)
-  {
-    if(_buffer.size < buffer.size)
-      throw Exception("BufferOutputStream: end of dest buffer");
-    memcpy(_buffer.data, buffer.data, buffer.size);
-    _buffer.data = (uint8_t*)_buffer.data + buffer.size;
-    _buffer.size -= buffer.size;
-  }
-
-  void MemoryStream::Write(Buffer const& buffer)
-  {
-    size_t initialSize = _data.size();
-    _data.resize(initialSize + buffer.size);
-    memcpy(_data.data() + initialSize, buffer.data, buffer.size);
-  }
-
-  Buffer MemoryStream::ToBuffer() const
-  {
-    return _data;
   }
 }

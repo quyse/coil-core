@@ -197,7 +197,7 @@ namespace Coil
 #endif
   }
 
-  size_t File::Read(uint64_t offset, Buffer const& buffer)
+  size_t File::Read(uint64_t offset, Buffer const& buffer) const
   {
 #if defined(COIL_PLATFORM_WINDOWS)
     OVERLAPPED overlapped =

@@ -1,11 +1,112 @@
 #include "data.hpp"
 #include <algorithm>
+#include <cstring>
 
 namespace Coil
 {
   void EndianSwap(uint32_t& value)
   {
     value = ((value & 0xFF) << 24) | ((value & 0xFF00) << 8) | ((value & 0xFF0000) >> 8) | ((value & 0xFF000000) >> 24);
+  }
+
+
+  BufferInputStream::BufferInputStream(Buffer const& buffer)
+  : _buffer(buffer) {}
+
+  size_t BufferInputStream::Read(Buffer const& buffer)
+  {
+    size_t size = std::min(buffer.size, _buffer.size);
+    memcpy(buffer.data, _buffer.data, size);
+    _buffer.data = (uint8_t*)_buffer.data + size;
+    _buffer.size -= size;
+    return size;
+  }
+
+  size_t BufferInputStream::Skip(size_t size)
+  {
+    size = std::min(size, _buffer.size);
+    _buffer.data = (uint8_t*)_buffer.data + size;
+    _buffer.size -= size;
+    return size;
+  }
+
+  Buffer const& BufferInputStream::GetBuffer() const
+  {
+    return _buffer;
+  }
+
+  BufferInputStreamSource::BufferInputStreamSource(Buffer const& buffer)
+  : _buffer(buffer) {}
+
+  BufferInputStream& BufferInputStreamSource::CreateStream(Book& book)
+  {
+    return book.Allocate<BufferInputStream>(_buffer);
+  }
+
+
+  BufferOutputStream::BufferOutputStream(Buffer const& buffer)
+  : _buffer(buffer) {}
+
+  void BufferOutputStream::Write(Buffer const& buffer)
+  {
+    if(_buffer.size < buffer.size)
+      throw Exception("BufferOutputStream: end of dest buffer");
+    memcpy(_buffer.data, buffer.data, buffer.size);
+    _buffer.data = (uint8_t*)_buffer.data + buffer.size;
+    _buffer.size -= buffer.size;
+  }
+
+
+  void MemoryStream::Write(Buffer const& buffer)
+  {
+    size_t initialSize = _data.size();
+    _data.resize(initialSize + buffer.size);
+    memcpy(_data.data() + initialSize, buffer.data, buffer.size);
+  }
+
+  Buffer MemoryStream::ToBuffer() const
+  {
+    return _data;
+  }
+
+
+  BufferStorage::BufferStorage(Buffer const& buffer)
+  : _buffer(buffer) {}
+
+  size_t BufferStorage::Read(uint64_t offset, Buffer const& buffer) const
+  {
+    if(_buffer.size < offset) return 0;
+    size_t toRead = std::min(buffer.size, (size_t)(_buffer.size - offset));
+    std::copy_n((uint8_t const*)_buffer.data + offset, toRead, (uint8_t*)buffer.data);
+    return toRead;
+  }
+
+  void BufferStorage::Write(uint64_t offset, Buffer const& buffer)
+  {
+    if(offset + buffer.size > _buffer.size)
+      throw Exception("buffer storage overflow while writing");
+    std::copy_n((uint8_t const*)buffer.data, buffer.size, (uint8_t*)_buffer.data + offset);
+  }
+
+
+  ReadableStorageStream::ReadableStorageStream(ReadableStorage const& storage, uint64_t offset, uint64_t size)
+  : _storage(storage), _offset(offset), _size(size) {}
+
+  size_t ReadableStorageStream::Read(Buffer const& buffer)
+  {
+    size_t toRead = (size_t)std::min<uint64_t>(_size, buffer.size);
+    toRead = _storage.Read(_offset, toRead);
+    _offset += toRead;
+    _size -= toRead;
+    return toRead;
+  }
+
+  size_t ReadableStorageStream::Skip(size_t size)
+  {
+    size_t toSkip = (size_t)std::min<uint64_t>(_size, size);
+    _offset += toSkip;
+    _size -= toSkip;
+    return toSkip;
   }
 
 
@@ -214,5 +315,25 @@ namespace Coil
     std::copy_n((uint8_t const*)buffer.data + toWrite1, buffer.size - toWrite1, _buffer.data());
 
     _size += buffer.size;
+  }
+
+
+  LimitedInputStream::LimitedInputStream(InputStream& inputStream, uint64_t limit)
+  : _inputStream(inputStream), _remaining(limit)
+  {
+  }
+
+  size_t LimitedInputStream::Read(Buffer const& buffer)
+  {
+    size_t readSize = _inputStream.Read(Buffer(buffer.data, (size_t)std::min<uint64_t>(buffer.size, _remaining)));
+    _remaining -= readSize;
+    return readSize;
+  }
+
+  size_t LimitedInputStream::Skip(size_t size)
+  {
+    size_t skipSize = _inputStream.Skip((size_t)std::min<uint64_t>(size, _remaining));
+    _remaining -= skipSize;
+    return skipSize;
   }
 }

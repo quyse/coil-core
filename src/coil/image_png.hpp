@@ -2,6 +2,7 @@
 
 #include "graphics.hpp"
 #include "tasks.hpp"
+#include "data.hpp"
 
 namespace Coil
 {

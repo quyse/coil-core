@@ -165,6 +165,7 @@ if(TRUE)
   )
   target_link_libraries(coil_core_fs
     PUBLIC
+      coil_core_data
       coil_core_tasks
     PRIVATE
       coil_core_unicode
@@ -535,6 +536,7 @@ if(TARGET PNG::PNG)
   )
   target_link_libraries(coil_core_image_png
     PUBLIC
+      coil_core_data
       coil_core_image
       coil_core_tasks
     PRIVATE

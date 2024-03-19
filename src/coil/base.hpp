@@ -242,53 +242,6 @@ namespace Coil
     void WriteAllFrom(InputStream& inputStream);
   };
 
-  // Input stream reading from buffer.
-  class BufferInputStream final : public InputStream
-  {
-  public:
-    BufferInputStream(Buffer const& buffer);
-
-    size_t Read(Buffer const& buffer) override;
-    size_t Skip(size_t size) override;
-
-  private:
-    Buffer _buffer;
-  };
-
-  class BufferInputStreamSource final : public InputStreamSource
-  {
-  public:
-    BufferInputStreamSource(Buffer const& buffer);
-
-    BufferInputStream& CreateStream(Book& book) override;
-
-  private:
-    Buffer const _buffer;
-  };
-
-  // Output stream writing into buffer.
-  class BufferOutputStream final : public OutputStream
-  {
-  public:
-    BufferOutputStream(Buffer const& buffer);
-
-    void Write(Buffer const& buffer) override;
-
-  private:
-    Buffer _buffer;
-  };
-
-  class MemoryStream final : public OutputStream
-  {
-  public:
-    void Write(Buffer const& buffer) override;
-
-    Buffer ToBuffer() const;
-
-  private:
-    std::vector<uint8_t> _data;
-  };
-
   // Packetized input stream.
   class PacketInputStream
   {
@@ -304,6 +257,18 @@ namespace Coil
   {
   public:
     virtual PacketInputStream& CreateStream(Book& book) = 0;
+  };
+
+  class ReadableStorage
+  {
+  public:
+    virtual size_t Read(uint64_t offset, Buffer const& buffer) const = 0;
+  };
+
+  class WritableStorage
+  {
+  public:
+    virtual void Write(uint64_t offset, Buffer const& buffer) = 0;
   };
 
 

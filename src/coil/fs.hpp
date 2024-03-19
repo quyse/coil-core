@@ -1,6 +1,7 @@
 #pragma once
 
 #include "tasks.hpp"
+#include "data.hpp"
 #include <concepts>
 #include <filesystem>
 #include <string>
@@ -54,7 +55,7 @@ namespace Coil
     std::variant<std::filesystem::path::value_type const*, std::filesystem::path> _path;
   };
 
-  class File
+  class File : public ReadableStorage, public WritableStorage
   {
   public:
 #if defined(COIL_PLATFORM_WINDOWS)
@@ -67,8 +68,8 @@ namespace Coil
     File(File const&) = delete;
     File(File&&) = delete;
 
-    size_t Read(uint64_t offset, Buffer const& buffer);
-    void Write(uint64_t offset, Buffer const& buffer);
+    size_t Read(uint64_t offset, Buffer const& buffer) const override;
+    void Write(uint64_t offset, Buffer const& buffer) override;
     uint64_t GetSize() const;
 
     static File& Open(Book& book, FsPathInput const& path, FileAccessMode accessMode, FileOpenMode openMode, FileAdviseMode adviseMode = FileAdviseMode::None);

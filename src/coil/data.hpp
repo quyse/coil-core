@@ -19,6 +19,80 @@ namespace Coil
     EndianSwap(value);
   };
 
+  // Input stream reading from buffer.
+  class BufferInputStream final : public InputStream
+  {
+  public:
+    BufferInputStream(Buffer const& buffer);
+
+    size_t Read(Buffer const& buffer) override;
+    size_t Skip(size_t size) override;
+
+    Buffer const& GetBuffer() const;
+
+  private:
+    Buffer _buffer;
+  };
+
+  class BufferInputStreamSource final : public InputStreamSource
+  {
+  public:
+    BufferInputStreamSource(Buffer const& buffer);
+
+    BufferInputStream& CreateStream(Book& book) override;
+
+  private:
+    Buffer const _buffer;
+  };
+
+  // Output stream writing into buffer.
+  class BufferOutputStream final : public OutputStream
+  {
+  public:
+    BufferOutputStream(Buffer const& buffer);
+
+    void Write(Buffer const& buffer) override;
+
+  private:
+    Buffer _buffer;
+  };
+
+  class MemoryStream final : public OutputStream
+  {
+  public:
+    void Write(Buffer const& buffer) override;
+
+    Buffer ToBuffer() const;
+
+  private:
+    std::vector<uint8_t> _data;
+  };
+
+  class BufferStorage : public ReadableStorage, public WritableStorage
+  {
+  public:
+    BufferStorage(Buffer const& buffer);
+
+    size_t Read(uint64_t offset, Buffer const& buffer) const override;
+    void Write(uint64_t offset, Buffer const& buffer) override;
+
+  private:
+    Buffer _buffer;
+  };
+
+  class ReadableStorageStream : public InputStream
+  {
+  public:
+    ReadableStorageStream(ReadableStorage const& storage, uint64_t offset, uint64_t size);
+
+    size_t Read(Buffer const& buffer) override;
+    size_t Skip(size_t size) override;
+
+  private:
+    ReadableStorage const& _storage;
+    uint64_t _offset, _size;
+  };
+
   // Writer of various data types.
   class StreamWriter
   {
@@ -172,5 +246,20 @@ namespace Coil
     std::vector<uint8_t> _buffer;
     size_t _start = 0;
     size_t _size = 0;
+  };
+
+  // input stream which reads not more than specified number of bytes
+  // from source stream
+  class LimitedInputStream final : public InputStream
+  {
+  public:
+    LimitedInputStream(InputStream& inputStream, uint64_t limit);
+
+    size_t Read(Buffer const& buffer) override;
+    size_t Skip(size_t size) override;
+
+  private:
+    InputStream& _inputStream;
+    uint64_t _remaining;
   };
 }
