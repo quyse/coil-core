@@ -68,9 +68,9 @@ namespace Coil
     File(File const&) = delete;
     File(File&&) = delete;
 
+    uint64_t GetSize() const override;
     size_t Read(uint64_t offset, Buffer const& buffer) const override;
     void Write(uint64_t offset, Buffer const& buffer) override;
-    uint64_t GetSize() const;
 
     static File& Open(Book& book, FsPathInput const& path, FileAccessMode accessMode, FileOpenMode openMode, FileAdviseMode adviseMode = FileAdviseMode::None);
     static File& OpenRead(Book& book, FsPathInput const& path, FileAdviseMode adviseMode = FileAdviseMode::None);

@@ -197,6 +197,21 @@ namespace Coil
 #endif
   }
 
+  uint64_t File::GetSize() const
+  {
+#if defined(COIL_PLATFORM_WINDOWS)
+    LARGE_INTEGER size;
+    if(!::GetFileSizeEx(_hFile, &size))
+      throw Exception("getting file size failed");
+    return size.QuadPart;
+#elif defined(COIL_PLATFORM_POSIX)
+    struct stat st;
+    if(::fstat(_fd, &st) != 0)
+      throw Exception("getting file size failed");
+    return st.st_size;
+#endif
+  }
+
   size_t File::Read(uint64_t offset, Buffer const& buffer) const
   {
 #if defined(COIL_PLATFORM_WINDOWS)
@@ -252,21 +267,6 @@ namespace Coil
       data += writtenSize;
       offset += writtenSize;
     }
-#endif
-  }
-
-  uint64_t File::GetSize() const
-  {
-#if defined(COIL_PLATFORM_WINDOWS)
-    LARGE_INTEGER size;
-    if(!::GetFileSizeEx(_hFile, &size))
-      throw Exception("getting file size failed");
-    return size.QuadPart;
-#elif defined(COIL_PLATFORM_POSIX)
-    struct stat st;
-    if(::fstat(_fd, &st) != 0)
-      throw Exception("getting file size failed");
-    return st.st_size;
 #endif
   }
 

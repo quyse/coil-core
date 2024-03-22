@@ -68,16 +68,17 @@ namespace Coil
     std::vector<uint8_t> _data;
   };
 
-  class BufferStorage : public ReadableStorage, public WritableStorage
+  class BufferStorage final : public ReadableStorage, public WritableStorage
   {
   public:
     BufferStorage(Buffer const& buffer);
 
+    uint64_t GetSize() const override;
     size_t Read(uint64_t offset, Buffer const& buffer) const override;
     void Write(uint64_t offset, Buffer const& buffer) override;
 
   private:
-    Buffer _buffer;
+    Buffer const _buffer;
   };
 
   class ReadableStorageStream : public InputStream

@@ -118,7 +118,7 @@ namespace Coil
     : data(data), size(size) {}
     Buffer(void const* data, size_t size)
     : data(const_cast<void*>(data)), size(size) {}
-    Buffer(size_t size)
+    explicit Buffer(size_t size)
     : data(nullptr), size(size) {}
 
     template <typename T>
@@ -262,6 +262,7 @@ namespace Coil
   class ReadableStorage
   {
   public:
+    virtual uint64_t GetSize() const = 0;
     virtual size_t Read(uint64_t offset, Buffer const& buffer) const = 0;
   };
 

@@ -73,6 +73,11 @@ namespace Coil
   BufferStorage::BufferStorage(Buffer const& buffer)
   : _buffer(buffer) {}
 
+  uint64_t BufferStorage::GetSize() const
+  {
+    return _buffer.size;
+  }
+
   size_t BufferStorage::Read(uint64_t offset, Buffer const& buffer) const
   {
     if(_buffer.size < offset) return 0;
@@ -95,7 +100,7 @@ namespace Coil
   size_t ReadableStorageStream::Read(Buffer const& buffer)
   {
     size_t toRead = (size_t)std::min<uint64_t>(_size, buffer.size);
-    toRead = _storage.Read(_offset, toRead);
+    toRead = _storage.Read(_offset, Buffer{buffer.data, toRead});
     _offset += toRead;
     _size -= toRead;
     return toRead;
