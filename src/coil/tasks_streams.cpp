@@ -88,7 +88,7 @@ namespace Coil
   Task<void> SuspendablePipe::WaitForRead()
   {
     std::unique_lock lock{_mutex};
-    while(!(_buffer.GetDataSize() > 0))
+    while(!_ended && _buffer.GetDataSize() <= 0)
     {
       co_await _readerVar.Wait(lock);
     }
@@ -106,7 +106,7 @@ namespace Coil
         throw Exception("write to suspendable pipe is too big");
 
       // if there's no place for the data
-      if(!(_buffer.GetDataSize() + buffer.size <= _bufferSize))
+      if(buffer.size <= _bufferSize && _buffer.GetDataSize() + buffer.size > _bufferSize)
         return false;
 
       // otherwise there's space, write data
@@ -129,7 +129,7 @@ namespace Coil
   Task<void> SuspendablePipe::WaitForWrite(size_t size)
   {
     std::unique_lock lock{_mutex};
-    while(!(_buffer.GetDataSize() + size <= _bufferSize))
+    while(size <= _bufferSize && _buffer.GetDataSize() + size > _bufferSize)
     {
       co_await _writerVar.Wait(lock);
     }

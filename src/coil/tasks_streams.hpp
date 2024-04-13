@@ -45,7 +45,8 @@ namespace Coil
   public:
     // allow buffer expansion means allow writes bigger than buffer size
     // normally if there's not enough space for write pipe suspends
-    // but if the write is bigger than the buffer, there's no point in suspending
+    // but if the write is bigger than the buffer, assuming the writer cannot
+    // do lesser write, there's no point in suspending
     // if expansion is allowed, big writes succeed immediately, and buffer is expanded
     // if expansion is not allowed, an exception is thrown
     SuspendablePipe(size_t bufferSize, bool allowBufferExpansion);
