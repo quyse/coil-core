@@ -30,7 +30,13 @@ lib.makeExtensible (self: with self; {
     inherit (pkgs.spirv-headers) pname version src meta;
   };
   zstd = mkCmakePkg {
-    inherit (pkgs.zstd) pname version src meta;
+    inherit (pkgs.zstd) pname version src;
+    patches = lib.optionals (pkgs.zstd.version == "1.5.6") [
+      (pkgs.fetchpatch {
+        url = "https://github.com/facebook/zstd/pull/4019.patch";
+        hash = "sha256-XC5sK/t6d0IB9oVhMTMZWQgck3OOTKhsMAgN4GX7/L0=";
+      })
+    ];
     postPatch = ''
       # remove unsupported option
       grep -Fv -- '-z noexecstack' < build/cmake/CMakeModules/AddZstdCompilationFlags.cmake > build/cmake/CMakeModules/AddZstdCompilationFlags.cmake.new
@@ -42,6 +48,9 @@ lib.makeExtensible (self: with self; {
       "-DZSTD_BUILD_TESTS=OFF"
     ];
     sourceDir = "build/cmake";
+    meta = pkgs.zstd.meta // {
+      outputsToInstall = null;
+    };
   };
   SDL2 = mkCmakePkg {
     inherit (pkgs.SDL2) pname version src meta;
