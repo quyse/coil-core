@@ -19,7 +19,7 @@ rec {
         "-DCOIL_CORE_DONT_REQUIRE_LIBS=${dontRequireLibsList}"
       ];
       nativeBuildInputs = attrs.nativeBuildInputs ++ [
-        clang
+        llvmPackages_18.clang
       ];
     });
 
@@ -87,7 +87,7 @@ rec {
       meta.license = lib.licenses.asl20;
     };
 
-    inherit (llvmPackages) openmp;
+    inherit (llvmPackages_18) openmp;
 
     steam-sdk = if coil.toolchain-steam != null then coil.toolchain-steam.sdk else null;
   });
@@ -95,7 +95,7 @@ rec {
 
   # Ubuntu build
   ubuntu-pkgs = rec {
-    clangVersion = "16";
+    clangVersion = "18";
     diskImage = coil.toolchain-linux.diskImagesFuns.ubuntu_2204_amd64 [
       "clang-${clangVersion}"
       "cmake"
