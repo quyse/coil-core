@@ -5,7 +5,7 @@
 , features ? null
 }:
 
-rec {
+lib.makeExtensible (self: with self; {
   # NixOS build
   nixos-pkgs = pkgs.extend (self: super: with self; {
     coil-core = (callPackage ./coil-core.nix {
@@ -163,4 +163,4 @@ rec {
   touch = {
     inherit coil-core-nixos coil-core-ubuntu coil-core-windows;
   };
-}
+})
