@@ -206,6 +206,33 @@ lib.makeExtensible (self: with self; {
   c-ares = mkCmakePkg {
     inherit (pkgs.c-ares) pname version src meta;
   };
+  boost = msvc.stdenv.mkDerivation {
+    inherit (pkgs.boost) pname version src meta;
+    nativeBuildInputs = [
+      msvc.buildEnv
+    ];
+    configurePhase = ''
+      wine ./bootstrap.bat --with-toolset=clang-win
+    '';
+    buildPhase = ''
+      wine b2 \
+        --prefix=$out \
+        -j''${NIX_BUILD_CORES} \
+        --layout=system \
+        toolset=clang-win \
+        variant=release \
+        threading=multi \
+        link=shared \
+        runtime-link=shared \
+        address-model=64 \
+        debug-symbols=off \
+        --without-python \
+        install
+    '';
+    installPhase = finalizePkg {
+      buildInputs = [];
+    };
+  };
   steam = if coil.toolchain-steam != null then coil.toolchain-steam.sdk.overrideAttrs (attrs: {
     installPhase = (attrs.installPhase or "") + (finalizePkg {
       buildInputs = [];
