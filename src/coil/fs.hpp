@@ -49,7 +49,8 @@ namespace Coil
     std::filesystem::path GetNativePath() const&;
     std::filesystem::path GetNativePath() &&;
 
-    std::string GetString() const;
+    std::string GetString() const&;
+    std::string GetString() &&;
 
   private:
     std::variant<std::filesystem::path::value_type const*, std::filesystem::path> _path;

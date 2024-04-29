@@ -144,7 +144,7 @@ namespace Coil
     }, std::move(_path));
   }
 
-  std::string FsPathInput::GetString() const
+  std::string FsPathInput::GetString() const&
   {
     return std::visit([this](auto const& path) -> std::string
     {
@@ -158,7 +158,7 @@ namespace Coil
         {
           std::string spath;
           Unicode::Convert<char16_t, char>(path, spath);
-          return spath;
+          return std::move(spath);
         }
       }
       else
@@ -171,10 +171,42 @@ namespace Coil
         {
           std::string spath;
           Unicode::Convert<char16_t, char>(path.c_str(), spath);
-          return spath;
+          return std::move(spath);
         }
       }
     }, _path);
+  }
+  std::string FsPathInput::GetString() &&
+  {
+    return std::visit([this](auto&& path) -> std::string
+    {
+      if constexpr(std::same_as<std::decay_t<decltype(path)>, std::filesystem::path::value_type const*>)
+      {
+        if constexpr(std::same_as<std::filesystem::path::value_type, char>)
+        {
+          return path;
+        }
+        if constexpr(std::same_as<std::filesystem::path::value_type, wchar_t>)
+        {
+          std::string spath;
+          Unicode::Convert<char16_t, char>(path, spath);
+          return std::move(spath);
+        }
+      }
+      else
+      {
+        if constexpr(std::same_as<std::filesystem::path::value_type, char>)
+        {
+          return std::move(path).string();
+        }
+        if constexpr(std::same_as<std::filesystem::path::value_type, wchar_t>)
+        {
+          std::string spath;
+          Unicode::Convert<char16_t, char>(path.c_str(), spath);
+          return std::move(spath);
+        }
+      }
+    }, std::move(_path));
   }
 
 
