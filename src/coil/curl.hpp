@@ -6,6 +6,9 @@
 #include <functional>
 #include <stop_token>
 #include <thread>
+#if defined(COIL_PLATFORM_WINDOWS)
+#include "windows.hpp"
+#endif
 #include <curl/curl.h>
 
 namespace Coil
