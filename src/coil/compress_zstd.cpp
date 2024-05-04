@@ -36,7 +36,7 @@ namespace Coil
       .size = buffer.size,
       .pos = 0,
     };
-    uint8_t outBufferData[compressOutBufferSize];
+    uint8_t* outBufferData = (uint8_t*)alloca(compressOutBufferSize);
     bool moreOutput;
     do
     {
