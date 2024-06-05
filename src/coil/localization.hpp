@@ -200,16 +200,28 @@ namespace Coil
   static_assert(IsLanguage<Language::Belarusian>);
 
   template <>
-  struct Localization<Language::German>
+  struct Localization<Language::ChineseSimplified>
   {
     static constexpr LanguageInfo const info =
     {
-      .tag = LanguageTag::German,
-      .script = LanguageScript::Latin,
+      .tag = LanguageTag::Chinese,
+      .script = LanguageScript::HanSimplified,
       .direction = LanguageDirection::LeftToRight,
     };
   };
-  static_assert(IsLanguage<Language::German>);
+  static_assert(IsLanguage<Language::ChineseSimplified>);
+
+  template <>
+  struct Localization<Language::ChineseTraditional>
+  {
+    static constexpr LanguageInfo const info =
+    {
+      .tag = LanguageTag::Chinese,
+      .script = LanguageScript::HanTraditional,
+      .direction = LanguageDirection::LeftToRight,
+    };
+  };
+  static_assert(IsLanguage<Language::ChineseTraditional>);
 
   template <>
   struct Localization<Language::English>
@@ -270,30 +282,6 @@ namespace Coil
   static_assert(IsLanguage<Language::EnglishBritish>);
 
   template <>
-  struct Localization<Language::Spanish>
-  {
-    static constexpr LanguageInfo const info =
-    {
-      .tag = LanguageTag::Spanish,
-      .script = LanguageScript::Latin,
-      .direction = LanguageDirection::LeftToRight,
-    };
-  };
-  static_assert(IsLanguage<Language::Spanish>);
-
-  template <>
-  struct Localization<Language::Persian>
-  {
-    static constexpr LanguageInfo const info =
-    {
-      .tag = LanguageTag::Persian,
-      .script = LanguageScript::Arabic,
-      .direction = LanguageDirection::RightToLeft,
-    };
-  };
-  static_assert(IsLanguage<Language::Persian>);
-
-  template <>
   struct Localization<Language::French>
   {
     static constexpr LanguageInfo const info =
@@ -304,6 +292,18 @@ namespace Coil
     };
   };
   static_assert(IsLanguage<Language::French>);
+
+  template <>
+  struct Localization<Language::German>
+  {
+    static constexpr LanguageInfo const info =
+    {
+      .tag = LanguageTag::German,
+      .script = LanguageScript::Latin,
+      .direction = LanguageDirection::LeftToRight,
+    };
+  };
+  static_assert(IsLanguage<Language::German>);
 
   template <>
   struct Localization<Language::Hebrew>
@@ -378,6 +378,18 @@ namespace Coil
   static_assert(IsLanguage<Language::Korean>);
 
   template <>
+  struct Localization<Language::Persian>
+  {
+    static constexpr LanguageInfo const info =
+    {
+      .tag = LanguageTag::Persian,
+      .script = LanguageScript::Arabic,
+      .direction = LanguageDirection::RightToLeft,
+    };
+  };
+  static_assert(IsLanguage<Language::Persian>);
+
+  template <>
   struct Localization<Language::Portuguese>
   {
     static constexpr LanguageInfo const info =
@@ -400,6 +412,18 @@ namespace Coil
     };
   };
   static_assert(IsLanguage<Language::Russian>);
+
+  template <>
+  struct Localization<Language::Spanish>
+  {
+    static constexpr LanguageInfo const info =
+    {
+      .tag = LanguageTag::Spanish,
+      .script = LanguageScript::Latin,
+      .direction = LanguageDirection::LeftToRight,
+    };
+  };
+  static_assert(IsLanguage<Language::Spanish>);
 
   template <>
   struct Localization<Language::Thai>
@@ -448,27 +472,4 @@ namespace Coil
     };
   };
   static_assert(IsLanguage<Language::Vietnamese>);
-
-  template <>
-  struct Localization<Language::ChineseSimplified>
-  {
-    static constexpr LanguageInfo const info =
-    {
-      .tag = LanguageTag::Chinese,
-      .script = LanguageScript::HanSimplified,
-      .direction = LanguageDirection::LeftToRight,
-    };
-  };
-  template <>
-  struct Localization<Language::ChineseTraditional>
-  {
-    static constexpr LanguageInfo const info =
-    {
-      .tag = LanguageTag::Chinese,
-      .script = LanguageScript::HanTraditional,
-      .direction = LanguageDirection::LeftToRight,
-    };
-  };
-  static_assert(IsLanguage<Language::ChineseSimplified>);
-  static_assert(IsLanguage<Language::ChineseTraditional>);
 }
