@@ -968,6 +968,18 @@ if(TARGET coil_core_sdl_vulkan)
 endif()
 list(APPEND coil_core_all_examples example_render_gradient)
 
+if(TARGET coil_core_vulkan)
+  add_executable(example_vulkan_compute
+    examples/example_vulkan_compute.cpp
+  )
+  target_link_libraries(example_vulkan_compute
+    coil_core_entrypoint_console
+    coil_core_vulkan
+  )
+  list(APPEND coil_core_examples example_vulkan_compute)
+endif()
+list(APPEND coil_core_all_examples example_vulkan_compute)
+
 if(TARGET coil_core_steam)
   add_executable(example_steam
     examples/example_steam.cpp
