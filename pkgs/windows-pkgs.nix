@@ -216,7 +216,7 @@ lib.makeExtensible (self: with self; {
     '';
     buildPhase = ''
       wine b2 \
-        --prefix=$out \
+        --prefix=$(winepath -w $out) \
         -j''${NIX_BUILD_CORES} \
         --layout=system \
         toolset=clang-win \
