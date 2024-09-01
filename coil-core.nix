@@ -19,6 +19,7 @@
 , harfbuzz
 , wayland
 , wayland-protocols
+, wayland-scanner
 , libxkbcommon
 , pulseaudio
 , libogg
@@ -40,6 +41,8 @@ in stdenv.mkDerivation {
     ninja
   ] ++ lib.optionals stdenv.buildPlatform.isLinux [
     pkg-config
+  ] ++ lib.optionals (hasFeature "graphics" && stdenv.hostPlatform.isLinux) [
+    wayland-scanner
   ];
   propagatedBuildInputs = [
     nlohmann_json
