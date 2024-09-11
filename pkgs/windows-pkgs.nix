@@ -180,17 +180,17 @@ lib.makeExtensible (self: with self; {
   };
   opus = mkCmakePkg rec {
     pname = "opus";
-    version = "1.4";
+    version = "1.5.2";
     # use git checkout instead of tarball to get cmake exports
     src = pkgs.fetchgit {
       url = "https://github.com/xiph/opus";
       rev = "v${version}";
-      hash = "sha256-rA47xZB2mj2lhweA+pra1wjAjsFPMl2yMgX78jdn364=";
+      hash = "sha256-iflnfZqocDuiqV4KEB/iB5OWezoBUIMdfdw5/zhgnS8=";
     };
     cmakeFlags = [
       "-DBUILD_SHARED_LIBS=ON"
       "-DOPUS_X86_MAY_HAVE_SSE4_1=OFF"
-      "-DOPUS_X86_MAY_HAVE_AVX=OFF"
+      "-DOPUS_X86_MAY_HAVE_AVX2=OFF"
     ];
     meta.license = lib.licenses.bsd3;
   };
