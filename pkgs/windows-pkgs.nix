@@ -16,6 +16,12 @@ lib.makeExtensible (self: with self; {
   };
   vulkan-headers = mkCmakePkg {
     inherit (pkgs.vulkan-headers) pname version src meta;
+    postPatch = ''
+      sed -ie 's?-Werror??;s?/WX??' tests/integration/CMakeLists.txt
+    '';
+    cmakeFlags = [
+      "-DVULKAN_HEADERS_ENABLE_MODULE=OFF"
+    ];
   };
   vulkan-loader = mkCmakePkg {
     inherit (pkgs.vulkan-loader) pname version src meta;
