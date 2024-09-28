@@ -700,22 +700,7 @@ endif()
 list(APPEND coil_core_all_libraries fthb)
 
 if(TARGET PkgConfig::WaylandClient AND TARGET PkgConfig::WaylandProtocols AND TARGET PkgConfig::XkbCommon)
-  add_library(coil_core_wayland STATIC
-    wayland.cpp
-    wayland_keys.cpp
-  )
-  set_property(TARGET coil_core_wayland PROPERTY PUBLIC_HEADER
-    wayland.hpp
-  )
-  target_link_libraries(coil_core_wayland
-    PUBLIC
-      coil_core_platform
-    PRIVATE
-      coil_core_graphics
-      PkgConfig::WaylandClient
-      PkgConfig::WaylandProtocols
-      PkgConfig::XkbCommon
-  )
+  add_library(coil_core_wayland_protocols STATIC)
   find_program(WaylandScanner wayland-scanner REQUIRED)
   pkg_get_variable(WaylandProtocols_DataDir wayland-protocols pkgdatadir)
   file(GLOB_RECURSE WaylandProtocols_Xmls "${WaylandProtocols_DataDir}/*.xml")
@@ -732,11 +717,38 @@ if(TARGET PkgConfig::WaylandClient AND TARGET PkgConfig::WaylandProtocols AND TA
       COMMAND ${WaylandScanner} -c client-header ${protocol_xml_path} ${protocol_h}
       DEPENDS ${protocol_xml_path}
     )
-    target_sources(coil_core_wayland PRIVATE ${protocol_c})
+    target_sources(coil_core_wayland_protocols PRIVATE ${protocol_c})
+    set_property(TARGET coil_core_wayland_protocols APPEND PROPERTY PUBLIC_HEADER ${protocol_h})
     list(APPEND WaylandProtocols_Outputs ${protocol_c} ${protocol_h})
   endforeach()
   add_custom_target(WaylandProtocolsGenerated DEPENDS ${WaylandProtocols_Outputs})
-  add_dependencies(coil_core_wayland WaylandProtocolsGenerated)
+  add_dependencies(coil_core_wayland_protocols WaylandProtocolsGenerated)
+  # cannot use build dir in interface
+  # target_include_directories(coil_core_wayland_protocols PUBLIC ${CMAKE_BINARY_DIR})
+  list(APPEND coil_core_libraries wayland_protocols)
+endif()
+if(UNIX)
+  list(APPEND coil_core_all_libraries wayland_protocols)
+endif()
+
+if(TARGET coil_core_wayland_protocols)
+  add_library(coil_core_wayland STATIC
+    wayland.cpp
+    wayland_keys.cpp
+  )
+  set_property(TARGET coil_core_wayland PROPERTY PUBLIC_HEADER
+    wayland.hpp
+  )
+  target_link_libraries(coil_core_wayland
+    PUBLIC
+      coil_core_platform
+    PRIVATE
+      coil_core_graphics
+      coil_core_wayland_protocols
+      PkgConfig::WaylandClient
+      PkgConfig::WaylandProtocols
+      PkgConfig::XkbCommon
+  )
   target_include_directories(coil_core_wayland PRIVATE ${CMAKE_BINARY_DIR})
   list(APPEND coil_core_libraries wayland)
 endif()
