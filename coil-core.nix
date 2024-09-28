@@ -20,6 +20,7 @@
 , wayland
 , wayland-protocols
 , wayland-scanner
+, wlr-protocols
 , libxkbcommon
 , pulseaudio
 , libogg
@@ -78,6 +79,7 @@ in stdenv.mkDerivation {
   ++ lib.optionals (hasFeature "graphics" && stdenv.hostPlatform.isLinux) [
     wayland
     wayland-protocols
+    wlr-protocols
     libxkbcommon
   ]
   ++ lib.optionals (hasFeature "audio" && stdenv.hostPlatform.isLinux) [

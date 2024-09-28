@@ -704,7 +704,11 @@ if(TARGET PkgConfig::WaylandClient AND TARGET PkgConfig::WaylandProtocols AND TA
   find_program(WaylandScanner wayland-scanner REQUIRED)
   pkg_get_variable(WaylandProtocols_DataDir wayland-protocols pkgdatadir)
   file(GLOB_RECURSE WaylandProtocols_Xmls "${WaylandProtocols_DataDir}/*.xml")
-  foreach(protocol_xml_path ${WaylandProtocols_Xmls})
+  if(TARGET PkgConfig::WlrProtocols)
+    pkg_get_variable(WlrProtocols_DataDir wlr-protocols pkgdatadir)
+    file(GLOB_RECURSE WlrProtocols_Xmls "${WlrProtocols_DataDir}/*.xml")
+  endif()
+  foreach(protocol_xml_path ${WaylandProtocols_Xmls} ${WlrProtocols_Xmls})
     cmake_path(GET protocol_xml_path FILENAME protocol_xml)
     cmake_path(REMOVE_EXTENSION protocol_xml OUTPUT_VARIABLE protocol)
     set(protocol_c "${CMAKE_BINARY_DIR}/wayland-${protocol}-protocol.c")
@@ -746,7 +750,6 @@ if(TARGET coil_core_wayland_protocols)
       coil_core_graphics
       coil_core_wayland_protocols
       PkgConfig::WaylandClient
-      PkgConfig::WaylandProtocols
       PkgConfig::XkbCommon
   )
   target_include_directories(coil_core_wayland PRIVATE ${CMAKE_BINARY_DIR})

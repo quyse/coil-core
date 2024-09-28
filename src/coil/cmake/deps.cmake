@@ -22,5 +22,6 @@ find_package(Steam)
 
 pkg_search_module(WaylandClient IMPORTED_TARGET wayland-client)
 pkg_search_module(WaylandProtocols IMPORTED_TARGET wayland-protocols)
+pkg_search_module(WlrProtocols IMPORTED_TARGET wlr-protocols)
 pkg_search_module(XkbCommon IMPORTED_TARGET xkbcommon)
 find_package(PulseAudio)
