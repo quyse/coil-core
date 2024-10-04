@@ -130,6 +130,7 @@ namespace Coil
     // set headers
     for(size_t i = 0; i < info.headers.size(); ++i)
       _headers = curl_slist_append(_headers, info.headers[i].c_str());
+    curl_easy_setopt(_curl, CURLOPT_HTTPHEADER, _headers);
     // enable all supported encodings
     curl_easy_setopt(_curl, CURLOPT_ACCEPT_ENCODING, "");
     // set callbacks
