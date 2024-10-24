@@ -302,6 +302,15 @@ namespace Coil
 #endif
   }
 
+  void File::SetModeExecutable(bool executable)
+  {
+#if defined(COIL_PLATFORM_WINDOWS)
+    // not supported on Windows
+#elif defined(COIL_PLATFORM_POSIX)
+    ::fchmod(_fd, executable ? 0755 : 0644);
+#endif
+  }
+
   File& File::Open(Book& book, FsPathInput const& path, FileAccessMode accessMode, FileOpenMode openMode, FileAdviseMode adviseMode)
   {
     return book.Allocate<File>(DoOpen(path, accessMode, openMode, adviseMode));

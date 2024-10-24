@@ -73,6 +73,8 @@ namespace Coil
     size_t Read(uint64_t offset, Buffer const& buffer) const override;
     void Write(uint64_t offset, Buffer const& buffer) override;
 
+    void SetModeExecutable(bool executable);
+
     static File& Open(Book& book, FsPathInput const& path, FileAccessMode accessMode, FileOpenMode openMode, FileAdviseMode adviseMode = FileAdviseMode::None);
     static File& OpenRead(Book& book, FsPathInput const& path, FileAdviseMode adviseMode = FileAdviseMode::None);
     static File& OpenWrite(Book& book, FsPathInput const& path, FileAdviseMode adviseMode = FileAdviseMode::None);
