@@ -11,12 +11,12 @@
 
 stdenv.mkDerivation rec {
   pname = "libdatachannel";
-  version = "0.21.2";
+  version = "0.22.2";
 
   src = fetchgit {
     url = "https://github.com/paullouisageneau/libdatachannel.git";
     rev = "v${version}";
-    hash = "sha256-3fax57oaJvOgbTDPCiiUdtsfAGhICfPkuMihawq06SA=";
+    hash = "sha256-ZGxv4JfJ3b0S7zacIHBlBtCbChADCQG1CfxStA1lKKE=";
     fetchSubmodules = false;
   };
 
