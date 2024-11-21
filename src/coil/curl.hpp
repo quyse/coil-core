@@ -50,6 +50,8 @@ namespace Coil
       Task<void> WaitForFinish();
       uint32_t GetResponseCode() const;
 
+      CURL* GetCURL() const;
+
     private:
       void Start();
 

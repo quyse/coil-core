@@ -191,6 +191,11 @@ namespace Coil
     return (uint32_t)code;
   }
 
+  CURL* CurlManager::Request::GetCURL() const
+  {
+    return _curl;
+  }
+
   void CurlManager::Request::Start()
   {
     // reference itself to prevent removal
