@@ -19,7 +19,7 @@ lib.makeExtensible (self: with self; {
         "-DCOIL_CORE_DONT_REQUIRE_LIBS=${dontRequireLibsList}"
       ];
       nativeBuildInputs = attrs.nativeBuildInputs ++ [
-        llvmPackages_18.clang
+        clang
       ];
     });
 
@@ -93,7 +93,7 @@ lib.makeExtensible (self: with self; {
       '';
     });
 
-    inherit (llvmPackages_18) openmp;
+    inherit (llvmPackages) openmp;
 
     libdatachannel = callPackage ./pkgs/libdatachannel.nix {};
     plog = callPackage ./pkgs/plog.nix {};
