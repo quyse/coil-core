@@ -63,7 +63,7 @@ namespace Coil
   }
 
 
-#if defined(__cpp_lib_source_location)
+#if defined(__cpp_lib_source_location) && !defined(NDEBUG)
   Exception::Exception(std::source_location location)
   {
     *this << location.file_name() << ':' << location.line() << ' ' << location.function_name() << ": ";

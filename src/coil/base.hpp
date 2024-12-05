@@ -7,7 +7,9 @@
 #include <vector>
 #include <array>
 #include <version>
-#if defined(__cpp_lib_source_location)
+// do not store source locations in release builds
+// dev source paths end up in executables and bloat Nix closure
+#if defined(__cpp_lib_source_location) && !defined(NDEBUG)
 #include <source_location>
 #endif
 #include <cstddef>
@@ -165,7 +167,7 @@ namespace Coil
   class Exception
   {
   public:
-#if defined(__cpp_lib_source_location)
+#if defined(__cpp_lib_source_location) && !defined(NDEBUG)
     Exception(std::source_location location = std::source_location::current());
 #else
     Exception() = default;
@@ -173,13 +175,13 @@ namespace Coil
 
     template <typename T>
     explicit Exception(T&& value
-#if defined(__cpp_lib_source_location)
+#if defined(__cpp_lib_source_location) && !defined(NDEBUG)
       , std::source_location location = std::source_location::current()
 #endif
     )
     {
       *this
-#if defined(__cpp_lib_source_location)
+#if defined(__cpp_lib_source_location) && !defined(NDEBUG)
         << location.file_name() << ':' << location.line() << ' ' << location.function_name() << ": "
 #endif
         << std::forward<T>(value);

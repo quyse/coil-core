@@ -1023,7 +1023,7 @@ foreach(library ${coil_core_libraries})
   target_include_directories(${library}
     INTERFACE
       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
-      $<INSTALL_INTERFACE:include>
+      $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
   )
 endforeach()
 
@@ -1037,8 +1037,8 @@ endif()
 # installation
 install(TARGETS ${coil_core_libraries} ${coil_core_executables}
   EXPORT coil_coreTargets
-  ARCHIVE DESTINATION lib
-  PUBLIC_HEADER DESTINATION include/coil
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/coil"
 )
 install(EXPORT coil_coreTargets
   DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/coil_core"

@@ -87,5 +87,7 @@ in stdenv.mkDerivation {
   ];
   cmakeFlags = lib.optional (features != null) "-DCOIL_CORE_REQUIRE_LIBS=";
   doCheck = true;
+  outputs = ["out" "dev"];
+  outputLib = "dev";
   meta.license = lib.licenses.mit;
 }
