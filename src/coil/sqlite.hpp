@@ -10,6 +10,18 @@ namespace Coil
 {
   template <typename T>
   struct SqliteValue;
+
+  template <typename T>
+  concept IsSqliteValueBindable = requires(sqlite3_stmt* stmt, int index, T value)
+  {
+    { SqliteValue<T>::Bind(stmt, index, value) } -> std::same_as<void>;
+  };
+  template <typename T>
+  concept IsSqliteValueGettable = requires(sqlite3_stmt* stmt, int index)
+  {
+    { SqliteValue<T>::Get(stmt, index) } -> std::same_as<T>;
+  };
+
   template <>
   struct SqliteValue<int32_t>
   {
@@ -55,16 +67,31 @@ namespace Coil
     static void Bind(sqlite3_stmt* stmt, int index, Buffer const& value);
     static Buffer Get(sqlite3_stmt* stmt, int index);
   };
-
   template <typename T>
-  concept IsSqliteValueBindable = requires(sqlite3_stmt* stmt, int index, T value)
+  struct SqliteValue<std::optional<T>>
   {
-    { SqliteValue<T>::Bind(stmt, index, value) } -> std::same_as<void>;
-  };
-  template <typename T>
-  concept IsSqliteValueGettable = requires(sqlite3_stmt* stmt, int index)
-  {
-    { SqliteValue<T>::Get(stmt, index) } -> std::same_as<T>;
+    static void Bind(sqlite3_stmt* stmt, int index, std::optional<T> const& value) requires IsSqliteValueBindable<T>
+    {
+      if(value.has_value())
+      {
+        SqliteValue<T>::Bind(stmt, index, value.value());
+      }
+      else
+      {
+        sqlite3_bind_null(stmt, index);
+      }
+    }
+    static std::optional<T> Get(sqlite3_stmt* stmt, int index) requires IsSqliteValueGettable<T>
+    {
+      if(sqlite3_column_type(stmt, index) != SQLITE_NULL)
+      {
+        return { SqliteValue<T>::Get(stmt, index) };
+      }
+      else
+      {
+        return {};
+      }
+    }
   };
 
   class SqliteDb
