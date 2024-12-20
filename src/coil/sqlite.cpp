@@ -43,6 +43,15 @@ namespace Coil
     return (int64_t)sqlite3_column_int64(stmt, index);
   }
 
+  void SqliteValue<bool>::Bind(sqlite3_stmt* stmt, int index, bool value)
+  {
+    sqlite3_bind_int64(stmt, index, value ? 1 : 0);
+  }
+  bool SqliteValue<bool>::Get(sqlite3_stmt* stmt, int index)
+  {
+    return sqlite3_column_int64(stmt, index) > 0;
+  }
+
   void SqliteValue<std::string>::Bind(sqlite3_stmt* stmt, int index, std::string const& value)
   {
     sqlite3_bind_text64(stmt, index, value.c_str(), value.length(), SQLITE_TRANSIENT, SQLITE_UTF8);

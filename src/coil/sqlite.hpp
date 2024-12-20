@@ -41,6 +41,12 @@ namespace Coil
     static int64_t Get(sqlite3_stmt* stmt, int index);
   };
   template <>
+  struct SqliteValue<bool>
+  {
+    static void Bind(sqlite3_stmt* stmt, int index, bool value);
+    static bool Get(sqlite3_stmt* stmt, int index);
+  };
+  template <>
   struct SqliteValue<std::string>
   {
     static void Bind(sqlite3_stmt* stmt, int index, std::string const& value);
