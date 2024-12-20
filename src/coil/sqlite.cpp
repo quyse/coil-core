@@ -4,11 +4,11 @@
 namespace
 {
   template <int... additionalSuccessCodes>
-  int CheckError(int error)
+  int CheckError(sqlite3* db, int error)
   {
     if(((error != SQLITE_OK) && ... && (error != additionalSuccessCodes)))
     {
-      throw Coil::Exception("sqlite error: ") << sqlite3_errstr(error);
+      throw Coil::Exception("sqlite error: ") << sqlite3_errmsg(db);
     }
     return error;
   }
@@ -82,8 +82,8 @@ namespace Coil
   SqliteDb::Result::Result(sqlite3_stmt* stmt)
   : _stmt(stmt) {}
 
-  SqliteDb::Query::Query(sqlite3_stmt* stmt)
-  : _stmt(stmt) {}
+  SqliteDb::Query::Query(sqlite3* db, sqlite3_stmt* stmt)
+  : _db(db), _stmt(stmt) {}
 
   SqliteDb::Query::~Query()
   {
@@ -98,15 +98,15 @@ namespace Coil
 
   std::optional<SqliteDb::Result> SqliteDb::Query::Next()
   {
-    if(CheckError<SQLITE_ROW, SQLITE_DONE>(sqlite3_step(_stmt)) == SQLITE_ROW)
+    if(CheckError<SQLITE_ROW, SQLITE_DONE>(_db, sqlite3_step(_stmt)) == SQLITE_ROW)
     {
       return Result(_stmt);
     }
     return {};
   }
 
-  SqliteDb::Statement::Statement(sqlite3_stmt* stmt)
-  : _stmt(stmt) {}
+  SqliteDb::Statement::Statement(sqlite3* db, sqlite3_stmt* stmt)
+  : _db(db), _stmt(stmt) {}
 
   SqliteDb::Statement::Statement(Statement&& stmt) noexcept
   {
@@ -192,15 +192,15 @@ namespace Coil
     sqlite3* dbHandle = nullptr;
     int r = sqlite3_open_v2(fileName, &dbHandle, flagsValue, nullptr);
     DbHandle db(dbHandle);
-    CheckError(r);
+    CheckError(dbHandle, r);
     return db;
   }
 
   SqliteDb::Statement SqliteDb::CreateStatement(char const* sql)
   {
     sqlite3_stmt* stmt;
-    CheckError(sqlite3_prepare_v2(_db, sql, -1, &stmt, nullptr));
-    return stmt;
+    CheckError(_db, sqlite3_prepare_v2(_db, sql, -1, &stmt, nullptr));
+    return {_db, stmt};
   }
 
   SqliteDb::Transaction SqliteDb::CreateTransaction()
@@ -210,6 +210,6 @@ namespace Coil
 
   void SqliteDb::Exec(char const* sql)
   {
-    CheckError(sqlite3_exec(_db, sql, nullptr, nullptr, nullptr));
+    CheckError(_db, sqlite3_exec(_db, sql, nullptr, nullptr, nullptr));
   }
 }

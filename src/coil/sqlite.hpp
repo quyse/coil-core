@@ -121,7 +121,7 @@ namespace Coil
     class Query
     {
     public:
-      Query(sqlite3_stmt* stmt);
+      Query(sqlite3* db, sqlite3_stmt* stmt);
       Query(Query const&) = delete;
       Query(Query&&) = delete;
       ~Query();
@@ -133,13 +133,14 @@ namespace Coil
       std::optional<Result> Next();
 
     private:
-      sqlite3_stmt* _stmt;
+      sqlite3* _db = nullptr;
+      sqlite3_stmt* _stmt = nullptr;
     };
 
     class Statement
     {
     public:
-      Statement(sqlite3_stmt* stmt);
+      Statement(sqlite3* db, sqlite3_stmt* stmt);
       Statement(Statement const&) = delete;
       Statement(Statement&& stmt) noexcept;
       ~Statement();
@@ -152,10 +153,11 @@ namespace Coil
         {
           (SqliteValue<std::decay_t<Args>>::Bind(_stmt, indices + 1, std::forward<Args>(args)) , ...);
         })(std::make_integer_sequence<int, sizeof...(Args)>());
-        return _stmt;
+        return {_db, _stmt};
       }
 
     private:
+      sqlite3* _db = nullptr;
       sqlite3_stmt* _stmt = nullptr;
     };
 
