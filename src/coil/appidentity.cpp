@@ -3,16 +3,21 @@
 namespace Coil
 {
   AppIdentity::AppIdentity()
-  : _name("Coil Core App"), _version(0) {}
+  : name_{"App"}, packageName_{"app"} {}
 
   std::string& AppIdentity::Name()
   {
-    return _name;
+    return name_;
+  }
+
+  std::string& AppIdentity::PackageName()
+  {
+    return packageName_;
   }
 
   uint32_t& AppIdentity::Version()
   {
-    return _version;
+    return version_;
   }
 
   AppIdentity& AppIdentity::GetInstance()
