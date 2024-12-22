@@ -185,6 +185,9 @@ if(TARGET coil_core_appidentity)
   target_link_libraries(coil_core_process
     PUBLIC
       coil_core_appidentity
+      coil_core_fs
+      $<$<BOOL:${WIN32}>:coil_core_unicode>
+      $<$<BOOL:${WIN32}>:coil_core_windows>
   )
   list(APPEND coil_core_libraries process)
 endif()

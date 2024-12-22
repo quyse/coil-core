@@ -1,50 +1,92 @@
 #include "process.hpp"
 #include "appidentity.hpp"
-#include <filesystem>
+#include "fs.hpp"
+#if defined(COIL_PLATFORM_WINDOWS)
+#include "unicode.hpp"
+#include "windows.hpp"
+#include <shlobj.h>
+#include <knownfolders.h>
+#elif defined(COIL_PLATFORM_POSIX)
 #include <unistd.h>
+#endif
+#include <filesystem>
+
+#if defined(COIL_PLATFORM_WINDOWS)
+namespace
+{
+  std::string GetKnownFolder(REFKNOWNFOLDERID pId)
+  {
+    std::string location;
+    Coil::CoTaskMemPtr<wchar_t> pLocation;
+    Coil::CheckHResult(SHGetKnownFolderPath(pId, 0, NULL, &pLocation), "failed to get known folder path");
+    Coil::Unicode::Convert<char16_t, char>((wchar_t const*)pLocation, location);
+    return location;
+  }
+}
+#endif
 
 namespace
 {
   std::string const& GetHomeLocation()
   {
-    static std::string const location = []()
+    static std::string const location =
+#if defined(COIL_PLATFORM_WINDOWS)
+    GetKnownFolder(FOLDERID_Profile);
+#elif defined(COIL_PLATFORM_POSIX)
+    []()
     {
       char const* str = std::getenv("HOME");
       return str ? str : ".";
     }();
+#endif
     return location;
   }
 
   std::string const& GetConfigLocation()
   {
-    static std::string const location = []() -> std::string
+    static std::string const location =
+#if defined(COIL_PLATFORM_WINDOWS)
+    GetKnownFolder(FOLDERID_RoamingAppData);
+#elif defined(COIL_PLATFORM_POSIX)
+    []() -> std::string
     {
       char const* str = std::getenv("XDG_CONFIG_HOME");
       if(str) return str;
       return GetHomeLocation() + "/.config";
     }();
+#endif
     return location;
   }
 
   std::string const& GetDataLocation()
   {
-    static std::string const location = []() -> std::string
+    static std::string const location =
+#if defined(COIL_PLATFORM_WINDOWS)
+    GetKnownFolder(FOLDERID_RoamingAppData);
+#elif defined(COIL_PLATFORM_POSIX)
+    []() -> std::string
     {
       char const* str = std::getenv("XDG_DATA_HOME");
       if(str) return str;
       return GetHomeLocation() + "/.local/share";
     }();
+#endif
     return location;
   }
 
   std::string const& GetStateLocation()
   {
-    static std::string const location = []() -> std::string
+    static std::string const location =
+#if defined(COIL_PLATFORM_WINDOWS)
+    GetKnownFolder(FOLDERID_LocalAppData);
+#elif defined(COIL_PLATFORM_POSIX)
+    []() -> std::string
     {
       char const* str = std::getenv("XDG_STATE_HOME");
       if(str) return str;
       return GetHomeLocation() + "/.local/state";
     }();
+#endif
     return location;
   }
 }
@@ -56,11 +98,11 @@ namespace Coil
     switch(location)
     {
     case AppKnownLocation::Config:
-      return GetConfigLocation() + "/" + AppIdentity::GetInstance().PackageName();
+      return GetConfigLocation() + FsPathSeparator + AppIdentity::GetInstance().PackageName();
     case AppKnownLocation::Data:
-      return GetDataLocation() + "/" + AppIdentity::GetInstance().PackageName();
+      return GetDataLocation() + FsPathSeparator + AppIdentity::GetInstance().PackageName();
     case AppKnownLocation::State:
-      return GetStateLocation() + "/" + AppIdentity::GetInstance().PackageName();
+      return GetStateLocation() + FsPathSeparator + AppIdentity::GetInstance().PackageName();
     default:
       throw Exception{"unsupported app known location"};
     }
@@ -75,6 +117,10 @@ namespace Coil
 
   void RunProcessAndForget(std::string const& program, std::vector<std::string> const& arguments)
   {
+#if defined(COIL_PLATFORM_WINDOWS)
+    // not clear how to transition from arguments to command line, Windows escaping is crazy
+    throw Exception{"RunProcessAndForget is not implemented on Windows yet"};
+#elif defined(COIL_PLATFORM_POSIX)
     std::vector<char*> args;
     args.reserve(arguments.size() + 2);
     args.push_back((char*)program.c_str());
@@ -86,5 +132,6 @@ namespace Coil
     {
       ::execvp(program.c_str(), args.data());
     }
+#endif
   }
 }
