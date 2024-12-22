@@ -1,6 +1,7 @@
 #include "process.hpp"
 #include "appidentity.hpp"
 #include <filesystem>
+#include <unistd.h>
 
 namespace
 {
@@ -70,5 +71,20 @@ namespace Coil
     auto path = GetAppKnownLocation(location);
     std::filesystem::create_directories(path);
     return std::move(path);
+  }
+
+  void RunProcessAndForget(std::string const& program, std::vector<std::string> const& arguments)
+  {
+    std::vector<char*> args;
+    args.reserve(arguments.size() + 2);
+    args.push_back((char*)program.c_str());
+    for(size_t i = 0; i < arguments.size(); ++i)
+      args.push_back((char*)arguments[i].c_str());
+    args.push_back(nullptr);
+
+    if(::fork() == 0)
+    {
+      ::execvp(program.c_str(), args.data());
+    }
   }
 }
