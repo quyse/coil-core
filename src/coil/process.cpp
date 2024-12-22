@@ -134,4 +134,27 @@ namespace Coil
     }
 #endif
   }
+
+  void RunOrOpenFile(std::string const& fileName)
+  {
+#if defined(COIL_PLATFORM_WINDOWS)
+    std::wstring fileNameStr;
+    Unicode::Convert<char, char16_t>(fileName.begin(), fileName.end(), fileNameStr);
+    SHELLEXECUTEINFOW info =
+    {
+      .cbSize = sizeof(info),
+      .fMask = SEE_MASK_NOASYNC,
+      .hwnd = NULL,
+      .lpVerb = NULL,
+      .lpFile = fileNameStr.c_str(),
+      .lpParameters = NULL,
+      .lpDirectory = NULL,
+      .nShow = SW_NORMAL,
+    };
+    if(!ShellExecuteExW(&info))
+      throw Exception{"failed to run or open file: "} << fileName;
+#elif defined(COIL_PLATFORM_POSIX)
+    RunProcessAndForget("xdg-open", {fileName});
+#endif
+  }
 }

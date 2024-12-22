@@ -20,4 +20,7 @@ namespace Coil
 
   // run process, do not wait for it
   void RunProcessAndForget(std::string const& program, std::vector<std::string> const& arguments);
+
+  // run executable or open a document
+  void RunOrOpenFile(std::string const& fileName);
 }
