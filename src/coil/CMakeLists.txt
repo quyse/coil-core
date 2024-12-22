@@ -176,19 +176,19 @@ endif()
 list(APPEND coil_core_all_libraries fs)
 
 if(TARGET coil_core_appidentity)
-  add_library(coil_core_env STATIC
-    env.cpp
+  add_library(coil_core_process STATIC
+    process.cpp
   )
-  set_property(TARGET coil_core_env PROPERTY PUBLIC_HEADER
-    env.hpp
+  set_property(TARGET coil_core_process PROPERTY PUBLIC_HEADER
+    process.hpp
   )
-  target_link_libraries(coil_core_env
+  target_link_libraries(coil_core_process
     PUBLIC
       coil_core_appidentity
   )
-  list(APPEND coil_core_libraries env)
+  list(APPEND coil_core_libraries process)
 endif()
-list(APPEND coil_core_all_libraries env)
+list(APPEND coil_core_all_libraries process)
 
 if(TRUE)
   add_library(coil_core_math INTERFACE)
@@ -1087,16 +1087,16 @@ if(BUILD_TESTING)
     add_test(NAME test_data COMMAND test_data)
   endif()
 
-  if(TARGET coil_core_env)
-    add_executable(test_env
-      test_env.cpp
+  if(TARGET coil_core_process)
+    add_executable(test_process
+      test_process.cpp
     )
-    target_link_libraries(test_env
+    target_link_libraries(test_process
       coil_core_appidentity
       coil_core_entrypoint_console
-      coil_core_env
+      coil_core_process
     )
-    add_test(NAME test_env COMMAND test_env)
+    add_test(NAME test_process COMMAND test_process)
   endif()
 
   if(TARGET coil_core_math_determ)
