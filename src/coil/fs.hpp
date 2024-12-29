@@ -1,6 +1,7 @@
 #pragma once
 
 #include "tasks.hpp"
+#include "tasks_storage.hpp"
 #include "data.hpp"
 #include <concepts>
 #include <filesystem>
@@ -56,7 +57,7 @@ namespace Coil
     std::variant<std::filesystem::path::value_type const*, std::filesystem::path> _path;
   };
 
-  class File : public ReadableStorage, public WritableStorage
+  class File final : public ReadableStorage, public WritableStorage, public AsyncReadableStorage, public AsyncWritableStorage
   {
   public:
 #if defined(COIL_PLATFORM_WINDOWS)
@@ -69,9 +70,15 @@ namespace Coil
     File(File const&) = delete;
     File(File&&) = delete;
 
+    // ReadableStorage
     uint64_t GetSize() const override;
     size_t Read(uint64_t offset, Buffer const& buffer) const override;
+    // WritableStorage
     void Write(uint64_t offset, Buffer const& buffer) override;
+    // AsyncReadableStorage
+    Task<size_t> AsyncRead(uint64_t offset, Buffer const& buffer) const override;
+    // AsyncWritableStorage
+    Task<void> AsyncWrite(uint64_t offset, Buffer const& buffer) override;
 
     void SetModeExecutable(bool executable);
 

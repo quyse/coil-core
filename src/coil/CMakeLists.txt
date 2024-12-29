@@ -231,10 +231,12 @@ list(APPEND coil_core_all_libraries math_determ)
 if(TRUE)
   add_library(coil_core_tasks STATIC
     tasks.cpp
+    tasks_storage.cpp
     tasks_streams.cpp
   )
   set_property(TARGET coil_core_tasks PROPERTY PUBLIC_HEADER
     tasks.hpp
+    tasks_storage.hpp
     tasks_streams.hpp
     tasks_sync.hpp
   )

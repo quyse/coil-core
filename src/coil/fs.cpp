@@ -302,6 +302,17 @@ namespace Coil
 #endif
   }
 
+  Task<size_t> File::AsyncRead(uint64_t offset, Buffer const& buffer) const
+  {
+    co_return Read(offset, buffer);
+  }
+
+  Task<void> File::AsyncWrite(uint64_t offset, Buffer const& buffer)
+  {
+    Write(offset, buffer);
+    co_return;
+  }
+
   void File::SetModeExecutable(bool executable)
   {
 #if defined(COIL_PLATFORM_WINDOWS)
