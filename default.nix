@@ -173,5 +173,6 @@ lib.makeExtensible (self: with self; {
 
   touch = {
     inherit coil-core-nixos coil-core-ubuntu coil-core-windows;
+    boost-windows = windows-pkgs.boost;
   };
 })

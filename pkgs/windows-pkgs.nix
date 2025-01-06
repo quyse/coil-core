@@ -14,6 +14,7 @@ lib.makeExtensible (self: with self; {
       "-DJSON_BuildTests=OFF"
     ];
   };
+
   vulkan-headers = mkCmakePkg {
     inherit (pkgs.vulkan-headers) pname version src meta;
     postPatch = ''
@@ -23,6 +24,7 @@ lib.makeExtensible (self: with self; {
       "-DVULKAN_HEADERS_ENABLE_MODULE=OFF"
     ];
   };
+
   vulkan-loader = mkCmakePkg {
     inherit (pkgs.vulkan-loader) pname version src meta;
     buildInputs = [
@@ -32,9 +34,11 @@ lib.makeExtensible (self: with self; {
       "-DENABLE_WERROR=OFF"
     ];
   };
+
   spirv-headers = mkCmakePkg {
     inherit (pkgs.spirv-headers) pname version src meta;
   };
+
   zstd = mkCmakePkg {
     inherit (pkgs.zstd) pname version src;
     patches = lib.optionals (pkgs.zstd.version == "1.5.6") [
@@ -58,15 +62,18 @@ lib.makeExtensible (self: with self; {
       outputsToInstall = null;
     };
   };
+
   SDL2 = mkCmakePkg {
     inherit (pkgs.SDL2) pname version src meta;
     cmakeFlags = [
       "-DBUILD_SHARED_LIBS=ON"
     ];
   };
+
   zlib = mkCmakePkg {
     inherit (pkgs.zlib) pname version src meta;
   };
+
   libpng = mkCmakePkg {
     inherit (pkgs.libpng) pname version src meta;
     buildInputs = [
@@ -78,12 +85,14 @@ lib.makeExtensible (self: with self; {
       "-DPNG_TESTS=OFF"
     ];
   };
+
   libsquish = mkCmakePkg rec {
     inherit (pkgs.libsquish) pname version src sourceRoot meta;
     cmakeFlags = [
       "-DBUILD_SQUISH_WITH_OPENMP=OFF"
     ];
   };
+
   sqlite = mkCmakePkg {
     inherit (pkgs.sqlite) pname version src meta;
     postPatch = ''
@@ -100,6 +109,7 @@ lib.makeExtensible (self: with self; {
       ''} CMakeLists.txt
     '';
   };
+
   mbedtls = mkCmakePkg {
     inherit (pkgs.mbedtls) pname version src meta;
     cmakeFlags = [
@@ -112,6 +122,7 @@ lib.makeExtensible (self: with self; {
       echo '#define MBEDTLS_SSL_DTLS_SRTP' >> include/mbedtls/mbedtls_config.h
     '';
   };
+
   freetype = mkCmakePkg {
     inherit (pkgs.freetype) pname version src meta;
     buildInputs = [
@@ -121,6 +132,7 @@ lib.makeExtensible (self: with self; {
       "-DBUILD_SHARED_LIBS=ON"
     ];
   };
+
   harfbuzz = mkCmakePkg rec {
     inherit (pkgs.harfbuzz) pname version src meta;
     buildInputs = [
@@ -131,6 +143,7 @@ lib.makeExtensible (self: with self; {
       "-DHB_HAVE_FREETYPE=ON"
     ];
   };
+
   libdatachannel = mkCmakePkg rec {
     inherit (pkgs.libdatachannel) pname version src;
 
@@ -184,6 +197,7 @@ lib.makeExtensible (self: with self; {
       "-DBUILD_SHARED_LIBS=ON"
     ];
   };
+
   opus = mkCmakePkg rec {
     pname = "opus";
     version = "1.5.2";
@@ -200,6 +214,7 @@ lib.makeExtensible (self: with self; {
     ];
     meta.license = lib.licenses.bsd3;
   };
+
   libwebm = mkCmakePkg rec {
     inherit (pkgs.libwebm) pname version src meta;
     cmakeFlags = [
@@ -209,6 +224,7 @@ lib.makeExtensible (self: with self; {
       "-DENABLE_SAMPLE_PROGRAMS=OFF"
     ];
   };
+
   libgav1 = mkCmakePkg rec {
     inherit (pkgs.libgav1) pname version src meta;
     postPatch = ''
@@ -235,6 +251,7 @@ lib.makeExtensible (self: with self; {
       "-DLIBGAV1_ENABLE_TESTS=0"
     ];
   };
+
   curl = mkCmakePkg {
     inherit (pkgs.curl) pname version src;
     buildInputs = [
@@ -257,9 +274,11 @@ lib.makeExtensible (self: with self; {
       outputsToInstall = null;
     };
   };
+
   c-ares = mkCmakePkg {
     inherit (pkgs.c-ares) pname version src meta;
   };
+
   boost = msvc.stdenv.mkDerivation {
     inherit (pkgs.boost) pname version src meta;
     nativeBuildInputs = [
@@ -278,6 +297,7 @@ lib.makeExtensible (self: with self; {
         threading=multi \
         link=shared \
         runtime-link=shared \
+        architecture=x86 \
         address-model=64 \
         debug-symbols=off \
         --without-python \
@@ -287,11 +307,13 @@ lib.makeExtensible (self: with self; {
       buildInputs = [];
     };
   };
+
   steam = if coil.toolchain-steam != null then coil.toolchain-steam.sdk.overrideAttrs (attrs: {
     installPhase = (attrs.installPhase or "") + (finalizePkg {
       buildInputs = [];
     });
   }) else null;
+
   coil-core = mkCmakePkg {
     inherit (pkgs.coil-core) name src meta;
     buildInputs = [
