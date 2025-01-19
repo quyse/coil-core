@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.19)
+cmake_minimum_required(VERSION 3.28.2)
 
 project(coil_core VERSION 3.0)
 
@@ -17,13 +17,12 @@ include(cmake/deps.cmake)
 
 
 if(TRUE)
-  add_library(coil_core_base STATIC
+  add_library(coil_core_base STATIC)
+  target_sources(coil_core_base PUBLIC FILE_SET CXX_MODULES FILES
     base.cpp
+    base_debug.cpp
   )
-  set_property(TARGET coil_core_base PROPERTY PUBLIC_HEADER
-    base.hpp
-    base_debug.hpp
-  )
+  target_compile_features(coil_core_base PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries base)
 endif()
 list(APPEND coil_core_all_libraries base)
@@ -1059,9 +1058,13 @@ install(TARGETS ${coil_core_libraries} ${coil_core_executables}
   EXPORT coil_coreTargets
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/coil"
+  FILE_SET HEADERS DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/coil"
+  FILE_SET CXX_MODULES DESTINATION src
+  CXX_MODULES_BMI DESTINATION "${CMAKE_INSTALL_LIBDIR}/cxx"
 )
 install(EXPORT coil_coreTargets
   DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/coil_core"
+  CXX_MODULES_DIRECTORY cxx
 )
 
 # package config

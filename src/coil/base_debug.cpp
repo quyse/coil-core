@@ -1,7 +1,8 @@
-#pragma once
+module;
 
-#include "base.hpp"
 #include <ostream>
+
+export module coil.base.debug;
 
 namespace std
 {
