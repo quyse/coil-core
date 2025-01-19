@@ -1,4 +1,8 @@
-#include "time.hpp"
+module;
+
+#include "base.hpp"
+#include <cstdint>
+
 #if defined(COIL_PLATFORM_WINDOWS)
 #include "windows.hpp"
 #elif defined(COIL_PLATFORM_MACOS)
@@ -7,8 +11,34 @@
 #include <ctime>
 #endif
 
-namespace Coil
+export module coil.core.time;
+
+export namespace Coil
 {
+  class Time
+  {
+  public:
+    using Tick = uint64_t;
+
+    static Tick GetTick()
+    {
+#if defined(COIL_PLATFORM_WINDOWS)
+      LARGE_INTEGER tick;
+      QueryPerformanceCounter(&tick);
+      return tick.QuadPart;
+#elif defined(COIL_PLATFORM_MACOS)
+      return mach_absolute_time();
+#else
+      struct timespec t;
+      clock_gettime(CLOCK_MONOTONIC, &t);
+      return t.tv_sec * 1000000000ULL + t.tv_nsec;
+#endif
+    }
+
+    static Tick const ticksPerSecond;
+    static float const secondsPerTick;
+  };
+
   Time::Tick const Time::ticksPerSecond = []()
   {
 #if defined(COIL_PLATFORM_WINDOWS)
@@ -26,53 +56,46 @@ namespace Coil
 
   float const Time::secondsPerTick = 1.0f / (float)Time::ticksPerSecond;
 
-  Time::Tick Time::GetTick()
+  class Timer
   {
-#if defined(COIL_PLATFORM_WINDOWS)
-    LARGE_INTEGER tick;
-    QueryPerformanceCounter(&tick);
-    return tick.QuadPart;
-#elif defined(COIL_PLATFORM_MACOS)
-    return mach_absolute_time();
-#else
-    struct timespec t;
-    clock_gettime(CLOCK_MONOTONIC, &t);
-    return t.tv_sec * 1000000000ULL + t.tv_nsec;
-#endif
-  }
+  public:
+    Timer()
+    : _lastTick(0), _pauseTick(0) {}
 
-  Timer::Timer()
-  : _lastTick(0), _pauseTick(0) {}
-
-  void Timer::Pause()
-  {
-    // if already paused, do nothing
-    if(_pauseTick)
-      return;
-
-    // remember pause time
-    _pauseTick = Time::GetTick();
-  }
-
-  float Timer::Tick()
-  {
-    // get current time
-    Time::Tick currentTick = Time::GetTick();
-
-    // calculate amount of ticks from last tick
-    Time::Tick ticks = 0;
-    if(_lastTick)
+    void Pause()
     {
-      ticks = (_pauseTick ? _pauseTick : currentTick) - _lastTick;
+      // if already paused, do nothing
+      if(_pauseTick)
+        return;
+
+      // remember pause time
+      _pauseTick = Time::GetTick();
+    }
+    // time since last tick
+    float Tick()
+    {
+      // get current time
+      Time::Tick currentTick = Time::GetTick();
+
+      // calculate amount of ticks from last tick
+      Time::Tick ticks = 0;
+      if(_lastTick)
+      {
+        ticks = (_pauseTick ? _pauseTick : currentTick) - _lastTick;
+      }
+
+      // if was paused, resume
+      if(_pauseTick)
+        _pauseTick = 0;
+
+      // remember current tick as last tick
+      _lastTick = currentTick;
+
+      return (float)ticks * Time::secondsPerTick;
     }
 
-    // if was paused, resume
-    if(_pauseTick)
-      _pauseTick = 0;
-
-    // remember current tick as last tick
-    _lastTick = currentTick;
-
-    return (float)ticks * Time::secondsPerTick;
-  }
+  private:
+    Time::Tick _lastTick;
+    Time::Tick _pauseTick;
+  };
 }

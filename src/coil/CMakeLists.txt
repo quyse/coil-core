@@ -264,18 +264,16 @@ endif()
 list(APPEND coil_core_all_libraries json)
 
 if(TRUE)
-  add_library(coil_core_time STATIC
+  add_library(coil_core_time STATIC)
+  target_sources(coil_core_time PUBLIC FILE_SET CXX_MODULES FILES
     time.cpp
-  )
-  set_property(TARGET coil_core_time PROPERTY PUBLIC_HEADER
-    time.hpp
   )
   target_link_libraries(coil_core_time
     PUBLIC
       coil_core_base
-    PRIVATE
       $<$<BOOL:${WIN32}>:coil_core_windows>
   )
+  target_compile_features(coil_core_time PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries time)
 endif()
 list(APPEND coil_core_all_libraries time)
