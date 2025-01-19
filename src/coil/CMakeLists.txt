@@ -55,11 +55,15 @@ if(WIN32)
 endif()
 
 if(TRUE)
-  add_library(coil_core_util INTERFACE)
-  set_property(TARGET coil_core_util PROPERTY PUBLIC_HEADER
-    util.hpp
-    util_generator.hpp
+  add_library(coil_core_util STATIC)
+  target_sources(coil_core_util PUBLIC FILE_SET CXX_MODULES FILES
+    util.cpp
+    util_generator.cpp
   )
+  target_sources(coil_core_util PUBLIC FILE_SET HEADERS FILES
+    util.hpp
+  )
+  target_compile_features(coil_core_util PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries util)
 endif()
 list(APPEND coil_core_all_libraries util)

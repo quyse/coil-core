@@ -1,10 +1,12 @@
-#pragma once
+module;
 
 #include <coroutine>
 #include <iterator>
 #include <optional>
 
-namespace Coil
+export module coil.core.util_generator;
+
+export namespace Coil
 {
   // Generator coroutine.
   template <typename T>
