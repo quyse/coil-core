@@ -165,20 +165,18 @@ endif()
 list(APPEND coil_core_all_libraries assets)
 
 if(TRUE)
-  add_library(coil_core_fs STATIC
+  add_library(coil_core_fs STATIC)
+  target_sources(coil_core_fs PUBLIC FILE_SET CXX_MODULES FILES
     fs.cpp
-  )
-  set_property(TARGET coil_core_fs PROPERTY PUBLIC_HEADER
-    fs.hpp
   )
   target_link_libraries(coil_core_fs
     PUBLIC
       coil_core_data
       coil_core_tasks
-    PRIVATE
       coil_core_unicode
       $<$<BOOL:${WIN32}>:coil_core_windows>
   )
+  target_compile_features(coil_core_fs PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries fs)
 endif()
 list(APPEND coil_core_all_libraries fs)
