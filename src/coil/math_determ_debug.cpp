@@ -1,9 +1,12 @@
-#pragma once
+module;
 
-#include "math_determ.hpp"
 #include <ostream>
 
-namespace Coil
+export module coil.core.math.determ.debug;
+
+import coil.core.math.determ;
+
+export namespace Coil
 {
   template <typename T, size_t n>
   std::ostream& operator<<(std::ostream& s, xvec_d<T, n> const& a)

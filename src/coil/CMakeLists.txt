@@ -212,12 +212,10 @@ endif()
 list(APPEND coil_core_all_libraries math)
 
 if(TRUE)
-  add_library(coil_core_math_determ STATIC
+  add_library(coil_core_math_determ STATIC)
+  target_sources(coil_core_math_determ PUBLIC FILE_SET CXX_MODULES FILES
     math_determ.cpp
-  )
-  set_property(TARGET coil_core_math_determ PROPERTY PUBLIC_HEADER
-    math_determ.hpp
-    math_determ_debug.hpp
+    math_determ_debug.cpp
   )
   target_compile_options(coil_core_math_determ
     PRIVATE
@@ -227,6 +225,7 @@ if(TRUE)
     PUBLIC
       coil_core_math
   )
+  target_compile_features(coil_core_math_determ PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries math_determ)
 endif()
 list(APPEND coil_core_all_libraries math_determ)
@@ -1109,7 +1108,8 @@ if(BUILD_TESTING)
   endif()
 
   if(TARGET coil_core_math_determ)
-    add_executable(test_math_determ
+    add_executable(test_math_determ)
+    target_sources(test_math_determ PRIVATE FILE_SET CXX_MODULES FILES
       test_math_determ.cpp
     )
     target_link_libraries(test_math_determ

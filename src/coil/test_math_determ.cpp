@@ -1,10 +1,16 @@
+module;
+
 #include "entrypoint.hpp"
-#include "math_determ.hpp"
-#include "math_debug.hpp"
-#include "math_determ_debug.hpp"
+#include <cstring>
 #include <iostream>
 #include <random>
-#include <cstring>
+
+export module coil.core.test.math.determ;
+
+import coil.core.math.debug;
+import coil.core.math.determ.debug;
+import coil.core.math.determ;
+import coil.core.math;
 
 using namespace Coil;
 
@@ -131,7 +137,7 @@ void check_hash(char const* msg, uint32_t expected)
   g_hashSum = 0;
 }
 
-int COIL_ENTRY_POINT(std::vector<std::string> args)
+extern "C++" int COIL_ENTRY_POINT(std::vector<std::string> args)
 {
   uint32_t okCount = 0, totalCount = 0;
 
