@@ -1,9 +1,18 @@
+module;
+
 #include "entrypoint.hpp"
-#include "tasks_sync.hpp"
-#include "tasks_streams.hpp"
-#include "math.hpp"
-#include <random>
+#include <coroutine>
 #include <iostream>
+#include <random>
+
+export module coil.core.test.tasks;
+
+import coil.core.base;
+import coil.core.math;
+import coil.core.tasks.streams;
+import coil.core.tasks.sync;
+import coil.core.tasks;
+
 using namespace Coil;
 
 std::mt19937 rnd;
@@ -248,7 +257,7 @@ private:
   std::vector<Task<bool>> _tests;
 };
 
-int COIL_ENTRY_POINT(std::vector<std::string> args)
+extern "C++" int COIL_ENTRY_POINT(std::vector<std::string> args)
 {
   ivec2 counts;
 

@@ -1121,7 +1121,8 @@ if(BUILD_TESTING)
   endif()
 
   if(TARGET coil_core_tasks)
-    add_executable(test_tasks
+    add_executable(test_tasks)
+    target_sources(test_tasks PRIVATE FILE_SET CXX_MODULES FILES
       test_tasks.cpp
     )
     target_link_libraries(test_tasks
