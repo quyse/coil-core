@@ -1,9 +1,29 @@
-#include "tasks_storage.hpp"
+module;
 
-namespace Coil
+#include <cstddef>
+#include <cstdint>
+#include <coroutine>
+
+export module coil.core.tasks.storage;
+
+import coil.core.base;
+import coil.core.tasks;
+
+export namespace Coil
 {
-  Task<void> AsyncWritableStorage::AsyncEnd()
+  class AsyncReadableStorage
   {
-    co_return;
-  }
+  public:
+    virtual Task<size_t> AsyncRead(uint64_t offset, Buffer const& buffer) const = 0;
+  };
+
+  class AsyncWritableStorage
+  {
+  public:
+    virtual Task<void> AsyncWrite(uint64_t offset, Buffer const& buffer) = 0;
+    virtual Task<void> AsyncEnd()
+    {
+      co_return;
+    }
+  };
 }

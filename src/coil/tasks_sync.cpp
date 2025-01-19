@@ -1,9 +1,15 @@
-#pragma once
+module;
 
-#include "tasks.hpp"
+#include <coroutine>
 #include <memory>
+#include <mutex>
+#include <queue>
 
-namespace Coil
+export module coil.core.tasks.sync;
+
+import coil.core.tasks;
+
+export namespace Coil
 {
   // condition variable which works with tasks
   class ConditionVariable

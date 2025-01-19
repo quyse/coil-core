@@ -236,21 +236,18 @@ endif()
 list(APPEND coil_core_all_libraries math_determ)
 
 if(TRUE)
-  add_library(coil_core_tasks STATIC
+  add_library(coil_core_tasks STATIC)
+  target_sources(coil_core_tasks PUBLIC FILE_SET CXX_MODULES FILES
     tasks.cpp
     tasks_storage.cpp
     tasks_streams.cpp
-  )
-  set_property(TARGET coil_core_tasks PROPERTY PUBLIC_HEADER
-    tasks.hpp
-    tasks_storage.hpp
-    tasks_streams.hpp
-    tasks_sync.hpp
+    tasks_sync.cpp
   )
   target_link_libraries(coil_core_tasks
     PUBLIC
       coil_core_data
   )
+  target_compile_features(coil_core_tasks PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries tasks)
 endif()
 list(APPEND coil_core_all_libraries tasks)
