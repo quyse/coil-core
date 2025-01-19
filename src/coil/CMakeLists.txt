@@ -28,10 +28,11 @@ endif()
 list(APPEND coil_core_all_libraries base)
 
 if(TRUE)
-  add_library(coil_core_unicode INTERFACE)
-  set_property(TARGET coil_core_unicode PROPERTY PUBLIC_HEADER
-    unicode.hpp
+  add_library(coil_core_unicode STATIC)
+  target_sources(coil_core_unicode PUBLIC FILE_SET CXX_MODULES FILES
+    unicode.cpp
   )
+  target_compile_features(coil_core_unicode PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries unicode)
 endif()
 list(APPEND coil_core_all_libraries unicode)

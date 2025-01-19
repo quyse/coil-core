@@ -1,8 +1,10 @@
-#pragma once
+module;
 
 #include <iterator>
 
-namespace Coil::Unicode
+export module coil.core.unicode;
+
+export namespace Coil::Unicode
 {
   // assuming char means UTF-8, char16_t means UTF-16, char32_t means UTF-32
 
