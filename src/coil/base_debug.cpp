@@ -2,7 +2,7 @@ module;
 
 #include <ostream>
 
-export module coil.base.debug;
+export module coil.core.base.debug;
 
 namespace std
 {

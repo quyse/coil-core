@@ -1,8 +1,17 @@
+module;
+
 #include "entrypoint.hpp"
+#include "base.hpp"
 
 #if defined(COIL_PLATFORM_WINDOWS)
 
 #include "windows.hpp"
+
+#endif
+
+export module coil.core.entrypoint_graphical;
+
+#if defined(COIL_PLATFORM_WINDOWS)
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {

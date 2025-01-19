@@ -1,8 +1,17 @@
+module;
+
 #include "entrypoint.hpp"
+#include "base.hpp"
 
 #if defined(COIL_PLATFORM_WINDOWS)
 
 #include "windows.hpp"
+
+#endif
+
+export module coil.core.entrypoint_console;
+
+#if defined(COIL_PLATFORM_WINDOWS)
 
 int wmain(int argc, wchar_t** argv)
 {

@@ -22,6 +22,9 @@ if(TRUE)
     base.cpp
     base_debug.cpp
   )
+  target_sources(coil_core_base PUBLIC FILE_SET HEADERS FILES
+    base.hpp
+  )
   target_compile_features(coil_core_base PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries base)
 endif()
@@ -70,12 +73,8 @@ list(APPEND coil_core_all_libraries util)
 
 if(TRUE)
   add_library(coil_core_entrypoint INTERFACE)
-  set_property(TARGET coil_core_entrypoint PROPERTY PUBLIC_HEADER
+  target_sources(coil_core_entrypoint PUBLIC FILE_SET HEADERS FILES
     entrypoint.hpp
-  )
-  target_link_libraries(coil_core_entrypoint
-    INTERFACE
-      coil_core_base
   )
   target_link_options(coil_core_entrypoint
     INTERFACE
@@ -86,11 +85,13 @@ endif()
 list(APPEND coil_core_all_libraries entrypoint)
 
 if(TRUE)
-  add_library(coil_core_entrypoint_console STATIC
+  add_library(coil_core_entrypoint_console STATIC)
+  target_sources(coil_core_entrypoint_console PUBLIC FILE_SET CXX_MODULES FILES
     entrypoint_console.cpp
   )
   target_link_libraries(coil_core_entrypoint_console
     PRIVATE
+      coil_core_base
       coil_core_entrypoint
       $<$<BOOL:${WIN32}>:coil_core_windows>
   )
@@ -98,16 +99,19 @@ if(TRUE)
     INTERFACE
       $<$<BOOL:${WIN32}>:$<IF:$<BOOL:${MSVC}>,/subsystem:console,-mconsole>>
   )
+  target_compile_features(coil_core_entrypoint_console PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries entrypoint_console)
 endif()
 list(APPEND coil_core_all_libraries entrypoint_console)
 
 if(TRUE)
-  add_library(coil_core_entrypoint_graphical STATIC
+  add_library(coil_core_entrypoint_graphical STATIC)
+  target_sources(coil_core_entrypoint_graphical PUBLIC FILE_SET CXX_MODULES FILES
     entrypoint_graphical.cpp
   )
   target_link_libraries(coil_core_entrypoint_graphical
     PRIVATE
+      coil_core_base
       coil_core_entrypoint
       $<$<BOOL:${WIN32}>:coil_core_windows>
   )
@@ -115,6 +119,7 @@ if(TRUE)
     INTERFACE
       $<$<BOOL:${WIN32}>:$<IF:$<BOOL:${MSVC}>,/subsystem:windows,-mwindows>>
   )
+  target_compile_features(coil_core_entrypoint_graphical PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries entrypoint_graphical)
 endif()
 list(APPEND coil_core_all_libraries entrypoint_graphical)
