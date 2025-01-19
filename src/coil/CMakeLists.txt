@@ -135,16 +135,15 @@ endif()
 list(APPEND coil_core_all_libraries appidentity)
 
 if(TRUE)
-  add_library(coil_core_data STATIC
+  add_library(coil_core_data STATIC)
+  target_sources(coil_core_data PUBLIC FILE_SET CXX_MODULES FILES
     data.cpp
-  )
-  set_property(TARGET coil_core_data PROPERTY PUBLIC_HEADER
-    data.hpp
   )
   target_link_libraries(coil_core_data
     PUBLIC
       coil_core_base
   )
+  target_compile_features(coil_core_data PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries data)
 endif()
 list(APPEND coil_core_all_libraries data)
