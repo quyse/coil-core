@@ -1,8 +1,12 @@
-#pragma once
+module;
 
-#include "math.hpp"
+#include <cmath>
 
-namespace Coil
+export module coil.core.math.geometry;
+
+import coil.core.math;
+
+export namespace Coil
 {
   template <typename T>
   constexpr xmat<T, 4, 4> AffineTranslation(xvec<T, 3> const& t)

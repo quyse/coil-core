@@ -1,9 +1,12 @@
-#pragma once
+module;
 
-#include "math.hpp"
 #include <ostream>
 
-namespace Coil
+export module coil.core.math.debug;
+
+import coil.core.math;
+
+export namespace Coil
 {
   template <typename T, size_t n, MathOptions o>
   std::ostream& operator<<(std::ostream& s, xvec<T, n, o> const& a)

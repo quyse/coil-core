@@ -1,10 +1,12 @@
-#pragma once
+module;
 
-#include "base.hpp"
-#include <concepts>
 #include <cmath>
+#include <concepts>
+#include <iterator>
 
-namespace Coil
+export module coil.core.math;
+
+export namespace Coil
 {
   enum class MathOption : size_t
   {

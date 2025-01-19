@@ -201,16 +201,13 @@ endif()
 list(APPEND coil_core_all_libraries process)
 
 if(TRUE)
-  add_library(coil_core_math INTERFACE)
-  set_property(TARGET coil_core_math PROPERTY PUBLIC_HEADER
-    math.hpp
-    math_debug.hpp
-    math_geometry.hpp
+  add_library(coil_core_math STATIC)
+  target_sources(coil_core_math PUBLIC FILE_SET CXX_MODULES FILES
+    math.cpp
+    math_debug.cpp
+    math_geometry.cpp
   )
-  target_link_libraries(coil_core_math
-    INTERFACE
-      coil_core_base
-  )
+  target_compile_features(coil_core_math PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries math)
 endif()
 list(APPEND coil_core_all_libraries math)
