@@ -125,12 +125,11 @@ endif()
 list(APPEND coil_core_all_libraries entrypoint_graphical)
 
 if(TRUE)
-  add_library(coil_core_appidentity STATIC
+  add_library(coil_core_appidentity STATIC)
+  target_sources(coil_core_appidentity PUBLIC FILE_SET CXX_MODULES FILES
     appidentity.cpp
   )
-  set_property(TARGET coil_core_appidentity PROPERTY PUBLIC_HEADER
-    appidentity.hpp
-  )
+  target_compile_features(coil_core_appidentity PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries appidentity)
 endif()
 list(APPEND coil_core_all_libraries appidentity)
