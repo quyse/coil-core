@@ -1,6 +1,5 @@
-#pragma once
+module;
 
-#include "base.hpp"
 #include <algorithm>
 #include <array>
 #include <limits>
@@ -9,7 +8,11 @@
 #include <tuple>
 #include <variant>
 
-namespace Coil
+export module coil.core.text;
+
+import coil.core.base;
+
+export namespace Coil
 {
   // text, can be outputted into std::ostream
   template <typename Text>

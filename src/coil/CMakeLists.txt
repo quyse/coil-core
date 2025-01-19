@@ -279,14 +279,15 @@ endif()
 list(APPEND coil_core_all_libraries time)
 
 if(TRUE)
-  add_library(coil_core_text INTERFACE)
-  set_property(TARGET coil_core_text PROPERTY PUBLIC_HEADER
-    text.hpp
+  add_library(coil_core_text STATIC)
+  target_sources(coil_core_text PUBLIC FILE_SET CXX_MODULES FILES
+    text.cpp
   )
   target_link_libraries(coil_core_text
-    INTERFACE
+    PUBLIC
       coil_core_base
   )
+  target_compile_features(coil_core_text PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries text)
 endif()
 list(APPEND coil_core_all_libraries text)
