@@ -149,16 +149,17 @@ endif()
 list(APPEND coil_core_all_libraries data)
 
 if(TRUE)
-  add_library(coil_core_assets INTERFACE)
-  set_property(TARGET coil_core_assets PROPERTY PUBLIC_HEADER
-    assets.hpp
-    assets_struct.hpp
+  add_library(coil_core_assets STATIC)
+  target_sources(coil_core_assets PUBLIC FILE_SET CXX_MODULES FILES
+    assets.cpp
+    assets_struct.cpp
   )
   target_link_libraries(coil_core_assets
-    INTERFACE
+    PUBLIC
       coil_core_json
       coil_core_tasks
   )
+  target_compile_features(coil_core_assets PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries assets)
 endif()
 list(APPEND coil_core_all_libraries assets)

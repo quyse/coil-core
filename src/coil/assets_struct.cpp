@@ -1,12 +1,16 @@
-#pragma once
+module;
 
-#include "assets.hpp"
-#include "util.hpp"
 #include <memory>
 #include <string>
 #include <vector>
 
-namespace Coil
+export module coil.core.assets_struct;
+
+import coil.core.assets;
+import coil.core.base;
+import coil.core.tasks;
+
+export namespace Coil
 {
   // asset struct adapter, allowing to load all asset fields using asset loader
   // all field types must have default constructor

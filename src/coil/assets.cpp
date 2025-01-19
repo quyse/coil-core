@@ -1,14 +1,18 @@
-#pragma once
+module;
 
-#include "json.hpp"
-#include "tasks.hpp"
 #include <any>
 #include <concepts>
 #include <mutex>
 #include <string_view>
 #include <unordered_map>
 
-namespace Coil
+export module coil.core.assets;
+
+import coil.core.base;
+import coil.core.json;
+import coil.core.tasks;
+
+export namespace Coil
 {
   // whether asset can be loaded by asset loader
   template <typename Asset, typename AssetLoader, typename AssetContext>
