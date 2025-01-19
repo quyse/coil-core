@@ -1,7 +1,13 @@
-#include "json.hpp"
+module;
+
 #include "entrypoint.hpp"
-#include "unicode.hpp"
 #include <random>
+
+export module coil.core.test.json;
+
+import coil.core.base;
+import coil.core.json;
+import coil.core.unicode;
 
 using namespace Coil;
 
@@ -93,7 +99,7 @@ namespace
   {
     static std::vector<T> Generate()
     {
-      std::vector<T> v(Random<size_t>::Generate() % 100);
+      std::vector<T> v(Random<uint32_t>::Generate() % 100);
       for(size_t i = 0; i < v.size(); ++i)
         v[i] = Random<T>::Generate();
       return std::move(v);
@@ -121,7 +127,7 @@ bool Test()
   return true;
 }
 
-int COIL_ENTRY_POINT(std::vector<std::string> args)
+extern "C++" int COIL_ENTRY_POINT(std::vector<std::string> args)
 {
   if(!Test<int32_t>()) return 1;
   if(!Test<uint32_t>()) return 1;

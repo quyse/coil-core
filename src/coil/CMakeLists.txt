@@ -250,17 +250,17 @@ endif()
 list(APPEND coil_core_all_libraries tasks)
 
 if(TARGET nlohmann_json::nlohmann_json)
-  add_library(coil_core_json STATIC
+  add_library(coil_core_json STATIC)
+  target_sources(coil_core_json PUBLIC FILE_SET CXX_MODULES FILES
     json.cpp
-  )
-  set_property(TARGET coil_core_json PROPERTY PUBLIC_HEADER
-    json.hpp
   )
   target_link_libraries(coil_core_json
     PUBLIC
+      coil_core_base
       coil_core_math
       nlohmann_json::nlohmann_json
   )
+  target_compile_features(coil_core_json PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries json)
 endif()
 list(APPEND coil_core_all_libraries json)
@@ -1134,7 +1134,8 @@ if(BUILD_TESTING)
   endif()
 
   if(TARGET coil_core_json)
-    add_executable(test_json
+    add_executable(test_json)
+    target_sources(test_json PRIVATE FILE_SET CXX_MODULES FILES
       test_json.cpp
     )
     target_link_libraries(test_json
