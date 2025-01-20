@@ -897,17 +897,16 @@ endif()
 list(APPEND coil_core_all_libraries av1)
 
 if(TARGET CURL::libcurl)
-  add_library(coil_core_curl STATIC
+  add_library(coil_core_curl STATIC)
+  target_sources(coil_core_curl PUBLIC FILE_SET CXX_MODULES FILES
     curl.cpp
-  )
-  set_property(TARGET coil_core_curl PROPERTY PUBLIC_HEADER
-    curl.hpp
   )
   target_link_libraries(coil_core_curl
     PUBLIC
       coil_core_tasks
       CURL::libcurl
   )
+  target_compile_features(coil_core_curl PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries curl)
 endif()
 list(APPEND coil_core_all_libraries curl)
