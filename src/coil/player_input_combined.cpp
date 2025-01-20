@@ -1,9 +1,14 @@
-#pragma once
+module;
 
-#include "player_input.hpp"
 #include <concepts>
+#include <tuple>
+#include <vector>
 
-namespace Coil
+export module coil.core.player_input.combined;
+
+import coil.core.player_input;
+
+export namespace Coil
 {
   template <std::derived_from<PlayerInputManager>... Managers>
   class CombinedPlayerInputManager final : public PlayerInputManager

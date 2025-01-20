@@ -327,27 +327,24 @@ endif()
 list(APPEND coil_core_all_libraries input)
 
 if(TRUE)
-  add_library(coil_core_player_input STATIC
+  add_library(coil_core_player_input STATIC)
+  target_sources(coil_core_player_input PUBLIC FILE_SET CXX_MODULES FILES
     player_input.cpp
-  )
-  set_property(TARGET coil_core_player_input PROPERTY PUBLIC_HEADER
-    player_input.hpp
-    player_input_combined.hpp
+    player_input_combined.cpp
   )
   target_link_libraries(coil_core_player_input
     PUBLIC
       coil_core_base
   )
+  target_compile_features(coil_core_player_input PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries player_input)
 endif()
 list(APPEND coil_core_all_libraries player_input)
 
 if(TRUE)
-  add_library(coil_core_player_input_native STATIC
+  add_library(coil_core_player_input_native STATIC)
+  target_sources(coil_core_player_input_native PUBLIC FILE_SET CXX_MODULES FILES
     player_input_native.cpp
-  )
-  set_property(TARGET coil_core_player_input_native PROPERTY PUBLIC_HEADER
-    player_input_native.hpp
   )
   target_link_libraries(coil_core_player_input_native
     PUBLIC
@@ -355,6 +352,7 @@ if(TRUE)
       coil_core_json
       coil_core_player_input
   )
+  target_compile_features(coil_core_player_input_native PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries player_input_native)
 endif()
 list(APPEND coil_core_all_libraries player_input_native)
