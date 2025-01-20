@@ -6,16 +6,15 @@ module;
 export module coil.core.platform;
 
 import coil.core.base;
+import coil.core.graphics;
 import coil.core.input;
 import coil.core.math;
 import coil.core.util.generator;
 
 export namespace Coil
 {
-  class GraphicsPresenter;
-
   // Window interface.
-  class Window
+  class Window : public GraphicsWindow
   {
   public:
     // Set window title.
@@ -49,10 +48,6 @@ export namespace Coil
       });
     }
 
-    void SetPresenter(GraphicsPresenter* presenter)
-    {
-      _presenter = presenter;
-    }
     // Set mouse lock state.
     void SetMouseLock(bool mouseLock)
     {
@@ -96,7 +91,6 @@ export namespace Coil
     virtual void _UpdateMouseLock() = 0;
     virtual void _UpdateCursorVisible() = 0;
 
-    GraphicsPresenter* _presenter = nullptr;
     bool _mouseLock = false;
     bool _cursorVisible = true;
     bool _running = false;

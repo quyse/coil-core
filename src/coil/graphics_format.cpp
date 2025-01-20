@@ -1,8 +1,13 @@
-#pragma once
+module;
 
-#include "math.hpp"
+#include <cstddef>
+#include <cstdint>
 
-namespace Coil
+export module coil.core.graphics.format;
+
+import coil.core.math;
+
+export namespace Coil
 {
   // Vertex attribute format.
   struct VertexFormat

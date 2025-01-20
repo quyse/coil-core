@@ -364,6 +364,7 @@ if(TRUE)
   )
   target_link_libraries(coil_core_platform
     PUBLIC
+      coil_core_graphics
       coil_core_input
       coil_core_math
       coil_core_util
@@ -374,39 +375,35 @@ endif()
 list(APPEND coil_core_all_libraries platform)
 
 if(TRUE)
-  add_library(coil_core_graphics STATIC
+  add_library(coil_core_graphics STATIC)
+  target_sources(coil_core_graphics PUBLIC FILE_SET CXX_MODULES FILES
     graphics.cpp
+    graphics_format.cpp
     graphics_shaders.cpp
-  )
-  set_property(TARGET coil_core_graphics PROPERTY PUBLIC_HEADER
-    graphics.hpp
-    graphics_format.hpp
-    graphics_shaders.hpp
   )
   target_link_libraries(coil_core_graphics
     PUBLIC
       coil_core_image
-      coil_core_platform
+      coil_core_tasks
       coil_core_util
   )
+  target_compile_features(coil_core_graphics PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries graphics)
 endif()
 list(APPEND coil_core_all_libraries graphics)
 
 if(TRUE)
-  add_library(coil_core_image STATIC
+  add_library(coil_core_image STATIC)
+  target_sources(coil_core_image PUBLIC FILE_SET CXX_MODULES FILES
     image.cpp
     image_format.cpp
   )
-  set_property(TARGET coil_core_image PROPERTY PUBLIC_HEADER
-    image.hpp
-    image_format.hpp
-    image_typed.hpp
-  )
   target_link_libraries(coil_core_image
     PUBLIC
+      coil_core_base
       coil_core_math
   )
+  target_compile_features(coil_core_image PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries image)
 endif()
 list(APPEND coil_core_all_libraries image)
@@ -445,37 +442,43 @@ endif()
 list(APPEND coil_core_all_libraries render)
 
 if(TARGET SPIRV-Headers::SPIRV-Headers)
-  add_library(coil_core_spirv STATIC
+  add_library(coil_core_spirv STATIC)
+  target_sources(coil_core_spirv PUBLIC FILE_SET CXX_MODULES FILES
     spirv.cpp
-  )
-  set_property(TARGET coil_core_spirv PROPERTY PUBLIC_HEADER
-    spirv.hpp
   )
   target_link_libraries(coil_core_spirv
     PUBLIC
       coil_core_graphics
       SPIRV-Headers::SPIRV-Headers
   )
+  target_compile_features(coil_core_spirv PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries spirv)
 endif()
 list(APPEND coil_core_all_libraries spirv)
 
 if(TARGET coil_core_spirv AND TARGET Vulkan::Vulkan)
   add_library(coil_core_vulkan STATIC
-    vulkan.cpp
+    vulkan_computer.cpp
+    vulkan_context.cpp
+    vulkan_device.cpp
     vulkan_format.cpp
+    vulkan_frame.cpp
+    vulkan_pool.cpp
+    vulkan_presenter.cpp
+    vulkan_system.cpp
   )
-  set_property(TARGET coil_core_vulkan PROPERTY PUBLIC_HEADER
-    vulkan.hpp
+  target_sources(coil_core_vulkan PUBLIC FILE_SET CXX_MODULES FILES
+    vulkan.cpp
+    vulkan_utils.cpp
   )
   target_link_libraries(coil_core_vulkan
     PUBLIC
+      coil_core_appidentity
       coil_core_graphics
       coil_core_spirv
       Vulkan::Vulkan
-    PRIVATE
-      coil_core_appidentity
   )
+  target_compile_features(coil_core_vulkan PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries vulkan)
 endif()
 list(APPEND coil_core_all_libraries vulkan)

@@ -1,14 +1,59 @@
-#include "spirv.hpp"
-#include <set>
+module;
+
+#include <cstring>
 #include <map>
 #include <memory>
 #include <optional>
-#include <cstring>
+#include <set>
 #include <spirv/unified1/spirv.hpp11>
 #include <spirv/unified1/GLSL.std.450.h>
 
-namespace Coil
+export module coil.core.spirv;
+
+import coil.core.base;
+import coil.core.graphics.shaders;
+import coil.core.graphics;
+import coil.core.math;
+
+export namespace Coil
 {
+  using SpirvCode = std::vector<uint32_t>;
+
+  enum class SpirvDescriptorType
+  {
+    Unused,
+    UniformBuffer,
+    StorageBuffer,
+    SampledImage,
+  };
+
+  enum class SpirvStageFlag
+  {
+    Vertex = 1,
+    TessellationControl = 2,
+    TessellationEvaluation = 4,
+    Fragment = 8,
+    Compute = 16,
+  };
+
+  struct SpirvDescriptorSetLayoutBinding
+  {
+    SpirvDescriptorType descriptorType = SpirvDescriptorType::Unused;
+    uint32_t descriptorCount = 0;
+    uint32_t stageFlags = 0;
+  };
+
+  struct SpirvDescriptorSetLayout
+  {
+    std::vector<SpirvDescriptorSetLayoutBinding> bindings;
+  };
+
+  struct SpirvModule
+  {
+    SpirvCode code;
+    std::vector<SpirvDescriptorSetLayout> descriptorSetLayouts;
+  };
+
   class SpirvModuleCompiler
   {
   public:

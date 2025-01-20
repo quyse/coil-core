@@ -1,7 +1,53 @@
-#pragma once
+module;
+
+#include <vulkan/vulkan.h>
+#include <tuple>
+
+export module coil.core.vulkan:utils;
+
+import coil.core.base;
 
 namespace Coil
 {
+  template <VkResult... additionalSuccessResults>
+  VkResult CheckSuccess(VkResult result, char const* message)
+  {
+    if(((result != VK_SUCCESS) && ... && (result != additionalSuccessResults)))
+    {
+      char const* str;
+      switch(result)
+      {
+#define R(r) case r: str = #r; break
+      R(VK_SUCCESS);
+      R(VK_NOT_READY);
+      R(VK_TIMEOUT);
+      R(VK_EVENT_SET);
+      R(VK_EVENT_RESET);
+      R(VK_INCOMPLETE);
+      R(VK_ERROR_OUT_OF_HOST_MEMORY);
+      R(VK_ERROR_OUT_OF_DEVICE_MEMORY);
+      R(VK_ERROR_INITIALIZATION_FAILED);
+      R(VK_ERROR_DEVICE_LOST);
+      R(VK_ERROR_MEMORY_MAP_FAILED);
+      R(VK_ERROR_LAYER_NOT_PRESENT);
+      R(VK_ERROR_EXTENSION_NOT_PRESENT);
+      R(VK_ERROR_FEATURE_NOT_PRESENT);
+      R(VK_ERROR_INCOMPATIBLE_DRIVER);
+      R(VK_ERROR_TOO_MANY_OBJECTS);
+      R(VK_ERROR_FORMAT_NOT_SUPPORTED);
+      R(VK_ERROR_FRAGMENTED_POOL);
+      R(VK_ERROR_UNKNOWN);
+#undef R
+      default:
+        str = "unknown";
+        break;
+      }
+      throw Coil::Exception(message);
+    }
+
+    return result;
+  }
+
   void DestroyVulkanObject(VkDevice device)                                            { vkDestroyDevice(device, nullptr); }
   void DestroyVulkanObject(VkDevice device, VkBuffer buffer)                           { vkDestroyBuffer(device, buffer, nullptr); }
   void DestroyVulkanObject(VkDevice device, VkCommandPool commandPool)                 { vkDestroyCommandPool(device, commandPool, nullptr); }

@@ -1,4 +1,8 @@
-#include "vulkan.hpp"
+module;
+
+#include <vulkan/vulkan.h>
+
+module coil.core.vulkan;
 
 namespace Coil
 {
