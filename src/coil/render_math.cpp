@@ -1,9 +1,13 @@
-#pragma once
+module;
 
-#include "math.hpp"
-#include "graphics_shaders.hpp"
+#include <concepts>
 
-namespace Coil
+export module coil.core.render.math;
+
+import coil.core.graphics.shaders;
+import coil.core.math;
+
+export namespace Coil
 {
   template <typename Transform, typename T, size_t n>
   concept IsTransform = requires(Transform const& t, xvec<T, n> const& p)
@@ -51,9 +55,65 @@ namespace Coil
     return t;
   }
 
+  // axis-aligned bounding box
+  template <typename T, size_t n>
+  struct xaabb
+  {
+    xvec<T, n> a;
+    xvec<T, n> b;
+
+    constexpr void normalize()
+    {
+      for(size_t i = 0; i < n; ++i)
+        if(a(i) > b(i))
+          swap(a(i), b(i));
+    }
+  };
+
+  // combining AABBs (as a Minkowski sum)
+  template <typename T, size_t n>
+  constexpr xaabb<T, n> operator+(xaabb<T, n> const& a, xaabb<T, n> const& b)
+  {
+    return
+    {
+      .a = a.a + b.a,
+      .b = a.b + b.b,
+    };
+  }
+
+  // AABB tranform
+  template <typename T>
+  constexpr xaabb<T, 3> operator*(xquatoffset<T> const& qo, xaabb<T, 3> const& aabb)
+  {
+    auto x = qo.q * xvec<T, 3>(1, 0, 0);
+    auto y = qo.q * xvec<T, 3>(0, 1, 0);
+    auto z = qo.q * xvec<T, 3>(0, 0, 1);
+    xaabb<T, 3> tx =
+    {
+      .a = x * aabb.a.x(),
+      .b = x * aabb.b.x(),
+    };
+    tx.normalize();
+    xaabb<T, 3> ty =
+    {
+      .a = y * aabb.a.y(),
+      .b = y * aabb.b.y(),
+    };
+    ty.normalize();
+    xaabb<T, 3> tz =
+    {
+      .a = z * aabb.a.z(),
+      .b = z * aabb.b.z(),
+    };
+    tz.normalize();
+    return tx + ty + tz;
+  }
+
   // convenience type synonyms
   using quatoffset = xquatoffset<float>;
   using dquatoffset = xquatoffset<double>;
+  using aabb3 = xaabb<float, 3>;
+  using daabb3 = xaabb<double, 3>;
 
   // shader operators
   namespace Shaders

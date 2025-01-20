@@ -428,18 +428,17 @@ endif()
 list(APPEND coil_core_all_libraries image_transform)
 
 if(TRUE)
-  add_library(coil_core_render STATIC
+  add_library(coil_core_render STATIC)
+  target_sources(coil_core_render PUBLIC FILE_SET CXX_MODULES FILES
     render.cpp
     render_canvas.cpp
-  )
-  set_property(TARGET coil_core_render PROPERTY PUBLIC_HEADER
-    render.hpp
-    render_canvas.hpp
+    render_math.cpp
   )
   target_link_libraries(coil_core_render
     PUBLIC
       coil_core_graphics
   )
+  target_compile_features(coil_core_render PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries render)
 endif()
 list(APPEND coil_core_all_libraries render)
@@ -517,20 +516,6 @@ if(TARGET coil_core_vulkan AND TARGET coil_core_sdl)
   list(APPEND coil_core_libraries sdl_vulkan)
 endif()
 list(APPEND coil_core_all_libraries sdl_vulkan)
-
-if(TRUE)
-  add_library(coil_core_render_math INTERFACE)
-  set_property(TARGET coil_core_render_math PROPERTY PUBLIC_HEADER
-    render_math.hpp
-  )
-  target_link_libraries(coil_core_render_math
-    INTERFACE
-      coil_core_graphics
-      coil_core_math
-  )
-  list(APPEND coil_core_libraries render_math)
-endif()
-list(APPEND coil_core_all_libraries render_math)
 
 if(TRUE)
   add_library(coil_core_logic STATIC)
@@ -660,35 +645,32 @@ endif()
 list(APPEND coil_core_all_libraries crypto)
 
 if(TRUE)
-  add_library(coil_core_fonts STATIC
+  add_library(coil_core_fonts STATIC)
+  target_sources(coil_core_fonts PUBLIC FILE_SET CXX_MODULES FILES
     fonts.cpp
     fonts_cache.cpp
-  )
-  set_property(TARGET coil_core_fonts PROPERTY PUBLIC_HEADER
-    fonts.hpp
-    fonts_cache.hpp
   )
   target_link_libraries(coil_core_fonts
     PUBLIC
       coil_core_image
       coil_core_localization
   )
+  target_compile_features(coil_core_fonts PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries fonts)
 endif()
 list(APPEND coil_core_all_libraries fonts)
 
 if(TARGET coil_core_fonts)
-  add_library(coil_core_render_fonts STATIC
+  add_library(coil_core_render_fonts STATIC)
+  target_sources(coil_core_render_fonts PUBLIC FILE_SET CXX_MODULES FILES
     render_fonts.cpp
-  )
-  set_property(TARGET coil_core_render_fonts PROPERTY PUBLIC_HEADER
-    render_fonts.hpp
   )
   target_link_libraries(coil_core_render_fonts
     PUBLIC
       coil_core_fonts
       coil_core_render
   )
+  target_compile_features(coil_core_render_fonts PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries render_fonts)
 endif()
 list(APPEND coil_core_all_libraries render_fonts)
