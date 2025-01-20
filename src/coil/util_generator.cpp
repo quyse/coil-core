@@ -4,7 +4,7 @@ module;
 #include <iterator>
 #include <optional>
 
-export module coil.core.util_generator;
+export module coil.core.util.generator;
 
 export namespace Coil
 {

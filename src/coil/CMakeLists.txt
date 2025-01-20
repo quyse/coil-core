@@ -358,11 +358,9 @@ endif()
 list(APPEND coil_core_all_libraries player_input_native)
 
 if(TRUE)
-  add_library(coil_core_platform STATIC
+  add_library(coil_core_platform STATIC)
+  target_sources(coil_core_platform PUBLIC FILE_SET CXX_MODULES FILES
     platform.cpp
-  )
-  set_property(TARGET coil_core_platform PROPERTY PUBLIC_HEADER
-    platform.hpp
   )
   target_link_libraries(coil_core_platform
     PUBLIC
@@ -370,6 +368,7 @@ if(TRUE)
       coil_core_math
       coil_core_util
   )
+  target_compile_features(coil_core_platform PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries platform)
 endif()
 list(APPEND coil_core_all_libraries platform)
