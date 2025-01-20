@@ -1,10 +1,16 @@
-#pragma once
+module;
 
-#include "gltf.hpp"
-#include "mesh.hpp"
-#include <limits>
+#include <unordered_map>
+#include <vector>
 
-namespace Coil
+export module coil.core.gltf.cache;
+
+import coil.core.base;
+import coil.core.gltf;
+import coil.core.math;
+import coil.core.mesh;
+
+export namespace Coil
 {
   class GLTFCache
   {

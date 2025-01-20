@@ -252,6 +252,9 @@ if(TARGET nlohmann_json::nlohmann_json)
   target_sources(coil_core_json PUBLIC FILE_SET CXX_MODULES FILES
     json.cpp
   )
+  target_sources(coil_core_json PUBLIC FILE_SET HEADERS FILES
+    json.hpp
+  )
   target_link_libraries(coil_core_json
     PUBLIC
       coil_core_base
@@ -607,21 +610,19 @@ endif()
 list(APPEND coil_core_all_libraries mesh)
 
 if(TARGET coil_core_json)
-  add_library(coil_core_gltf STATIC
+  add_library(coil_core_gltf STATIC)
+  target_sources(coil_core_gltf PUBLIC FILE_SET CXX_MODULES FILES
     gltf.cpp
-  )
-  set_property(TARGET coil_core_gltf PROPERTY PUBLIC_HEADER
-    gltf.hpp
-    gltf_cache.hpp
+    gltf_cache.cpp
   )
   target_link_libraries(coil_core_gltf
     PUBLIC
       coil_core_math
       coil_core_mesh
-    PRIVATE
       coil_core_data
       coil_core_json
   )
+  target_compile_features(coil_core_gltf PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries gltf)
 endif()
 list(APPEND coil_core_all_libraries gltf)
