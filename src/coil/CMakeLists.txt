@@ -561,11 +561,9 @@ endif()
 list(APPEND coil_core_all_libraries image_png)
 
 if(TARGET Squish::Squish)
-  add_library(coil_core_image_compress STATIC
+  add_library(coil_core_image_compress STATIC)
+  target_sources(coil_core_image_compress PUBLIC FILE_SET CXX_MODULES FILES
     image_compress.cpp
-  )
-  set_property(TARGET coil_core_image_compress PROPERTY PUBLIC_HEADER
-    image_compress.hpp
   )
   target_link_libraries(coil_core_image_compress
     PUBLIC
@@ -574,6 +572,7 @@ if(TARGET Squish::Squish)
     PRIVATE
       Squish::Squish
   )
+  target_compile_features(coil_core_image_compress PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries image_compress)
 endif()
 list(APPEND coil_core_all_libraries image_compress)
