@@ -1,7 +1,14 @@
-#include "image_png.hpp"
+module;
+
 #include <sstream>
-#include <cstring>
 #include <png.h>
+
+export module coil.core.image.png;
+
+import coil.core.base;
+import coil.core.data;
+import coil.core.image.format;
+import coil.core.tasks;
 
 namespace
 {
@@ -23,7 +30,7 @@ namespace
   };
 }
 
-namespace Coil
+export namespace Coil
 {
   ImageBuffer LoadPngImage(Book& book, InputStream& stream)
   {
@@ -249,4 +256,18 @@ namespace Coil
 
     png_destroy_write_struct(&pngPtr, &infoPtr);
   }
+
+  class PngAssetLoader
+  {
+  public:
+    template <std::same_as<ImageBuffer> Asset, typename AssetContext>
+    Task<Asset> LoadAsset(Book& book, AssetContext& assetContext) const
+    {
+      BufferInputStream inputStream = co_await assetContext.template LoadAssetParam<Buffer>(book, "buffer");
+      co_return LoadPngImage(book, inputStream);
+    }
+
+    static constexpr std::string_view assetLoaderName = "image_png";
+  };
+  static_assert(IsAssetLoader<PngAssetLoader>);
 }

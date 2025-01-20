@@ -544,20 +544,18 @@ endif()
 list(APPEND coil_core_all_libraries logic)
 
 if(TARGET PNG::PNG)
-  add_library(coil_core_image_png STATIC
+  add_library(coil_core_image_png STATIC)
+  target_sources(coil_core_image_png PUBLIC FILE_SET CXX_MODULES FILES
     image_png.cpp
-  )
-  set_property(TARGET coil_core_image_png PROPERTY PUBLIC_HEADER
-    image_png.hpp
   )
   target_link_libraries(coil_core_image_png
     PUBLIC
       coil_core_data
       coil_core_image
       coil_core_tasks
-    PRIVATE
       PNG::PNG
   )
+  target_compile_features(coil_core_image_png PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries image_png)
 endif()
 list(APPEND coil_core_all_libraries image_png)
