@@ -730,22 +730,21 @@ endif()
 
 if(TARGET coil_core_wayland_protocols)
   add_library(coil_core_wayland STATIC
-    wayland.cpp
     wayland_keys.cpp
   )
-  set_property(TARGET coil_core_wayland PROPERTY PUBLIC_HEADER
-    wayland.hpp
+  target_sources(coil_core_wayland PUBLIC FILE_SET CXX_MODULES FILES
+    wayland.cpp
   )
   target_link_libraries(coil_core_wayland
     PUBLIC
-      coil_core_platform
-    PRIVATE
       coil_core_graphics
+      coil_core_platform
       coil_core_wayland_protocols
       PkgConfig::WaylandClient
       PkgConfig::XkbCommon
   )
   target_include_directories(coil_core_wayland PRIVATE ${CMAKE_BINARY_DIR})
+  target_compile_features(coil_core_wayland PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries wayland)
 endif()
 if(UNIX)
@@ -753,17 +752,16 @@ if(UNIX)
 endif()
 
 if(TARGET coil_core_vulkan AND TARGET coil_core_wayland)
-  add_library(coil_core_wayland_vulkan STATIC
+  add_library(coil_core_wayland_vulkan STATIC)
+  target_sources(coil_core_wayland_vulkan PUBLIC FILE_SET CXX_MODULES FILES
     wayland_vulkan.cpp
-  )
-  set_property(TARGET coil_core_wayland_vulkan PROPERTY PUBLIC_HEADER
-    wayland_vulkan.hpp
   )
   target_link_libraries(coil_core_wayland_vulkan
     PRIVATE
       coil_core_vulkan
       coil_core_wayland
   )
+  target_compile_features(coil_core_wayland_vulkan PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries wayland_vulkan)
 endif()
 if(UNIX)

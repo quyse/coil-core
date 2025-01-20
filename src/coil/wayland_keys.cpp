@@ -1,5 +1,9 @@
-#include "wayland.hpp"
+module;
+
 #include <linux/input-event-codes.h>
+#include <cstdint>
+
+module coil.core.wayland;
 
 namespace Coil
 {
@@ -149,4 +153,3 @@ namespace Coil
     return key;
   }
 }
-
