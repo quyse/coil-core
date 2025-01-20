@@ -530,14 +530,15 @@ endif()
 list(APPEND coil_core_all_libraries render_math)
 
 if(TRUE)
-  add_library(coil_core_logic INTERFACE)
-  set_property(TARGET coil_core_logic PROPERTY PUBLIC_HEADER
-    logic_math.hpp
+  add_library(coil_core_logic STATIC)
+  target_sources(coil_core_logic PUBLIC FILE_SET CXX_MODULES FILES
+    logic_math.cpp
   )
   target_link_libraries(coil_core_logic
-    INTERFACE
+    PUBLIC
       coil_core_math
   )
+  target_compile_features(coil_core_logic PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries logic)
 endif()
 list(APPEND coil_core_all_libraries logic)

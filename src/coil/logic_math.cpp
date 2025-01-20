@@ -1,9 +1,12 @@
-#pragma once
+module;
 
-#include "math.hpp"
-#include <concepts>
+#include <algorithm>
 
-namespace Coil
+export module coil.core.logic.math;
+
+import coil.core.math;
+
+export namespace Coil
 {
   // soften changes
   // slows down speed exponentially (with negative coefficient)
