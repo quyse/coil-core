@@ -10,7 +10,7 @@ export module coil.core.audio.soft;
 import coil.core.audio;
 import coil.core.base;
 
-namespace Coil
+export namespace Coil
 {
   // stream which can be paused
   // returns silence while paused

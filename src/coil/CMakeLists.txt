@@ -834,43 +834,39 @@ if(UNIX)
 endif()
 
 if(TARGET Ogg::ogg)
-  add_library(coil_core_ogg STATIC
+  add_library(coil_core_ogg STATIC)
+  target_sources(coil_core_ogg PUBLIC FILE_SET CXX_MODULES FILES
     ogg.cpp
-  )
-  set_property(TARGET coil_core_ogg PROPERTY PUBLIC_HEADER
-    ogg.hpp
   )
   target_link_libraries(coil_core_ogg
     PUBLIC
       coil_core_tasks
       Ogg::ogg
   )
+  target_compile_features(coil_core_ogg PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries ogg)
 endif()
 list(APPEND coil_core_all_libraries ogg)
 
 if(TARGET Webm::Webm)
-  add_library(coil_core_webm STATIC
+  add_library(coil_core_webm STATIC)
+  target_sources(coil_core_webm PUBLIC FILE_SET CXX_MODULES FILES
     webm.cpp
-  )
-  set_property(TARGET coil_core_webm PROPERTY PUBLIC_HEADER
-    webm.hpp
   )
   target_link_libraries(coil_core_webm
     PUBLIC
       coil_core_tasks
       Webm::Webm
   )
+  target_compile_features(coil_core_webm PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries webm)
 endif()
 list(APPEND coil_core_all_libraries webm)
 
 if(TARGET Opus::opus)
-  add_library(coil_core_opus STATIC
+  add_library(coil_core_opus STATIC)
+  target_sources(coil_core_opus PUBLIC FILE_SET CXX_MODULES FILES
     opus.cpp
-  )
-  set_property(TARGET coil_core_opus PROPERTY PUBLIC_HEADER
-    opus.hpp
   )
   target_link_libraries(coil_core_opus
     PUBLIC
@@ -879,16 +875,15 @@ if(TARGET Opus::opus)
     PRIVATE
       Opus::opus
   )
+  target_compile_features(coil_core_opus PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries opus)
 endif()
 list(APPEND coil_core_all_libraries opus)
 
 if(TARGET libgav1::libgav1)
-  add_library(coil_core_av1 STATIC
+  add_library(coil_core_av1 STATIC)
+  target_sources(coil_core_av1 PUBLIC FILE_SET CXX_MODULES FILES
     av1.cpp
-  )
-  set_property(TARGET coil_core_av1 PROPERTY PUBLIC_HEADER
-    av1.hpp
   )
   target_link_libraries(coil_core_av1
     PUBLIC
@@ -896,6 +891,7 @@ if(TARGET libgav1::libgav1)
       coil_core_video
       libgav1::libgav1
   )
+  target_compile_features(coil_core_av1 PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries av1)
 endif()
 list(APPEND coil_core_all_libraries av1)
