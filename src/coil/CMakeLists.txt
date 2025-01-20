@@ -578,17 +578,16 @@ endif()
 list(APPEND coil_core_all_libraries image_compress)
 
 if(TARGET zstd::libzstd_shared)
-  add_library(coil_core_compress_zstd STATIC
+  add_library(coil_core_compress_zstd STATIC)
+  target_sources(coil_core_compress_zstd PUBLIC FILE_SET CXX_MODULES FILES
     compress_zstd.cpp
-  )
-  set_property(TARGET coil_core_compress_zstd PROPERTY PUBLIC_HEADER
-    compress_zstd.hpp
   )
   target_link_libraries(coil_core_compress_zstd
     PUBLIC
       coil_core_tasks
       zstd::libzstd_shared
   )
+  target_compile_features(coil_core_compress_zstd PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries compress_zstd)
 endif()
 list(APPEND coil_core_all_libraries compress_zstd)
