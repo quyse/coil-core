@@ -676,11 +676,9 @@ endif()
 list(APPEND coil_core_all_libraries render_fonts)
 
 if(TARGET Freetype::Freetype AND TARGET harfbuzz::harfbuzz)
-  add_library(coil_core_fthb STATIC
+  add_library(coil_core_fthb STATIC)
+  target_sources(coil_core_fthb PUBLIC FILE_SET CXX_MODULES FILES
     fthb.cpp
-  )
-  set_property(TARGET coil_core_fthb PROPERTY PUBLIC_HEADER
-    fthb.hpp
   )
   target_link_libraries(coil_core_fthb
     PUBLIC
@@ -689,6 +687,7 @@ if(TARGET Freetype::Freetype AND TARGET harfbuzz::harfbuzz)
       Freetype::Freetype
       harfbuzz::harfbuzz
   )
+  target_compile_features(coil_core_fthb PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries fthb)
 endif()
 list(APPEND coil_core_all_libraries fthb)
