@@ -36,7 +36,9 @@
 
 in stdenv.mkDerivation {
   name = "coil-core";
+
   src = ./src/coil;
+
   nativeBuildInputs = [
     cmake
     ninja
@@ -45,6 +47,7 @@ in stdenv.mkDerivation {
   ] ++ lib.optionals (hasFeature "graphics" && stdenv.hostPlatform.isLinux) [
     wayland-scanner
   ];
+
   propagatedBuildInputs = [
     nlohmann_json
     zstd
@@ -85,9 +88,21 @@ in stdenv.mkDerivation {
   ++ lib.optionals (hasFeature "audio" && stdenv.hostPlatform.isLinux) [
     pulseaudio
   ];
+
   cmakeFlags = lib.optional (features != null) "-DCOIL_CORE_REQUIRE_LIBS=";
+
+  # use build dir not nested into source dir
+  preConfigure = ''
+    cmakeDir=$PWD
+    mkdir ../build
+    cd ../build
+  '';
+  dontUseCmakeBuildDir = true;
+
   doCheck = true;
+
   outputs = ["out" "dev"];
   outputLib = "dev";
+
   meta.license = lib.licenses.mit;
 }

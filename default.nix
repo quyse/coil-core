@@ -7,7 +7,10 @@
 
 lib.makeExtensible (self: with self; {
   # NixOS build
-  nixos-pkgs = pkgs.extend (self: super: with self; {
+  nixos-pkgs = pkgs.extend (self: super: with self; let
+    clang-tools = llvmPackages_19.clang-tools.override { enableLibcxx = true; };
+    clang = llvmPackages_19.clangUseLLVM;
+  in {
     coil-core = (callPackage ./coil-core.nix {
       inherit features;
     }).overrideAttrs (attrs: {
@@ -18,7 +21,9 @@ lib.makeExtensible (self: with self; {
         # do not require some libs
         "-DCOIL_CORE_DONT_REQUIRE_LIBS=${dontRequireLibsList}"
       ];
+      CXXFLAGS = "-fexperimental-library"; # for std::jthread in libc++
       nativeBuildInputs = attrs.nativeBuildInputs ++ [
+        clang-tools # for C++ modules to work; must be before clang
         clang
       ];
     });
@@ -56,9 +61,13 @@ lib.makeExtensible (self: with self; {
       nativeBuildInputs = [
         cmake
         ninja
+        clang
       ];
       cmakeFlags = [
         "-DENABLE_WEBM_PARSER=ON"
+        # force clang
+        "-DCMAKE_CXX_COMPILER=clang++"
+        "-DCMAKE_C_COMPILER=clang"
       ];
       meta.license = lib.licenses.bsd3;
     };
@@ -74,6 +83,7 @@ lib.makeExtensible (self: with self; {
       nativeBuildInputs = [
         cmake
         ninja
+        clang
       ];
       cmakeFlags = [
         # https://github.com/NixOS/nixpkgs/issues/144170
@@ -83,6 +93,9 @@ lib.makeExtensible (self: with self; {
         "-DLIBGAV1_THREADPOOL_USE_STD_MUTEX=1"
         "-DLIBGAV1_ENABLE_EXAMPLES=0"
         "-DLIBGAV1_ENABLE_TESTS=0"
+        # force clang
+        "-DCMAKE_CXX_COMPILER=clang++"
+        "-DCMAKE_C_COMPILER=clang"
       ];
       meta.license = lib.licenses.asl20;
     };
@@ -106,7 +119,7 @@ lib.makeExtensible (self: with self; {
 
   # Ubuntu build
   ubuntu-pkgs = rec {
-    clangVersion = "18";
+    clangVersion = "19";
     diskImage = coil.toolchain-linux.diskImagesFuns.ubuntu_2204_amd64 [
       "clang-${clangVersion}"
       "cmake"
