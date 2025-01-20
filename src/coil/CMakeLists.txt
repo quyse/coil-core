@@ -769,14 +769,16 @@ if(UNIX)
 endif()
 
 if(TRUE)
-  add_library(coil_core_audio STATIC
+  add_library(coil_core_audio STATIC)
+  target_sources(coil_core_audio PUBLIC FILE_SET CXX_MODULES FILES
     audio.cpp
     audio_soft.cpp
   )
-  set_property(TARGET coil_core_audio PROPERTY PUBLIC_HEADER
-    audio.hpp
-    audio_soft.hpp
+  target_link_libraries(coil_core_audio
+    PUBLIC
+      coil_core_base
   )
+  target_compile_features(coil_core_audio PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries audio)
 endif()
 list(APPEND coil_core_all_libraries audio)
