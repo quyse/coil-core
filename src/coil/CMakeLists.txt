@@ -784,16 +784,15 @@ endif()
 list(APPEND coil_core_all_libraries audio)
 
 if(TRUE)
-  add_library(coil_core_video STATIC
+  add_library(coil_core_video STATIC)
+  target_sources(coil_core_video PUBLIC FILE_SET CXX_MODULES FILES
     video.cpp
-  )
-  set_property(TARGET coil_core_video PROPERTY PUBLIC_HEADER
-    video.hpp
   )
   target_link_libraries(coil_core_video
     PUBLIC
       coil_core_image
   )
+  target_compile_features(coil_core_video PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries video)
 endif()
 list(APPEND coil_core_all_libraries video)
