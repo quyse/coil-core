@@ -418,7 +418,7 @@ export namespace Coil
   class GraphicsWindow
   {
   public:
-    void SetPresenter(GraphicsPresenter* presenter)
+    virtual void SetPresenter(GraphicsPresenter* presenter)
     {
       _presenter = presenter;
     }

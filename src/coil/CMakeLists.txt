@@ -501,17 +501,16 @@ endif()
 list(APPEND coil_core_all_libraries sdl)
 
 if(TARGET coil_core_vulkan AND TARGET coil_core_sdl)
-  add_library(coil_core_sdl_vulkan STATIC
+  add_library(coil_core_sdl_vulkan STATIC)
+  target_sources(coil_core_sdl_vulkan PUBLIC FILE_SET CXX_MODULES FILES
     sdl_vulkan.cpp
   )
-  set_property(TARGET coil_core_sdl_vulkan PROPERTY PUBLIC_HEADER
-    sdl_vulkan.hpp
-  )
   target_link_libraries(coil_core_sdl_vulkan
-    PRIVATE
+    PUBLIC
       coil_core_vulkan
       coil_core_sdl
   )
+  target_compile_features(coil_core_sdl_vulkan PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries sdl_vulkan)
 endif()
 list(APPEND coil_core_all_libraries sdl_vulkan)
