@@ -484,21 +484,18 @@ endif()
 list(APPEND coil_core_all_libraries vulkan)
 
 if(TARGET SDL2::SDL2)
-  add_library(coil_core_sdl STATIC
+  add_library(coil_core_sdl STATIC)
+  target_sources(coil_core_sdl PUBLIC FILE_SET CXX_MODULES FILES
     sdl.cpp
-  )
-  set_property(TARGET coil_core_sdl PROPERTY PUBLIC_HEADER
-    sdl.hpp
   )
   target_link_libraries(coil_core_sdl
     PUBLIC
       coil_core_input
       coil_core_platform
-      SDL2::SDL2
-    PRIVATE
-      coil_core_graphics
       coil_core_unicode
+      SDL2::SDL2
   )
+  target_compile_features(coil_core_sdl PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries sdl)
 endif()
 list(APPEND coil_core_all_libraries sdl)
