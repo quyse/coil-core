@@ -912,17 +912,16 @@ endif()
 list(APPEND coil_core_all_libraries curl)
 
 if(TARGET Steam::Steam)
-  add_library(coil_core_steam STATIC
+  add_library(coil_core_steam STATIC)
+  target_sources(coil_core_steam PUBLIC FILE_SET CXX_MODULES FILES
     steam.cpp
-  )
-  set_property(TARGET coil_core_steam PROPERTY PUBLIC_HEADER
-    steam.hpp
   )
   target_link_libraries(coil_core_steam
     PUBLIC
       coil_core_player_input
       Steam::Steam
   )
+  target_compile_features(coil_core_steam PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries steam)
 endif()
 list(APPEND coil_core_all_libraries steam)
