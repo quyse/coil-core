@@ -628,17 +628,16 @@ endif()
 list(APPEND coil_core_all_libraries gltf)
 
 if(TARGET SQLite::SQLite3)
-  add_library(coil_core_sqlite STATIC
+  add_library(coil_core_sqlite STATIC)
+  target_sources(coil_core_sqlite PUBLIC FILE_SET CXX_MODULES FILES
     sqlite.cpp
-  )
-  set_property(TARGET coil_core_sqlite PROPERTY PUBLIC_HEADER
-    sqlite.hpp
   )
   target_link_libraries(coil_core_sqlite
     PUBLIC
       coil_core_base
       SQLite::SQLite3
   )
+  target_compile_features(coil_core_sqlite PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries sqlite)
 endif()
 list(APPEND coil_core_all_libraries sqlite)
