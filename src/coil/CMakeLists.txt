@@ -593,14 +593,15 @@ endif()
 list(APPEND coil_core_all_libraries compress_zstd)
 
 if(TRUE)
-  add_library(coil_core_mesh INTERFACE)
-  set_property(TARGET coil_core_mesh PROPERTY PUBLIC_HEADER
-    mesh.hpp
+  add_library(coil_core_mesh STATIC)
+  target_sources(coil_core_mesh PUBLIC FILE_SET CXX_MODULES FILES
+    mesh.cpp
   )
   target_link_libraries(coil_core_mesh
-    INTERFACE
+    PUBLIC
       coil_core_math
   )
+  target_compile_features(coil_core_mesh PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries mesh)
 endif()
 list(APPEND coil_core_all_libraries mesh)

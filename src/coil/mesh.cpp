@@ -1,9 +1,12 @@
-#pragma once
+module;
 
-#include "math.hpp"
-#include <algorithm>
+#include <vector>
 
-namespace Coil
+export module coil.core.mesh;
+
+import coil.core.math;
+
+export namespace Coil
 {
   template <typename Vertex>
   concept IsVertexWithPosition = requires(Vertex v)
