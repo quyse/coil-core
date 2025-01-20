@@ -1,9 +1,15 @@
-#include "input_debug.hpp"
-#include "math_debug.hpp"
-#include "unicode.hpp"
-#include <concepts>
+module;
 
-namespace Coil
+#include <concepts>
+#include <ostream>
+
+export module coil.core.input.debug;
+
+import coil.core.input;
+import coil.core.math.debug;
+import coil.core.unicode;
+
+export namespace Coil
 {
   std::ostream& operator<<(std::ostream& stream, InputEvent const& event)
   {

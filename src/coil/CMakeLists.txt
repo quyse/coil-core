@@ -307,21 +307,21 @@ endif()
 list(APPEND coil_core_all_libraries localization)
 
 if(TRUE)
-  add_library(coil_core_input STATIC
+  add_library(coil_core_input STATIC)
+  target_sources(coil_core_input PUBLIC FILE_SET CXX_MODULES FILES
     input.cpp
     input_debug.cpp
   )
-  set_property(TARGET coil_core_input PROPERTY PUBLIC_HEADER
-    input.hpp
-    input_debug.hpp
+  target_sources(coil_core_input PUBLIC FILE_SET HEADERS FILES
     input_keys.hpp
   )
   target_link_libraries(coil_core_input
     PUBLIC
+      coil_core_base
       coil_core_math
-    PRIVATE
       coil_core_unicode
   )
+  target_compile_features(coil_core_input PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries input)
 endif()
 list(APPEND coil_core_all_libraries input)
