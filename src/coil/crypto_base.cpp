@@ -1,8 +1,12 @@
-#pragma once
+module;
 
-#include "base.hpp"
+#include <concepts>
 
-namespace Coil
+export module coil.core.crypto.base;
+
+import coil.core.base;
+
+export namespace Coil
 {
   template <typename HashAlgorithm>
   concept IsHashAlgorithm = requires(HashAlgorithm state, Buffer const& buffer)

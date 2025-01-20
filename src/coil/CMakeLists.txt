@@ -643,19 +643,18 @@ endif()
 list(APPEND coil_core_all_libraries sqlite)
 
 if(TARGET MbedTLS::mbedcrypto)
-  add_library(coil_core_crypto STATIC
+  add_library(coil_core_crypto STATIC)
+  target_sources(coil_core_crypto PUBLIC FILE_SET CXX_MODULES FILES
+    crypto.cpp
+    crypto_base.cpp
     crypto_mbedtls.cpp
-  )
-  set_property(TARGET coil_core_crypto PROPERTY PUBLIC_HEADER
-    crypto.hpp
-    crypto_base.hpp
-    crypto_mbedtls.hpp
   )
   target_link_libraries(coil_core_crypto
     PUBLIC
       coil_core_base
       MbedTLS::mbedcrypto
   )
+  target_compile_features(coil_core_crypto PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries crypto)
 endif()
 list(APPEND coil_core_all_libraries crypto)
