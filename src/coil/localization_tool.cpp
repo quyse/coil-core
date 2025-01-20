@@ -1,11 +1,17 @@
+module;
+
 #include "entrypoint.hpp"
-#include "json.hpp"
-#include "text.hpp"
-#include "unicode.hpp"
-#include "fs.hpp"
-#include <map>
-#include <iostream>
 #include <fstream>
+#include <iostream>
+#include <map>
+
+export module coil.core.localization.tool;
+
+import coil.core.base;
+import coil.core.fs;
+import coil.core.json;
+import coil.core.text;
+import coil.core.unicode;
 
 using namespace Coil;
 
@@ -362,7 +368,7 @@ private:
   std::ostringstream _initStream;
 };
 
-int COIL_ENTRY_POINT(std::vector<std::string> args)
+extern "C++" int COIL_ENTRY_POINT(std::vector<std::string> args)
 {
   std::string workingDir = ".";
   std::string localizationConfigFileName;
@@ -454,11 +460,11 @@ int COIL_ENTRY_POINT(std::vector<std::string> args)
     // read language strings
     if(langConfig.file.has_value())
     {
-      for(auto j = JsonFromBuffer(File::MapRead(book, workingDir + "/" + langConfig.file.value())); auto const& [key, value] : j.items())
+      for(auto j = JsonFromBuffer(File::MapRead(book, workingDir + "/" + langConfig.file.value())); auto const& item : j.items())
       {
-        auto& string = strings.insert({ key, {} }).first->second;
+        auto& string = strings.insert({ item.key(), {} }).first->second;
         if(string.strings.size() != langsCount) string.strings.resize(langsCount);
-        string.strings[langIndex] = value;
+        string.strings[langIndex] = item.value();
       }
     }
   }
@@ -496,7 +502,15 @@ int COIL_ENTRY_POINT(std::vector<std::string> args)
   {
     std::ofstream outStream(outputDir + "/" + langsIds[langIndex] + ".cpp", std::ios::out | std::ios::trunc);
 
-    outStream << R"(#include "localized.hpp"
+    outStream << R"(module;
+
+#include <cstdint>
+
+export module localized:)" << langsIds[langIndex] << R"(;
+
+import coil.core.localization;
+import coil.core.text;
+import localized;
 
 using namespace Coil;
 
@@ -567,7 +581,7 @@ namespace
 
 namespace Localized
 {
-  template <> constinit Set const g_set<)" << langIndex << R"(> =
+  extern "C++" template <> constinit Set const g_set<)" << langIndex << R"(> =
   {
     .name = )";
     OutputCppString(outStream, langsIds[langIndex]);
@@ -580,14 +594,21 @@ namespace Localized
   }
   if(!checkErrors()) return 1;
 
-  // global header
+  // global implementation
   {
-    std::ofstream outStream(outputDir + "/localized.hpp", std::ios::out | std::ios::trunc);
-    outStream << R"(#pragma once
+    std::ofstream outStream(outputDir + "/localized.cpp", std::ios::out | std::ios::trunc);
+    outStream << R"(module;
 
-#include <coil/localization.hpp>
+#include <cstddef>
+#include <cstdint>
 
-namespace Localized
+export module localized;
+
+import coil.core.base;
+import coil.core.localization;
+import coil.core.text;
+
+export namespace Localized
 {
   using namespace Coil;
 
@@ -602,18 +623,26 @@ namespace Localized
     static Set const* Current;
   };
 
+  constinit Set const* Set::Current = nullptr;
+
   template <size_t langIndex> extern Set const g_set;
 )";
     // specialization declarations for g_set
     for(size_t langIndex = 0; langIndex < langsCount; ++langIndex)
-      outStream << R"(  template <> extern Set const g_set<)" << langIndex << R"(>;
+      outStream << R"(  extern "C++" template <> extern Set const g_set<)" << langIndex << R"(>;
 )";
     // explicit instantiation declarations for g_set
     for(size_t langIndex = 0; langIndex < langsCount; ++langIndex)
-      outStream << R"(  extern template Set const g_set<)" << langIndex << R"(>;
+      outStream << R"(  extern "C++" extern template Set const g_set<)" << langIndex << R"(>;
 )";
     // array of sets
-    outStream << "  extern Set const* const Sets[" << langsCount << R"(];
+    outStream << R"(  constinit Set const* const Sets[] =
+  {
+)";
+    for(size_t langIndex = 0; langIndex < langsCount; ++langIndex)
+      outStream << "    &g_set<" << langIndex << R"(>,
+)";
+    outStream << R"(  };
 )";
 
     for(auto const& [key, value] : strings)
@@ -645,25 +674,6 @@ namespace Localized
     return *(typename Info::Type const*)Set::Current->phrases[Info::index];
   }
 }
-)";
-  }
-
-  // global implementation
-  {
-    std::ofstream outStream(outputDir + "/localized.cpp", std::ios::out | std::ios::trunc);
-    outStream << R"(#include "localized.hpp"
-
-namespace Localized
-{
-  constinit Set const* Set::Current = nullptr;
-  constinit Set const* const Sets[] =
-  {
-)";
-    for(size_t langIndex = 0; langIndex < langsCount; ++langIndex)
-      outStream << "    &g_set<" << langIndex << R"(>,
-)";
-    outStream << R"(  };
-};
 )";
   }
 

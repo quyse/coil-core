@@ -293,14 +293,15 @@ endif()
 list(APPEND coil_core_all_libraries text)
 
 if(TRUE)
-  add_library(coil_core_localization INTERFACE)
-  set_property(TARGET coil_core_localization PROPERTY PUBLIC_HEADER
-    localization.hpp
+  add_library(coil_core_localization STATIC)
+  target_sources(coil_core_localization PUBLIC FILE_SET CXX_MODULES FILES
+    localization.cpp
   )
   target_link_libraries(coil_core_localization
-    INTERFACE
+    PUBLIC
       coil_core_text
   )
+  target_compile_features(coil_core_localization PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries localization)
 endif()
 list(APPEND coil_core_all_libraries localization)
@@ -966,7 +967,8 @@ list(TRANSFORM coil_core_libraries PREPEND coil_core_)
 # executables (tools)
 
 if(TARGET coil_core_localization)
-  add_executable(coil_core_localization_tool
+  add_executable(coil_core_localization_tool)
+  target_sources(coil_core_localization_tool PRIVATE FILE_SET CXX_MODULES FILES
     localization_tool.cpp
   )
   target_link_libraries(coil_core_localization_tool
@@ -1149,7 +1151,6 @@ if(BUILD_TESTING)
     add_custom_command(
       OUTPUT
         ${test_localization_localized}/localized.cpp
-        ${test_localization_localized}/localized.hpp
         ${test_localization_localized}/en.cpp
         ${test_localization_localized}/ru.cpp
       COMMAND coil_core_localization_tool -w "${CMAKE_CURRENT_LIST_DIR}" "${CMAKE_CURRENT_LIST_DIR}/test_localization_config.json" "${test_localization_localized}"
@@ -1159,7 +1160,8 @@ if(BUILD_TESTING)
         "${CMAKE_CURRENT_LIST_DIR}/test_localization_en.json"
         "${CMAKE_CURRENT_LIST_DIR}/test_localization_ru.json"
     )
-    add_executable(test_localization
+    add_executable(test_localization)
+    target_sources(test_localization PRIVATE FILE_SET CXX_MODULES BASE_DIRS "${CMAKE_CURRENT_LIST_DIR};${test_localization_localized}" FILES
       test_localization.cpp
       ${test_localization_localized}/localized.cpp
       ${test_localization_localized}/en.cpp

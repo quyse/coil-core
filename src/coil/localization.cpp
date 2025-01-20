@@ -1,8 +1,15 @@
-#pragma once
+module;
 
-#include "text.hpp"
+#include <concepts>
+#include <cstdint>
+#include <tuple>
 
-namespace Coil
+export module coil.core.localization;
+
+import coil.core.base;
+import coil.core.text;
+
+export namespace Coil
 {
   // supported languages
   // not very precise list, does not strictly correspond to any standard
