@@ -816,19 +816,17 @@ if(WIN32)
 endif()
 
 if(TARGET PulseAudio::PulseAudio)
-  add_library(coil_core_pulseaudio STATIC
+  add_library(coil_core_pulseaudio STATIC)
+  target_sources(coil_core_pulseaudio PUBLIC FILE_SET CXX_MODULES FILES
     pulseaudio.cpp
-  )
-  set_property(TARGET coil_core_pulseaudio PROPERTY PUBLIC_HEADER
-    pulseaudio.hpp
   )
   target_link_libraries(coil_core_pulseaudio
     PUBLIC
-      coil_core_audio
-    PRIVATE
       coil_core_appidentity
+      coil_core_audio
       PulseAudio::PulseAudio
   )
+  target_compile_features(coil_core_pulseaudio PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries pulseaudio)
 endif()
 if(UNIX)

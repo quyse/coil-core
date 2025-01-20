@@ -1,20 +1,23 @@
-#include "pulseaudio.hpp"
-#include "appidentity.hpp"
-#include <pulse/pulseaudio.h>
-#include <memory>
-#include <thread>
-#include <bit>
-#include <cstring>
+module;
 
-namespace Coil
+#include <pulse/pulseaudio.h>
+#include <thread>
+
+export module coil.core.audio.pulseaudio;
+
+import coil.core.appidentity;
+import coil.core.audio;
+import coil.core.base;
+
+export namespace Coil
 {
-  class PulseAudioDevice::Impl
+  class PulseAudioDevice : public AudioDevice
   {
   public:
-    Impl(PulseAudioDevice& device)
-    : _device(device) {}
+    PulseAudioDevice(AudioStream& outputStream)
+    : _outputStream(outputStream) {}
 
-    ~Impl()
+    ~PulseAudioDevice()
     {
       _shutdown = true;
       _thread.join();
@@ -35,17 +38,24 @@ namespace Coil
       }
     }
 
-    void Init()
+    static PulseAudioDevice& Init(Book& book, AudioStream& stream)
     {
-      _thread = std::thread(&Impl::ThreadFunc, this);
+      PulseAudioDevice& device = book.Allocate<PulseAudioDevice>(stream);
+      device.Init();
+      return device;
     }
 
-    void SetPlaying(bool playing)
+    void SetPlaying(bool playing) override
     {
       // TODO
     }
 
   private:
+    void Init()
+    {
+      _thread = std::thread(&PulseAudioDevice::ThreadFunc, this);
+    }
+
     void ThreadFunc()
     {
       _mainloop = pa_mainloop_new();
@@ -86,7 +96,7 @@ namespace Coil
           throw Exception("creating PulseAudio stream failed");
       }
 
-      pa_stream_set_write_callback(_stream, &Impl::StaticStreamWriteCallback, this);
+      pa_stream_set_write_callback(_stream, &StaticStreamWriteCallback, this);
 
       if(pa_stream_connect_playback(_stream, nullptr, nullptr, PA_STREAM_NOFLAGS, nullptr, nullptr))
         throw Exception("connecting PulseAudio playback failed");
@@ -137,7 +147,7 @@ namespace Coil
         if(!_currentBuffer)
         {
           // read packet
-          _currentBuffer = _device._stream.Read(deviceBufferSize / _frameSize);
+          _currentBuffer = _outputStream.Read(deviceBufferSize / _frameSize);
         }
 
         // get data from current buffer
@@ -159,10 +169,10 @@ namespace Coil
     }
     static void StaticStreamWriteCallback(pa_stream* stream, size_t size, void* userdata)
     {
-      ((Impl*)userdata)->StreamWriteCallback();
+      ((PulseAudioDevice*)userdata)->StreamWriteCallback();
     }
 
-    PulseAudioDevice& _device;
+    AudioStream& _outputStream;
     std::thread _thread;
     std::atomic<bool> _shutdown = false;
     Buffer _currentBuffer;
@@ -175,27 +185,4 @@ namespace Coil
     static constexpr uint32_t const _channelsCount = 2;
     static constexpr size_t const _frameSize = _channelsCount * sizeof(AudioSample);
   };
-
-  PulseAudioDevice::PulseAudioDevice(AudioStream& stream)
-  : _stream(stream), _impl(std::make_unique<Impl>(*this)) {}
-
-  // destructor definition is required to keep Impl out of header
-  PulseAudioDevice::~PulseAudioDevice() = default;
-
-  PulseAudioDevice& PulseAudioDevice::Init(Book& book, AudioStream& stream)
-  {
-    PulseAudioDevice& device = book.Allocate<PulseAudioDevice>(stream);
-    device.Init();
-    return device;
-  }
-
-  void PulseAudioDevice::Init()
-  {
-    _impl->Init();
-  }
-
-  void PulseAudioDevice::SetPlaying(bool playing)
-  {
-    _impl->SetPlaying(playing);
-  }
 }
