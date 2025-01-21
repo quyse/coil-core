@@ -1,10 +1,15 @@
+module;
+
 #include "entrypoint.hpp"
-#include "sqlite.hpp"
 #include <iostream>
+
+export module coil.core.test.sqlite;
+
+import coil.core.sqlite;
 
 using namespace Coil;
 
-int COIL_ENTRY_POINT(std::vector<std::string> args)
+extern "C++" int COIL_ENTRY_POINT(std::vector<std::string> args)
 {
   SqliteDb db = SqliteDb::Open(":memory:");
   auto stmt = db.CreateStatement("VALUES (?, ?, ?, ?), (?, ?, ?, ?), (131415, 161718, 'DEF', NULL)");

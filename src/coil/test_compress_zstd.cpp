@@ -1,12 +1,18 @@
-#include "fs.hpp"
-#include "compress_zstd.hpp"
+module;
+
 #include "entrypoint.hpp"
-#include <cstring>
 #include <iostream>
+
+export module coil.core.test.compress.zstd;
+
+import coil.core.base;
+import coil.core.compress.zstd;
+import coil.core.data;
+import coil.core.fs;
 
 using namespace Coil;
 
-int COIL_ENTRY_POINT(std::vector<std::string> args)
+extern "C++" int COIL_ENTRY_POINT(std::vector<std::string> args)
 {
   Book book;
 

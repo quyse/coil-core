@@ -1,15 +1,25 @@
-#include <coil/appidentity.hpp>
-#include <coil/sdl.hpp>
-#include <coil/sdl_vulkan.hpp>
-#include <coil/vulkan.hpp>
-#include <coil/render.hpp>
-#include <coil/render_canvas.hpp>
+module;
+
 #include <coil/entrypoint.hpp>
-#include <type_traits>
+
+export module coil.core.example.render_gradient;
+
+import coil.core.appidentity;
+import coil.core.base;
+import coil.core.graphics.shaders;
+import coil.core.graphics;
+import coil.core.input;
+import coil.core.math;
+import coil.core.platform;
+import coil.core.render.canvas;
+import coil.core.render;
+import coil.core.sdl.vulkan;
+import coil.core.sdl;
+import coil.core.vulkan;
 
 using namespace Coil;
 
-int COIL_ENTRY_POINT(std::vector<std::string> args)
+extern "C++" int COIL_ENTRY_POINT(std::vector<std::string> args)
 {
   AppIdentity::GetInstance().Name() = "coil_core_example_render_gradient";
 

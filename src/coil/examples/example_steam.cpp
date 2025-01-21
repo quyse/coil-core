@@ -1,21 +1,36 @@
-#include <coil/appidentity.hpp>
-#include <coil/assets.hpp>
-#include <coil/assets_struct.hpp>
+module;
+
 #include <coil/entrypoint.hpp>
-#include <coil/fs.hpp>
-#include <coil/image_compress.hpp>
-#include <coil/image_png.hpp>
-#include <coil/player_input_combined.hpp>
-#include <coil/player_input_native.hpp>
-#include <coil/render.hpp>
-#include <coil/render_canvas.hpp>
-#include <coil/sdl.hpp>
-#include <coil/sdl_vulkan.hpp>
-#include <coil/steam.hpp>
 #include <coil/util.hpp>
-#include <coil/util_generator.hpp>
-#include <coil/vulkan.hpp>
+#include <coroutine>
 #include <iostream>
+
+export module coil.core.example.steam;
+
+import coil.core.appidentity;
+import coil.core.assets.structs;
+import coil.core.assets;
+import coil.core.base;
+import coil.core.fs;
+import coil.core.graphics.shaders;
+import coil.core.graphics;
+import coil.core.image.compress;
+import coil.core.image.png;
+import coil.core.json;
+import coil.core.math;
+import coil.core.platform;
+import coil.core.player_input.combined;
+import coil.core.player_input.native;
+import coil.core.player_input;
+import coil.core.render.canvas;
+import coil.core.render;
+import coil.core.sdl.vulkan;
+import coil.core.sdl;
+import coil.core.steam;
+import coil.core.tasks;
+import coil.core.util.generator;
+import coil.core.util;
+import coil.core.vulkan;
 
 using namespace Coil;
 
@@ -31,7 +46,7 @@ COIL_META_STRUCT(Assets)
   COIL_META_STRUCT_FIELD(Coil::GraphicsImage*, texture);
 };
 
-int COIL_ENTRY_POINT(std::vector<std::string> args)
+extern "C++" int COIL_ENTRY_POINT(std::vector<std::string> args)
 {
   AppIdentity::GetInstance().Name() = "coil_core_example_steam";
 

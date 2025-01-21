@@ -82,22 +82,23 @@ export namespace Coil
   };
 
   // state adapter
-  template <PlayerInputActionType actionType>
-  struct PlayerInputActionSetStateAdapterMember;
-  template <>
-  struct PlayerInputActionSetStateAdapterMember<PlayerInputActionType::Button>
-  {
-    using Type = PlayerInputButtonActionState;
-  };
-  template <>
-  struct PlayerInputActionSetStateAdapterMember<PlayerInputActionType::Analog>
-  {
-    using Type = PlayerInputAnalogActionState;
-  };
   struct PlayerInputActionSetStateAdapter
   {
     template <PlayerInputActionType actionType>
-    using Field = typename PlayerInputActionSetStateAdapterMember<actionType>::Type;
+    struct Member;
+    template <>
+    struct Member<PlayerInputActionType::Button>
+    {
+      using Type = PlayerInputButtonActionState;
+    };
+    template <>
+    struct Member<PlayerInputActionType::Analog>
+    {
+      using Type = PlayerInputAnalogActionState;
+    };
+
+    template <PlayerInputActionType actionType>
+    using Field = typename Member<actionType>::Type;
 
     template <template <typename> typename ActionSet>
     class Base
@@ -148,7 +149,7 @@ export namespace Coil
     template <PlayerInputActionType actionType, auto f>
     std::tuple<> RegisterField(char const* name)
     {
-      GetMembers<actionType>().push_back(
+      Actions<actionType>::Get(*this).push_back(
       {
         name,
         f.template operator()<ActionSet<PlayerInputActionSetStateAdapter>>(),
@@ -158,19 +159,25 @@ export namespace Coil
     }
 
   private:
-    // get vector of members
+    // actions helper
     template <PlayerInputActionType actionType>
-    auto& GetMembers();
+    struct Actions;
     template <>
-    auto& GetMembers<PlayerInputActionType::Button>()
+    struct Actions<PlayerInputActionType::Button>
     {
-      return _buttons;
-    }
+      static auto& Get(Base& self)
+      {
+        return self._buttons;
+      }
+    };
     template <>
-    auto& GetMembers<PlayerInputActionType::Analog>()
+    struct Actions<PlayerInputActionType::Analog>
     {
-      return _analogs;
-    }
+      static auto& Get(Base& self)
+      {
+        return self._analogs;
+      }
+    };
 
     // button actions
     std::vector<

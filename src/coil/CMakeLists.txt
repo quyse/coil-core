@@ -152,7 +152,7 @@ if(TRUE)
   add_library(coil_core_assets STATIC)
   target_sources(coil_core_assets PUBLIC FILE_SET CXX_MODULES FILES
     assets.cpp
-    assets_struct.cpp
+    assets_structs.cpp
   )
   target_link_libraries(coil_core_assets
     PUBLIC
@@ -951,7 +951,8 @@ list(TRANSFORM coil_core_tools PREPEND coil_core_)
 # executables (examples)
 
 if(TARGET coil_core_sdl_vulkan)
-  add_executable(example_render_gradient
+  add_executable(example_render_gradient)
+  target_sources(example_render_gradient PRIVATE FILE_SET CXX_MODULES FILES
     examples/example_render_gradient.cpp
   )
   target_link_libraries(example_render_gradient
@@ -967,7 +968,8 @@ endif()
 list(APPEND coil_core_all_examples example_render_gradient)
 
 if(TARGET coil_core_vulkan)
-  add_executable(example_vulkan_compute
+  add_executable(example_vulkan_compute)
+  target_sources(example_vulkan_compute PRIVATE FILE_SET CXX_MODULES FILES
     examples/example_vulkan_compute.cpp
   )
   target_link_libraries(example_vulkan_compute
@@ -979,11 +981,13 @@ endif()
 list(APPEND coil_core_all_examples example_vulkan_compute)
 
 if(TARGET coil_core_steam)
-  add_executable(example_steam
+  add_executable(example_steam)
+  target_sources(example_steam PRIVATE FILE_SET CXX_MODULES FILES
     examples/example_steam.cpp
   )
   target_link_libraries(example_steam
     coil_core_appidentity
+    coil_core_assets
     coil_core_entrypoint_console
     coil_core_fs
     coil_core_image_compress
@@ -1049,7 +1053,8 @@ install(DIRECTORY
 if(BUILD_TESTING)
 
   if(TARGET coil_core_data)
-    add_executable(test_data
+    add_executable(test_data)
+    target_sources(test_data PRIVATE FILE_SET CXX_MODULES FILES
       test_data.cpp
     )
     target_link_libraries(test_data
@@ -1060,7 +1065,8 @@ if(BUILD_TESTING)
   endif()
 
   if(TARGET coil_core_process)
-    add_executable(test_process
+    add_executable(test_process)
+    target_sources(test_process PRIVATE FILE_SET CXX_MODULES FILES
       test_process.cpp
     )
     target_link_libraries(test_process
@@ -1139,7 +1145,8 @@ if(BUILD_TESTING)
   endif()
 
   if(TARGET coil_core_compress_zstd)
-    add_executable(test_compress_zstd
+    add_executable(test_compress_zstd)
+    target_sources(test_compress_zstd PRIVATE FILE_SET CXX_MODULES FILES
       test_compress_zstd.cpp
     )
     target_link_libraries(test_compress_zstd
@@ -1151,7 +1158,8 @@ if(BUILD_TESTING)
   endif()
 
   if(TARGET coil_core_sqlite)
-    add_executable(test_sqlite
+    add_executable(test_sqlite)
+    target_sources(test_sqlite PRIVATE FILE_SET CXX_MODULES FILES
       test_sqlite.cpp
     )
     target_link_libraries(test_sqlite
@@ -1162,7 +1170,8 @@ if(BUILD_TESTING)
   endif()
 
   if(TARGET coil_core_crypto)
-    add_executable(test_crypto
+    add_executable(test_crypto)
+    target_sources(test_crypto PRIVATE FILE_SET CXX_MODULES FILES
       test_crypto.cpp
     )
     target_link_libraries(test_crypto

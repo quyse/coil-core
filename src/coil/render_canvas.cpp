@@ -21,14 +21,12 @@ export namespace Coil
       T<vec2_ua> position;
     };
 
-  private:
     static auto const& GetScreenQuadVertexLayout()
     {
       static auto const layout = GetGraphicsVertexStructLayout<ScreenQuadVertex>();
       return layout;
     }
 
-  public:
     Canvas(GraphicsDevice& device)
     : _device(device) {}
 

@@ -1,8 +1,18 @@
-#include <coil/vulkan.hpp>
+module;
+
 #include <coil/entrypoint.hpp>
-#include <coil/debug.hpp>
 #include <random>
 #include <iostream>
+
+export module coil.core.example.vulkan_compute;
+
+import coil.core.base;
+import coil.core.graphics.shaders;
+import coil.core.graphics;
+import coil.core.math.debug;
+import coil.core.math;
+import coil.core.vulkan;
+
 using namespace Coil;
 
 template <template <typename> typename T>
@@ -44,7 +54,7 @@ mat<n, m> Random()
   return r;
 }
 
-int COIL_ENTRY_POINT(std::vector<std::string> args)
+extern "C++" int COIL_ENTRY_POINT(std::vector<std::string> args)
 {
   Book book;
   auto& graphicsSystem = VulkanSystem::Create(book,

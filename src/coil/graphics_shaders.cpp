@@ -972,16 +972,19 @@ export namespace Coil
     };
   };
 
+  // mutable struct members vector, initialized once by ShaderDataStructTypeOf
+  // it'd be better to be static local variable, but that hits a linking error
+  template <template <template <typename> typename> typename T>
+  std::vector<ShaderDataStructType::Member> shaderDataStructTypeOfMembers;
+
   // get type of struct
   template <template <template <typename> typename> typename T>
   ShaderDataStructType const& ShaderDataStructTypeOf()
   {
-    // declare mutable members vector
-    static std::vector<ShaderDataStructType::Member> members;
     // register members
-    static T<ShaderDataStructTypeOfHelper<members>::template Member> const object;
+    static T<ShaderDataStructTypeOfHelper<shaderDataStructTypeOfMembers<T>>::template Member> const object;
     // finalize type
-    static ShaderDataStructType const type = ShaderDataStructTypeOfHelper<members>::Finalize(&object, sizeof(object));
+    static ShaderDataStructType const type = ShaderDataStructTypeOfHelper<shaderDataStructTypeOfMembers<T>>::Finalize(&object, sizeof(object));
 
     return type;
   };

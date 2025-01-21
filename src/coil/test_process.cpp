@@ -1,10 +1,16 @@
-#include "appidentity.hpp"
+module;
+
 #include "entrypoint.hpp"
-#include "process.hpp"
 #include <iostream>
+
+export module coil.core.test.process;
+
+import coil.core.appidentity;
+import coil.core.process;
+
 using namespace Coil;
 
-int COIL_ENTRY_POINT(std::vector<std::string> args)
+extern "C++" int COIL_ENTRY_POINT(std::vector<std::string> args)
 {
   AppIdentity::GetInstance().Name() = "test_process";
   AppIdentity::GetInstance().PackageName() = "coil.core.test_process";
