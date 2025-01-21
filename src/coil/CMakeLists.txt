@@ -182,11 +182,9 @@ endif()
 list(APPEND coil_core_all_libraries fs)
 
 if(TARGET coil_core_appidentity)
-  add_library(coil_core_process STATIC
+  add_library(coil_core_process STATIC)
+  target_sources(coil_core_process PUBLIC FILE_SET CXX_MODULES FILES
     process.cpp
-  )
-  set_property(TARGET coil_core_process PROPERTY PUBLIC_HEADER
-    process.hpp
   )
   target_link_libraries(coil_core_process
     PUBLIC
@@ -195,6 +193,7 @@ if(TARGET coil_core_appidentity)
       $<$<BOOL:${WIN32}>:coil_core_unicode>
       $<$<BOOL:${WIN32}>:coil_core_windows>
   )
+  target_compile_features(coil_core_process PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries process)
 endif()
 list(APPEND coil_core_all_libraries process)

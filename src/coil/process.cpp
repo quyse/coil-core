@@ -1,15 +1,26 @@
-#include "process.hpp"
-#include "appidentity.hpp"
-#include "fs.hpp"
+module;
+
+#include "base.hpp"
+
 #if defined(COIL_PLATFORM_WINDOWS)
-#include "unicode.hpp"
 #include "windows.hpp"
 #include <shlobj.h>
 #include <knownfolders.h>
 #elif defined(COIL_PLATFORM_POSIX)
 #include <unistd.h>
 #endif
+
 #include <filesystem>
+
+export module coil.core.process;
+
+import coil.core.appidentity;
+import coil.core.base;
+import coil.core.fs;
+
+#if defined(COIL_PLATFORM_WINDOWS)
+import coil.core.unicode;
+#endif
 
 #if defined(COIL_PLATFORM_WINDOWS)
 namespace
@@ -91,8 +102,16 @@ namespace
   }
 }
 
-namespace Coil
+export namespace Coil
 {
+  enum class AppKnownLocation
+  {
+    Config,
+    Data,
+    State,
+  };
+
+  // get known location
   std::string GetAppKnownLocation(AppKnownLocation location)
   {
     switch(location)
@@ -108,6 +127,7 @@ namespace Coil
     }
   }
 
+  // make known location directory if necessary and return it
   std::string EnsureAppKnownLocation(AppKnownLocation location)
   {
     auto path = GetAppKnownLocation(location);
@@ -115,6 +135,7 @@ namespace Coil
     return std::move(path);
   }
 
+  // run process, do not wait for it
   void RunProcessAndForget(std::string const& program, std::vector<std::string> const& arguments)
   {
 #if defined(COIL_PLATFORM_WINDOWS)
@@ -135,6 +156,7 @@ namespace Coil
 #endif
   }
 
+  // run executable or open a document
   void RunOrOpenFile(std::string const& fileName)
   {
 #if defined(COIL_PLATFORM_WINDOWS)
