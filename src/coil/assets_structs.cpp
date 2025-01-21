@@ -1,10 +1,11 @@
 module;
 
+#include <coroutine>
 #include <memory>
 #include <string>
 #include <vector>
 
-export module coil.core.assets_struct;
+export module coil.core.assets.structs;
 
 import coil.core.assets;
 import coil.core.base;
