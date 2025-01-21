@@ -411,17 +411,16 @@ endif()
 list(APPEND coil_core_all_libraries image)
 
 if(TRUE)
-  add_library(coil_core_image_transform STATIC
+  add_library(coil_core_image_transform STATIC)
+  target_sources(coil_core_image_transform PUBLIC FILE_SET CXX_MODULES FILES
     image_transform.cpp
-  )
-  set_property(TARGET coil_core_image_transform PROPERTY PUBLIC_HEADER
-    image_transform.hpp
   )
   target_link_libraries(coil_core_image_transform
     PUBLIC
       coil_core_image
       coil_core_tasks
   )
+  target_compile_features(coil_core_image_transform PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries image_transform)
 endif()
 list(APPEND coil_core_all_libraries image_transform)

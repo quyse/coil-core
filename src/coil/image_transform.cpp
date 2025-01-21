@@ -1,8 +1,16 @@
-#include "image_transform.hpp"
-#include "image.hpp"
-#include "image_typed.hpp"
+module;
 
-namespace Coil
+#include <vector>
+
+export module coil.core.image.transform;
+
+import coil.core.base;
+import coil.core.image.format;
+import coil.core.image;
+import coil.core.math;
+import coil.core.tasks;
+
+export namespace Coil
 {
   ImageBuffer GenerateImageMips(Book& book, ImageBuffer const& imageBuffer)
   {
@@ -58,4 +66,17 @@ namespace Coil
       .buffer = book.Allocate<std::vector<uint8_t>>(std::move(resultPixels)),
     };
   }
+
+  class ImageMipsAssetLoader
+  {
+  public:
+    template <std::same_as<ImageBuffer> Asset, typename AssetContext>
+    Task<Asset> LoadAsset(Book& book, AssetContext& assetContext) const
+    {
+      co_return GenerateImageMips(book, co_await assetContext.template LoadAssetParam<ImageBuffer>(book, "image"));
+    }
+
+    static constexpr std::string_view assetLoaderName = "image_mips";
+  };
+  static_assert(IsAssetLoader<ImageMipsAssetLoader>);
 }
