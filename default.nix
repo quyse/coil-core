@@ -7,29 +7,42 @@
 
 lib.makeExtensible (self: with self; {
   # NixOS build
-  nixos-pkgs = pkgs.extend (self: super: with self; let
-    clang-tools = llvmPackages_19.clang-tools.override { enableLibcxx = true; };
-    clang = llvmPackages_19.clangUseLLVM;
-  in {
-    coil-core = (callPackage ./coil-core.nix {
-      inherit features;
-    }).overrideAttrs (attrs: {
+  nixos-pkgs = pkgs.extend (self: super: with self; {
+    # expose compiler
+    coil.llvmPackages = llvmPackages_19;
+    coil.clang-tools = self.coil.llvmPackages.clang-tools.override { enableLibcxx = true; };
+    coil.clang = self.coil.llvmPackages.clangUseLLVM.override {
+      inherit (self.coil.llvmPackages) bintools; # use lld
+    };
+    # function applying adjustments to a package
+    coil.compile-cpp = pkg: pkg.overrideAttrs (attrs: {
+      nativeBuildInputs = (attrs.nativeBuildInputs or []) ++ [
+        ninja
+        self.coil.clang-tools # for C++ modules to work; must be before clang
+        self.coil.clang
+      ];
       cmakeFlags = (attrs.cmakeFlags or []) ++ [
         # force clang
         "-DCMAKE_CXX_COMPILER=clang++"
         "-DCMAKE_C_COMPILER=clang"
-        # do not require some libs
-        "-DCOIL_CORE_DONT_REQUIRE_LIBS=${dontRequireLibsList}"
-      ];
-      CXXFLAGS = "-fexperimental-library"; # for std::jthread in libc++
-      nativeBuildInputs = attrs.nativeBuildInputs ++ [
-        clang-tools # for C++ modules to work; must be before clang
-        clang
       ];
     });
 
+    coil.core = self.coil.compile-cpp ((callPackage ./coil-core.nix {
+      inherit features;
+    }).overrideAttrs (attrs: {
+      cmakeFlags = (attrs.cmakeFlags or []) ++ [
+        # do not require some libs
+        "-DCOIL_CORE_DONT_REQUIRE_LIBS=${dontRequireLibsList}"
+      ];
+      CXXFLAGS = lib.concatStringsSep " " [
+        "-fexperimental-library" # for std::jthread in libc++
+        "-fno-builtin" # work around linking issue https://github.com/NixOS/nixpkgs/issues/371540
+      ];
+    }));
 
-    libsquish = stdenv.mkDerivation rec {
+
+    libsquish = self.coil.compile-cpp (stdenv.mkDerivation rec {
       pname = "libsquish";
       version = "1.15";
       src = pkgs.fetchurl {
@@ -39,7 +52,6 @@ lib.makeExtensible (self: with self; {
       sourceRoot = ".";
       nativeBuildInputs = [
         cmake
-        ninja
       ];
       buildInputs = [
         openmp
@@ -48,9 +60,9 @@ lib.makeExtensible (self: with self; {
         "-DBUILD_SHARED_LIBS=ON"
       ];
       meta.license = lib.licenses.mit;
-    };
+    });
 
-    libwebm = stdenv.mkDerivation rec {
+    libwebm = self.coil.compile-cpp (stdenv.mkDerivation rec {
       pname = "libwebm";
       version = "1.0.0.31";
       src = pkgs.fetchgit {
@@ -60,19 +72,14 @@ lib.makeExtensible (self: with self; {
       };
       nativeBuildInputs = [
         cmake
-        ninja
-        clang
       ];
       cmakeFlags = [
         "-DENABLE_WEBM_PARSER=ON"
-        # force clang
-        "-DCMAKE_CXX_COMPILER=clang++"
-        "-DCMAKE_C_COMPILER=clang"
       ];
       meta.license = lib.licenses.bsd3;
-    };
+    });
 
-    libgav1 = stdenv.mkDerivation rec {
+    libgav1 = self.coil.compile-cpp (stdenv.mkDerivation rec {
       pname = "libgav1";
       version = "0.19.0";
       src = pkgs.fetchgit {
@@ -82,8 +89,6 @@ lib.makeExtensible (self: with self; {
       };
       nativeBuildInputs = [
         cmake
-        ninja
-        clang
       ];
       cmakeFlags = [
         # https://github.com/NixOS/nixpkgs/issues/144170
@@ -93,29 +98,26 @@ lib.makeExtensible (self: with self; {
         "-DLIBGAV1_THREADPOOL_USE_STD_MUTEX=1"
         "-DLIBGAV1_ENABLE_EXAMPLES=0"
         "-DLIBGAV1_ENABLE_TESTS=0"
-        # force clang
-        "-DCMAKE_CXX_COMPILER=clang++"
-        "-DCMAKE_C_COMPILER=clang"
       ];
       meta.license = lib.licenses.asl20;
-    };
+    });
 
-    mbedtls = super.mbedtls.overrideAttrs (attrs: {
+    mbedtls = self.coil.compile-cpp (super.mbedtls.overrideAttrs (attrs: {
       postConfigure = (attrs.postConfigure or "") + ''
         perl scripts/config.pl set MBEDTLS_SSL_DTLS_SRTP
       '';
-    });
+    }));
 
-    inherit (llvmPackages) openmp;
+    inherit (self.coil.llvmPackages) openmp;
 
-    libdatachannel = callPackage ./pkgs/libdatachannel.nix {};
-    plog = callPackage ./pkgs/plog.nix {};
-    libjuice = callPackage ./pkgs/libjuice.nix {};
-    libsrtp = callPackage ./pkgs/libsrtp.nix {};
+    libdatachannel = self.coil.compile-cpp (callPackage ./pkgs/libdatachannel.nix {});
+    plog = self.coil.compile-cpp (callPackage ./pkgs/plog.nix {});
+    libjuice = self.coil.compile-cpp (callPackage ./pkgs/libjuice.nix {});
+    libsrtp = self.coil.compile-cpp (callPackage ./pkgs/libsrtp.nix {});
 
     steam-sdk = if coil.toolchain-steam != null then coil.toolchain-steam.sdk else null;
   });
-  coil-core-nixos = nixos-pkgs.coil-core;
+  coil-core-nixos = nixos-pkgs.coil.core;
 
   # Ubuntu build
   ubuntu-pkgs = rec {
