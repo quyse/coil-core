@@ -315,7 +315,7 @@ lib.makeExtensible (self: with self; {
   }) else null;
 
   coil-core = mkCmakePkg {
-    inherit (pkgs.coil-core) name src meta;
+    inherit (pkgs.coil.core) name src meta;
     buildInputs = [
       nlohmann_json
       vulkan-headers
