@@ -25,7 +25,15 @@ lib.makeExtensible (self: with self; {
         # force clang
         "-DCMAKE_CXX_COMPILER=clang++"
         "-DCMAKE_C_COMPILER=clang"
+        # compile flags
+        "-DCMAKE_CXX_FLAGS=${lib.concatStringsSep " " [
+          # for std::jthread in libc++
+          "-fexperimental-library"
+          # work around linking issue https://github.com/NixOS/nixpkgs/issues/371540
+          "-fno-builtin"
+        ]}"
       ];
+      __structuredAttrs = true;
     });
 
     coil.core = self.coil.compile-cpp ((callPackage ./coil-core.nix {
@@ -34,10 +42,6 @@ lib.makeExtensible (self: with self; {
       cmakeFlags = (attrs.cmakeFlags or []) ++ [
         # do not require some libs
         "-DCOIL_CORE_DONT_REQUIRE_LIBS=${dontRequireLibsList}"
-      ];
-      CXXFLAGS = lib.concatStringsSep " " [
-        "-fexperimental-library" # for std::jthread in libc++
-        "-fno-builtin" # work around linking issue https://github.com/NixOS/nixpkgs/issues/371540
       ];
     }));
 
