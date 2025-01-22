@@ -18,8 +18,8 @@ include(cmake/deps.cmake)
 if(TRUE)
   add_library(coil_core_base STATIC)
   target_sources(coil_core_base PUBLIC FILE_SET CXX_MODULES FILES
-    base.cpp
-    base_debug.cpp
+    base.cppm
+    base_debug.cppm
   )
   target_sources(coil_core_base PUBLIC FILE_SET HEADERS FILES
     base.hpp
@@ -32,7 +32,7 @@ list(APPEND coil_core_all_libraries base)
 if(TRUE)
   add_library(coil_core_unicode STATIC)
   target_sources(coil_core_unicode PUBLIC FILE_SET CXX_MODULES FILES
-    unicode.cpp
+    unicode.cppm
   )
   target_compile_features(coil_core_unicode PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries unicode)
@@ -59,8 +59,8 @@ endif()
 if(TRUE)
   add_library(coil_core_util STATIC)
   target_sources(coil_core_util PUBLIC FILE_SET CXX_MODULES FILES
-    util.cpp
-    util_generator.cpp
+    util.cppm
+    util_generator.cppm
   )
   target_sources(coil_core_util PUBLIC FILE_SET HEADERS FILES
     util.hpp
@@ -86,7 +86,7 @@ list(APPEND coil_core_all_libraries entrypoint)
 if(TRUE)
   add_library(coil_core_entrypoint_console STATIC)
   target_sources(coil_core_entrypoint_console PUBLIC FILE_SET CXX_MODULES FILES
-    entrypoint_console.cpp
+    entrypoint_console.cppm
   )
   target_link_libraries(coil_core_entrypoint_console
     PRIVATE
@@ -106,7 +106,7 @@ list(APPEND coil_core_all_libraries entrypoint_console)
 if(TRUE)
   add_library(coil_core_entrypoint_graphical STATIC)
   target_sources(coil_core_entrypoint_graphical PUBLIC FILE_SET CXX_MODULES FILES
-    entrypoint_graphical.cpp
+    entrypoint_graphical.cppm
   )
   target_link_libraries(coil_core_entrypoint_graphical
     PRIVATE
@@ -126,7 +126,7 @@ list(APPEND coil_core_all_libraries entrypoint_graphical)
 if(TRUE)
   add_library(coil_core_appidentity STATIC)
   target_sources(coil_core_appidentity PUBLIC FILE_SET CXX_MODULES FILES
-    appidentity.cpp
+    appidentity.cppm
   )
   target_compile_features(coil_core_appidentity PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries appidentity)
@@ -136,7 +136,7 @@ list(APPEND coil_core_all_libraries appidentity)
 if(TRUE)
   add_library(coil_core_data STATIC)
   target_sources(coil_core_data PUBLIC FILE_SET CXX_MODULES FILES
-    data.cpp
+    data.cppm
   )
   target_link_libraries(coil_core_data
     PUBLIC
@@ -150,8 +150,8 @@ list(APPEND coil_core_all_libraries data)
 if(TRUE)
   add_library(coil_core_assets STATIC)
   target_sources(coil_core_assets PUBLIC FILE_SET CXX_MODULES FILES
-    assets.cpp
-    assets_structs.cpp
+    assets.cppm
+    assets_structs.cppm
   )
   target_link_libraries(coil_core_assets
     PUBLIC
@@ -166,7 +166,7 @@ list(APPEND coil_core_all_libraries assets)
 if(TRUE)
   add_library(coil_core_fs STATIC)
   target_sources(coil_core_fs PUBLIC FILE_SET CXX_MODULES FILES
-    fs.cpp
+    fs.cppm
   )
   target_link_libraries(coil_core_fs
     PUBLIC
@@ -183,7 +183,7 @@ list(APPEND coil_core_all_libraries fs)
 if(TARGET coil_core_appidentity)
   add_library(coil_core_process STATIC)
   target_sources(coil_core_process PUBLIC FILE_SET CXX_MODULES FILES
-    process.cpp
+    process.cppm
   )
   target_link_libraries(coil_core_process
     PUBLIC
@@ -200,9 +200,9 @@ list(APPEND coil_core_all_libraries process)
 if(TRUE)
   add_library(coil_core_math STATIC)
   target_sources(coil_core_math PUBLIC FILE_SET CXX_MODULES FILES
-    math.cpp
-    math_debug.cpp
-    math_geometry.cpp
+    math.cppm
+    math_debug.cppm
+    math_geometry.cppm
   )
   target_compile_features(coil_core_math PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries math)
@@ -212,8 +212,8 @@ list(APPEND coil_core_all_libraries math)
 if(TRUE)
   add_library(coil_core_math_determ STATIC)
   target_sources(coil_core_math_determ PUBLIC FILE_SET CXX_MODULES FILES
-    math_determ.cpp
-    math_determ_debug.cpp
+    math_determ.cppm
+    math_determ_debug.cppm
   )
   target_compile_options(coil_core_math_determ
     PRIVATE
@@ -231,10 +231,10 @@ list(APPEND coil_core_all_libraries math_determ)
 if(TRUE)
   add_library(coil_core_tasks STATIC)
   target_sources(coil_core_tasks PUBLIC FILE_SET CXX_MODULES FILES
-    tasks.cpp
-    tasks_storage.cpp
-    tasks_streams.cpp
-    tasks_sync.cpp
+    tasks.cppm
+    tasks_storage.cppm
+    tasks_streams.cppm
+    tasks_sync.cppm
   )
   target_link_libraries(coil_core_tasks
     PUBLIC
@@ -248,7 +248,7 @@ list(APPEND coil_core_all_libraries tasks)
 if(TARGET nlohmann_json::nlohmann_json)
   add_library(coil_core_json STATIC)
   target_sources(coil_core_json PUBLIC FILE_SET CXX_MODULES FILES
-    json.cpp
+    json.cppm
   )
   target_sources(coil_core_json PUBLIC FILE_SET HEADERS FILES
     json.hpp
@@ -267,7 +267,7 @@ list(APPEND coil_core_all_libraries json)
 if(TRUE)
   add_library(coil_core_time STATIC)
   target_sources(coil_core_time PUBLIC FILE_SET CXX_MODULES FILES
-    time.cpp
+    time.cppm
   )
   target_link_libraries(coil_core_time
     PUBLIC
@@ -282,7 +282,7 @@ list(APPEND coil_core_all_libraries time)
 if(TRUE)
   add_library(coil_core_text STATIC)
   target_sources(coil_core_text PUBLIC FILE_SET CXX_MODULES FILES
-    text.cpp
+    text.cppm
   )
   target_link_libraries(coil_core_text
     PUBLIC
@@ -296,7 +296,7 @@ list(APPEND coil_core_all_libraries text)
 if(TRUE)
   add_library(coil_core_localization STATIC)
   target_sources(coil_core_localization PUBLIC FILE_SET CXX_MODULES FILES
-    localization.cpp
+    localization.cppm
   )
   target_link_libraries(coil_core_localization
     PUBLIC
@@ -310,8 +310,8 @@ list(APPEND coil_core_all_libraries localization)
 if(TRUE)
   add_library(coil_core_input STATIC)
   target_sources(coil_core_input PUBLIC FILE_SET CXX_MODULES FILES
-    input.cpp
-    input_debug.cpp
+    input.cppm
+    input_debug.cppm
   )
   target_sources(coil_core_input PUBLIC FILE_SET HEADERS FILES
     input_keys.hpp
@@ -330,8 +330,8 @@ list(APPEND coil_core_all_libraries input)
 if(TRUE)
   add_library(coil_core_player_input STATIC)
   target_sources(coil_core_player_input PUBLIC FILE_SET CXX_MODULES FILES
-    player_input.cpp
-    player_input_combined.cpp
+    player_input.cppm
+    player_input_combined.cppm
   )
   target_link_libraries(coil_core_player_input
     PUBLIC
@@ -345,7 +345,7 @@ list(APPEND coil_core_all_libraries player_input)
 if(TRUE)
   add_library(coil_core_player_input_native STATIC)
   target_sources(coil_core_player_input_native PUBLIC FILE_SET CXX_MODULES FILES
-    player_input_native.cpp
+    player_input_native.cppm
   )
   target_link_libraries(coil_core_player_input_native
     PUBLIC
@@ -361,7 +361,7 @@ list(APPEND coil_core_all_libraries player_input_native)
 if(TRUE)
   add_library(coil_core_platform STATIC)
   target_sources(coil_core_platform PUBLIC FILE_SET CXX_MODULES FILES
-    platform.cpp
+    platform.cppm
   )
   target_link_libraries(coil_core_platform
     PUBLIC
@@ -378,9 +378,9 @@ list(APPEND coil_core_all_libraries platform)
 if(TRUE)
   add_library(coil_core_graphics STATIC)
   target_sources(coil_core_graphics PUBLIC FILE_SET CXX_MODULES FILES
-    graphics.cpp
-    graphics_format.cpp
-    graphics_shaders.cpp
+    graphics.cppm
+    graphics_format.cppm
+    graphics_shaders.cppm
   )
   target_link_libraries(coil_core_graphics
     PUBLIC
@@ -396,8 +396,8 @@ list(APPEND coil_core_all_libraries graphics)
 if(TRUE)
   add_library(coil_core_image STATIC)
   target_sources(coil_core_image PUBLIC FILE_SET CXX_MODULES FILES
-    image.cpp
-    image_format.cpp
+    image.cppm
+    image_format.cppm
   )
   target_link_libraries(coil_core_image
     PUBLIC
@@ -412,7 +412,7 @@ list(APPEND coil_core_all_libraries image)
 if(TRUE)
   add_library(coil_core_image_transform STATIC)
   target_sources(coil_core_image_transform PUBLIC FILE_SET CXX_MODULES FILES
-    image_transform.cpp
+    image_transform.cppm
   )
   target_link_libraries(coil_core_image_transform
     PUBLIC
@@ -427,9 +427,9 @@ list(APPEND coil_core_all_libraries image_transform)
 if(TRUE)
   add_library(coil_core_render STATIC)
   target_sources(coil_core_render PUBLIC FILE_SET CXX_MODULES FILES
-    render.cpp
-    render_canvas.cpp
-    render_math.cpp
+    render.cppm
+    render_canvas.cppm
+    render_math.cppm
   )
   target_link_libraries(coil_core_render
     PUBLIC
@@ -443,7 +443,7 @@ list(APPEND coil_core_all_libraries render)
 if(TARGET SPIRV-Headers::SPIRV-Headers)
   add_library(coil_core_spirv STATIC)
   target_sources(coil_core_spirv PUBLIC FILE_SET CXX_MODULES FILES
-    spirv.cpp
+    spirv.cppm
   )
   target_link_libraries(coil_core_spirv
     PUBLIC
@@ -467,8 +467,8 @@ if(TARGET coil_core_spirv AND TARGET Vulkan::Vulkan)
     vulkan_system.cpp
   )
   target_sources(coil_core_vulkan PUBLIC FILE_SET CXX_MODULES FILES
-    vulkan.cpp
-    vulkan_utils.cpp
+    vulkan.cppm
+    vulkan_utils.cppm
   )
   target_link_libraries(coil_core_vulkan
     PUBLIC
@@ -485,7 +485,7 @@ list(APPEND coil_core_all_libraries vulkan)
 if(TARGET SDL2::SDL2)
   add_library(coil_core_sdl STATIC)
   target_sources(coil_core_sdl PUBLIC FILE_SET CXX_MODULES FILES
-    sdl.cpp
+    sdl.cppm
   )
   target_link_libraries(coil_core_sdl
     PUBLIC
@@ -502,7 +502,7 @@ list(APPEND coil_core_all_libraries sdl)
 if(TARGET coil_core_vulkan AND TARGET coil_core_sdl)
   add_library(coil_core_sdl_vulkan STATIC)
   target_sources(coil_core_sdl_vulkan PUBLIC FILE_SET CXX_MODULES FILES
-    sdl_vulkan.cpp
+    sdl_vulkan.cppm
   )
   target_link_libraries(coil_core_sdl_vulkan
     PUBLIC
@@ -517,7 +517,7 @@ list(APPEND coil_core_all_libraries sdl_vulkan)
 if(TRUE)
   add_library(coil_core_logic STATIC)
   target_sources(coil_core_logic PUBLIC FILE_SET CXX_MODULES FILES
-    logic_math.cpp
+    logic_math.cppm
   )
   target_link_libraries(coil_core_logic
     PUBLIC
@@ -531,7 +531,7 @@ list(APPEND coil_core_all_libraries logic)
 if(TARGET PNG::PNG)
   add_library(coil_core_image_png STATIC)
   target_sources(coil_core_image_png PUBLIC FILE_SET CXX_MODULES FILES
-    image_png.cpp
+    image_png.cppm
   )
   target_link_libraries(coil_core_image_png
     PUBLIC
@@ -548,7 +548,7 @@ list(APPEND coil_core_all_libraries image_png)
 if(TARGET Squish::Squish)
   add_library(coil_core_image_compress STATIC)
   target_sources(coil_core_image_compress PUBLIC FILE_SET CXX_MODULES FILES
-    image_compress.cpp
+    image_compress.cppm
   )
   target_link_libraries(coil_core_image_compress
     PUBLIC
@@ -565,7 +565,7 @@ list(APPEND coil_core_all_libraries image_compress)
 if(TARGET zstd::libzstd_shared)
   add_library(coil_core_compress_zstd STATIC)
   target_sources(coil_core_compress_zstd PUBLIC FILE_SET CXX_MODULES FILES
-    compress_zstd.cpp
+    compress_zstd.cppm
   )
   target_link_libraries(coil_core_compress_zstd
     PUBLIC
@@ -580,7 +580,7 @@ list(APPEND coil_core_all_libraries compress_zstd)
 if(TRUE)
   add_library(coil_core_mesh STATIC)
   target_sources(coil_core_mesh PUBLIC FILE_SET CXX_MODULES FILES
-    mesh.cpp
+    mesh.cppm
   )
   target_link_libraries(coil_core_mesh
     PUBLIC
@@ -594,8 +594,8 @@ list(APPEND coil_core_all_libraries mesh)
 if(TARGET coil_core_json)
   add_library(coil_core_gltf STATIC)
   target_sources(coil_core_gltf PUBLIC FILE_SET CXX_MODULES FILES
-    gltf.cpp
-    gltf_cache.cpp
+    gltf.cppm
+    gltf_cache.cppm
   )
   target_link_libraries(coil_core_gltf
     PUBLIC
@@ -612,7 +612,7 @@ list(APPEND coil_core_all_libraries gltf)
 if(TARGET SQLite::SQLite3)
   add_library(coil_core_sqlite STATIC)
   target_sources(coil_core_sqlite PUBLIC FILE_SET CXX_MODULES FILES
-    sqlite.cpp
+    sqlite.cppm
   )
   target_link_libraries(coil_core_sqlite
     PUBLIC
@@ -627,9 +627,9 @@ list(APPEND coil_core_all_libraries sqlite)
 if(TARGET MbedTLS::mbedcrypto)
   add_library(coil_core_crypto STATIC)
   target_sources(coil_core_crypto PUBLIC FILE_SET CXX_MODULES FILES
-    crypto.cpp
-    crypto_base.cpp
-    crypto_mbedtls.cpp
+    crypto.cppm
+    crypto_base.cppm
+    crypto_mbedtls.cppm
   )
   target_link_libraries(coil_core_crypto
     PUBLIC
@@ -644,8 +644,8 @@ list(APPEND coil_core_all_libraries crypto)
 if(TRUE)
   add_library(coil_core_fonts STATIC)
   target_sources(coil_core_fonts PUBLIC FILE_SET CXX_MODULES FILES
-    fonts.cpp
-    fonts_cache.cpp
+    fonts.cppm
+    fonts_cache.cppm
   )
   target_link_libraries(coil_core_fonts
     PUBLIC
@@ -660,7 +660,7 @@ list(APPEND coil_core_all_libraries fonts)
 if(TARGET coil_core_fonts)
   add_library(coil_core_render_fonts STATIC)
   target_sources(coil_core_render_fonts PUBLIC FILE_SET CXX_MODULES FILES
-    render_fonts.cpp
+    render_fonts.cppm
   )
   target_link_libraries(coil_core_render_fonts
     PUBLIC
@@ -675,7 +675,7 @@ list(APPEND coil_core_all_libraries render_fonts)
 if(TARGET Freetype::Freetype AND TARGET harfbuzz::harfbuzz)
   add_library(coil_core_fthb STATIC)
   target_sources(coil_core_fthb PUBLIC FILE_SET CXX_MODULES FILES
-    fthb.cpp
+    fthb.cppm
   )
   target_link_libraries(coil_core_fthb
     PUBLIC
@@ -730,7 +730,7 @@ if(TARGET coil_core_wayland_protocols)
     wayland_keys.cpp
   )
   target_sources(coil_core_wayland PUBLIC FILE_SET CXX_MODULES FILES
-    wayland.cpp
+    wayland.cppm
   )
   target_link_libraries(coil_core_wayland
     PUBLIC
@@ -751,7 +751,7 @@ endif()
 if(TARGET coil_core_vulkan AND TARGET coil_core_wayland)
   add_library(coil_core_wayland_vulkan STATIC)
   target_sources(coil_core_wayland_vulkan PUBLIC FILE_SET CXX_MODULES FILES
-    wayland_vulkan.cpp
+    wayland_vulkan.cppm
   )
   target_link_libraries(coil_core_wayland_vulkan
     PRIVATE
@@ -768,8 +768,8 @@ endif()
 if(TRUE)
   add_library(coil_core_audio STATIC)
   target_sources(coil_core_audio PUBLIC FILE_SET CXX_MODULES FILES
-    audio.cpp
-    audio_soft.cpp
+    audio.cppm
+    audio_soft.cppm
   )
   target_link_libraries(coil_core_audio
     PUBLIC
@@ -783,7 +783,7 @@ list(APPEND coil_core_all_libraries audio)
 if(TRUE)
   add_library(coil_core_video STATIC)
   target_sources(coil_core_video PUBLIC FILE_SET CXX_MODULES FILES
-    video.cpp
+    video.cppm
   )
   target_link_libraries(coil_core_video
     PUBLIC
@@ -815,7 +815,7 @@ endif()
 if(TARGET PulseAudio::PulseAudio)
   add_library(coil_core_pulseaudio STATIC)
   target_sources(coil_core_pulseaudio PUBLIC FILE_SET CXX_MODULES FILES
-    pulseaudio.cpp
+    pulseaudio.cppm
   )
   target_link_libraries(coil_core_pulseaudio
     PUBLIC
@@ -833,7 +833,7 @@ endif()
 if(TARGET Ogg::ogg)
   add_library(coil_core_ogg STATIC)
   target_sources(coil_core_ogg PUBLIC FILE_SET CXX_MODULES FILES
-    ogg.cpp
+    ogg.cppm
   )
   target_link_libraries(coil_core_ogg
     PUBLIC
@@ -848,7 +848,7 @@ list(APPEND coil_core_all_libraries ogg)
 if(TARGET Webm::Webm)
   add_library(coil_core_webm STATIC)
   target_sources(coil_core_webm PUBLIC FILE_SET CXX_MODULES FILES
-    webm.cpp
+    webm.cppm
   )
   target_link_libraries(coil_core_webm
     PUBLIC
@@ -863,7 +863,7 @@ list(APPEND coil_core_all_libraries webm)
 if(TARGET Opus::opus)
   add_library(coil_core_opus STATIC)
   target_sources(coil_core_opus PUBLIC FILE_SET CXX_MODULES FILES
-    opus.cpp
+    opus.cppm
   )
   target_link_libraries(coil_core_opus
     PUBLIC
@@ -880,7 +880,7 @@ list(APPEND coil_core_all_libraries opus)
 if(TARGET libgav1::libgav1)
   add_library(coil_core_av1 STATIC)
   target_sources(coil_core_av1 PUBLIC FILE_SET CXX_MODULES FILES
-    av1.cpp
+    av1.cppm
   )
   target_link_libraries(coil_core_av1
     PUBLIC
@@ -896,7 +896,7 @@ list(APPEND coil_core_all_libraries av1)
 if(TARGET CURL::libcurl)
   add_library(coil_core_curl STATIC)
   target_sources(coil_core_curl PUBLIC FILE_SET CXX_MODULES FILES
-    curl.cpp
+    curl.cppm
   )
   target_link_libraries(coil_core_curl
     PUBLIC
@@ -911,7 +911,7 @@ list(APPEND coil_core_all_libraries curl)
 if(TARGET Steam::Steam)
   add_library(coil_core_steam STATIC)
   target_sources(coil_core_steam PUBLIC FILE_SET CXX_MODULES FILES
-    steam.cpp
+    steam.cppm
   )
   target_link_libraries(coil_core_steam
     PUBLIC
