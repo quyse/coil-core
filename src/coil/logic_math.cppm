@@ -54,4 +54,55 @@ export namespace Coil
     S const _slowCoef;
     S const _maxSpeed;
   };
+
+  template <std::signed_integral I, typename T>
+  class LogicSwitch
+  {
+  public:
+    LogicSwitch(I maxValue, T switchSpeed)
+    : _maxValue(maxValue), _switchSpeed(switchSpeed) {}
+
+    T GetValue() const
+    {
+      return (T)_value + _subValue;
+    }
+
+    void ApplyIntent(I direction)
+    {
+      if(direction > 0 && _value >= _maxValue) return;
+      if(direction < 0 && _value <= 0) return;
+      _direction = direction;
+    }
+
+    void Tick(T time)
+    {
+      if(_direction > 0)
+      {
+        _subValue += _switchSpeed * time;
+        if(_subValue >= 1)
+        {
+          _value = std::min(_value + 1, _maxValue);
+          _subValue = {};
+          _direction = 0;
+        }
+      }
+      if(_direction < 0)
+      {
+        _subValue -= _switchSpeed * time;
+        if(_subValue <= -1)
+        {
+          _value = std::max(_value - 1, 0);
+          _subValue = {};
+          _direction = 0;
+        }
+      }
+    }
+
+  private:
+    I _value = 0;
+    T _subValue = {};
+    I _direction = 0;
+    I const _maxValue;
+    T const _switchSpeed;
+  };
 }
