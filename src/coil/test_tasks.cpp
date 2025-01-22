@@ -1,11 +1,7 @@
-module;
-
 #include "entrypoint.hpp"
 #include <coroutine>
 #include <iostream>
 #include <random>
-
-export module coil.core.test.tasks;
 
 import coil.core.base;
 import coil.core.math;
@@ -257,7 +253,7 @@ private:
   std::vector<Task<bool>> _tests;
 };
 
-extern "C++" int COIL_ENTRY_POINT(std::vector<std::string> args)
+int COIL_ENTRY_POINT(std::vector<std::string> args)
 {
   ivec2 counts;
 

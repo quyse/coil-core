@@ -1,9 +1,5 @@
-module;
-
 #include "entrypoint.hpp"
 #include <iostream>
-
-export module coil.core.test.compress.zstd;
 
 import coil.core.base;
 import coil.core.compress.zstd;
@@ -12,7 +8,7 @@ import coil.core.fs;
 
 using namespace Coil;
 
-extern "C++" int COIL_ENTRY_POINT(std::vector<std::string> args)
+int COIL_ENTRY_POINT(std::vector<std::string> args)
 {
   Book book;
 

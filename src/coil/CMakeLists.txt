@@ -238,6 +238,7 @@ if(TRUE)
   )
   target_link_libraries(coil_core_tasks
     PUBLIC
+      coil_core_base
       coil_core_data
   )
   target_compile_features(coil_core_tasks PUBLIC cxx_std_20)
@@ -384,7 +385,9 @@ if(TRUE)
   )
   target_link_libraries(coil_core_graphics
     PUBLIC
+      coil_core_base
       coil_core_image
+      coil_core_math
       coil_core_tasks
       coil_core_util
   )
@@ -473,6 +476,7 @@ if(TARGET coil_core_spirv AND TARGET Vulkan::Vulkan)
   target_link_libraries(coil_core_vulkan
     PUBLIC
       coil_core_appidentity
+      coil_core_base
       coil_core_graphics
       coil_core_spirv
       Vulkan::Vulkan
@@ -930,7 +934,7 @@ list(TRANSFORM coil_core_libraries PREPEND coil_core_)
 
 if(TARGET coil_core_localization)
   add_executable(coil_core_localization_tool)
-  target_sources(coil_core_localization_tool PRIVATE FILE_SET CXX_MODULES FILES
+  target_sources(coil_core_localization_tool PRIVATE
     localization_tool.cpp
   )
   target_link_libraries(coil_core_localization_tool
@@ -951,7 +955,7 @@ list(TRANSFORM coil_core_tools PREPEND coil_core_)
 
 if(TARGET coil_core_sdl_vulkan)
   add_executable(example_render_gradient)
-  target_sources(example_render_gradient PRIVATE FILE_SET CXX_MODULES FILES
+  target_sources(example_render_gradient PRIVATE
     examples/example_render_gradient.cpp
   )
   target_link_libraries(example_render_gradient
@@ -968,7 +972,7 @@ list(APPEND coil_core_all_examples example_render_gradient)
 
 if(TARGET coil_core_vulkan)
   add_executable(example_vulkan_compute)
-  target_sources(example_vulkan_compute PRIVATE FILE_SET CXX_MODULES FILES
+  target_sources(example_vulkan_compute PRIVATE
     examples/example_vulkan_compute.cpp
   )
   target_link_libraries(example_vulkan_compute
@@ -981,7 +985,7 @@ list(APPEND coil_core_all_examples example_vulkan_compute)
 
 if(TARGET coil_core_steam)
   add_executable(example_steam)
-  target_sources(example_steam PRIVATE FILE_SET CXX_MODULES FILES
+  target_sources(example_steam PRIVATE
     examples/example_steam.cpp
   )
   target_link_libraries(example_steam
@@ -1031,7 +1035,7 @@ install(TARGETS ${coil_core_libraries} ${coil_core_executables}
 )
 install(EXPORT coil_coreTargets
   DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/coil_core"
-  CXX_MODULES_DIRECTORY cxx
+  CXX_MODULES_DIRECTORY .
 )
 
 # package config
@@ -1053,7 +1057,7 @@ if(BUILD_TESTING)
 
   if(TARGET coil_core_data)
     add_executable(test_data)
-    target_sources(test_data PRIVATE FILE_SET CXX_MODULES FILES
+    target_sources(test_data PRIVATE
       test_data.cpp
     )
     target_link_libraries(test_data
@@ -1065,7 +1069,7 @@ if(BUILD_TESTING)
 
   if(TARGET coil_core_process)
     add_executable(test_process)
-    target_sources(test_process PRIVATE FILE_SET CXX_MODULES FILES
+    target_sources(test_process PRIVATE
       test_process.cpp
     )
     target_link_libraries(test_process
@@ -1078,7 +1082,7 @@ if(BUILD_TESTING)
 
   if(TARGET coil_core_math_determ)
     add_executable(test_math_determ)
-    target_sources(test_math_determ PRIVATE FILE_SET CXX_MODULES FILES
+    target_sources(test_math_determ PRIVATE
       test_math_determ.cpp
     )
     target_link_libraries(test_math_determ
@@ -1090,7 +1094,7 @@ if(BUILD_TESTING)
 
   if(TARGET coil_core_tasks)
     add_executable(test_tasks)
-    target_sources(test_tasks PRIVATE FILE_SET CXX_MODULES FILES
+    target_sources(test_tasks PRIVATE
       test_tasks.cpp
     )
     target_link_libraries(test_tasks
@@ -1103,7 +1107,7 @@ if(BUILD_TESTING)
 
   if(TARGET coil_core_json)
     add_executable(test_json)
-    target_sources(test_json PRIVATE FILE_SET CXX_MODULES FILES
+    target_sources(test_json PRIVATE
       test_json.cpp
     )
     target_link_libraries(test_json
@@ -1129,8 +1133,10 @@ if(BUILD_TESTING)
         "${CMAKE_CURRENT_LIST_DIR}/test_localization_ru.json"
     )
     add_executable(test_localization)
-    target_sources(test_localization PRIVATE FILE_SET CXX_MODULES BASE_DIRS "${CMAKE_CURRENT_LIST_DIR};${test_localization_localized}" FILES
+    target_sources(test_localization PRIVATE
       test_localization.cpp
+    )
+    target_sources(test_localization PRIVATE FILE_SET CXX_MODULES BASE_DIRS "${CMAKE_CURRENT_LIST_DIR};${test_localization_localized}" FILES
       ${test_localization_localized}/localized.cpp
       ${test_localization_localized}/en.cpp
       ${test_localization_localized}/ru.cpp
@@ -1145,7 +1151,7 @@ if(BUILD_TESTING)
 
   if(TARGET coil_core_compress_zstd)
     add_executable(test_compress_zstd)
-    target_sources(test_compress_zstd PRIVATE FILE_SET CXX_MODULES FILES
+    target_sources(test_compress_zstd PRIVATE
       test_compress_zstd.cpp
     )
     target_link_libraries(test_compress_zstd
@@ -1158,7 +1164,7 @@ if(BUILD_TESTING)
 
   if(TARGET coil_core_sqlite)
     add_executable(test_sqlite)
-    target_sources(test_sqlite PRIVATE FILE_SET CXX_MODULES FILES
+    target_sources(test_sqlite PRIVATE
       test_sqlite.cpp
     )
     target_link_libraries(test_sqlite
@@ -1170,7 +1176,7 @@ if(BUILD_TESTING)
 
   if(TARGET coil_core_crypto)
     add_executable(test_crypto)
-    target_sources(test_crypto PRIVATE FILE_SET CXX_MODULES FILES
+    target_sources(test_crypto PRIVATE
       test_crypto.cpp
     )
     target_link_libraries(test_crypto

@@ -1,10 +1,6 @@
-module;
-
 #include <coil/entrypoint.hpp>
 #include <random>
 #include <iostream>
-
-export module coil.core.example.vulkan_compute;
 
 import coil.core.base;
 import coil.core.graphics.shaders;
@@ -54,7 +50,7 @@ mat<n, m> Random()
   return r;
 }
 
-extern "C++" int COIL_ENTRY_POINT(std::vector<std::string> args)
+int COIL_ENTRY_POINT(std::vector<std::string> args)
 {
   Book book;
   auto& graphicsSystem = VulkanSystem::Create(book,

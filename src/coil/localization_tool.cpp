@@ -1,11 +1,7 @@
-module;
-
 #include "entrypoint.hpp"
 #include <fstream>
 #include <iostream>
 #include <map>
-
-export module coil.core.localization.tool;
 
 import coil.core.base;
 import coil.core.fs;
@@ -368,7 +364,7 @@ private:
   std::ostringstream _initStream;
 };
 
-extern "C++" int COIL_ENTRY_POINT(std::vector<std::string> args)
+int COIL_ENTRY_POINT(std::vector<std::string> args)
 {
   std::string workingDir = ".";
   std::string localizationConfigFileName;

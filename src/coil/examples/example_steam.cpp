@@ -1,11 +1,7 @@
-module;
-
 #include <coil/entrypoint.hpp>
 #include <coil/util.hpp>
 #include <coroutine>
 #include <iostream>
-
-export module coil.core.example.steam;
 
 import coil.core.appidentity;
 import coil.core.assets.structs;
@@ -46,7 +42,7 @@ COIL_META_STRUCT(Assets)
   COIL_META_STRUCT_FIELD(Coil::GraphicsImage*, texture);
 };
 
-extern "C++" int COIL_ENTRY_POINT(std::vector<std::string> args)
+int COIL_ENTRY_POINT(std::vector<std::string> args)
 {
   AppIdentity::GetInstance().Name() = "coil_core_example_steam";
 

@@ -1,10 +1,6 @@
-module;
-
 #include "entrypoint.hpp"
 #include <iostream>
 #include <random>
-
-export module coil.core.test.data;
 
 import coil.core.base;
 import coil.core.data;
@@ -73,7 +69,7 @@ bool TestSeries(size_t count, size_t opCount, size_t maxLen)
   return true;
 }
 
-extern "C++" int COIL_ENTRY_POINT(std::vector<std::string> args)
+int COIL_ENTRY_POINT(std::vector<std::string> args)
 {
   if(!TestSeries(100, 1000, 10)) return 1;
   if(!TestSeries(100, 1000, 100)) return 1;

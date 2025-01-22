@@ -1,8 +1,4 @@
-module;
-
 #include <coil/entrypoint.hpp>
-
-export module coil.core.example.render_gradient;
 
 import coil.core.appidentity;
 import coil.core.base;
@@ -19,7 +15,7 @@ import coil.core.vulkan;
 
 using namespace Coil;
 
-extern "C++" int COIL_ENTRY_POINT(std::vector<std::string> args)
+int COIL_ENTRY_POINT(std::vector<std::string> args)
 {
   AppIdentity::GetInstance().Name() = "coil_core_example_render_gradient";
 

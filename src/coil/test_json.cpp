@@ -1,9 +1,5 @@
-module;
-
 #include "entrypoint.hpp"
 #include <random>
-
-export module coil.core.test.json;
 
 import coil.core.base;
 import coil.core.json;
@@ -127,7 +123,7 @@ bool Test()
   return true;
 }
 
-extern "C++" int COIL_ENTRY_POINT(std::vector<std::string> args)
+int COIL_ENTRY_POINT(std::vector<std::string> args)
 {
   if(!Test<int32_t>()) return 1;
   if(!Test<uint32_t>()) return 1;

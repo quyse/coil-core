@@ -1,8 +1,4 @@
-module;
-
 #include "entrypoint.hpp"
-
-export module coil.core.test.crypto;
 
 import coil.core.base;
 import coil.core.crypto;
@@ -16,7 +12,7 @@ bool CheckHash(std::string_view str, typename HashAlgorithm::Hash const& hash)
   return gotHash == hash;
 }
 
-extern "C++" int COIL_ENTRY_POINT(std::vector<std::string> args)
+int COIL_ENTRY_POINT(std::vector<std::string> args)
 {
   // SHA256
   if(!CheckHash<SHA256>("", "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"_hex)) return 1;

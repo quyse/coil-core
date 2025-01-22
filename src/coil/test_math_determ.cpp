@@ -1,11 +1,7 @@
-module;
-
 #include "entrypoint.hpp"
 #include <cstring>
 #include <iostream>
 #include <random>
-
-export module coil.core.test.math.determ;
 
 import coil.core.math.debug;
 import coil.core.math.determ.debug;
@@ -137,7 +133,7 @@ void check_hash(char const* msg, uint32_t expected)
   g_hashSum = 0;
 }
 
-extern "C++" int COIL_ENTRY_POINT(std::vector<std::string> args)
+int COIL_ENTRY_POINT(std::vector<std::string> args)
 {
   uint32_t okCount = 0, totalCount = 0;
 
