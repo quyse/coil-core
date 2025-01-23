@@ -1,8 +1,10 @@
 module;
 
+#include <functional>
 #include <map>
 #include <optional>
 #include <span>
+#include <string_view>
 #include <variant>
 #include <vector>
 

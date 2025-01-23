@@ -1,7 +1,9 @@
 module;
 
 #include <optional>
+#include <string>
 #include <unordered_map>
+#include <variant>
 
 export module coil.core.player_input.native;
 

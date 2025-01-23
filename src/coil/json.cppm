@@ -147,7 +147,7 @@ export namespace Coil
   {
     static Json Encode(xquat<T, o> const& v)
     {
-      return Encode<xvec<T, 4, o>>(v);
+      return JsonEncode<xvec<T, 4, o>>(v);
     }
   };
 

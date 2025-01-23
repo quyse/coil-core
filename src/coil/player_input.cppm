@@ -1,6 +1,7 @@
 module;
 
 #include <memory>
+#include <vector>
 
 export module coil.core.player_input;
 

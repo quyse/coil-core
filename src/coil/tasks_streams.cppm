@@ -3,6 +3,7 @@ module;
 #include <coroutine>
 #include <mutex>
 #include <optional>
+#include <vector>
 
 export module coil.core.tasks.streams;
 

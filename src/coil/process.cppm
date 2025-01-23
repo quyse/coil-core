@@ -20,6 +20,7 @@ import coil.core.fs;
 
 #if defined(COIL_PLATFORM_WINDOWS)
 import coil.core.unicode;
+import coil.core.windows;
 #endif
 
 #if defined(COIL_PLATFORM_WINDOWS)

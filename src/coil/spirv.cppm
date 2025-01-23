@@ -5,6 +5,8 @@ module;
 #include <memory>
 #include <optional>
 #include <set>
+#include <string>
+#include <vector>
 #include <spirv/unified1/spirv.hpp11>
 #include <spirv/unified1/GLSL.std.450.h>
 

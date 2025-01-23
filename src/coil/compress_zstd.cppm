@@ -1,7 +1,7 @@
 module;
 
 #include <zstd.h>
-#include <alloca.h>
+#include <malloc.h>
 #include <concepts>
 #include <cstdint>
 #include <string_view>

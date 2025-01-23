@@ -1,7 +1,10 @@
 #include "entrypoint.hpp"
+#include "json.hpp"
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <optional>
+#include <sstream>
 
 import coil.core.base;
 import coil.core.fs;
@@ -456,11 +459,11 @@ int COIL_ENTRY_POINT(std::vector<std::string> args)
     // read language strings
     if(langConfig.file.has_value())
     {
-      for(auto j = JsonFromBuffer(File::MapRead(book, workingDir + "/" + langConfig.file.value())); auto const& item : j.items())
+      for(auto j = JsonFromBuffer(File::MapRead(book, workingDir + "/" + langConfig.file.value())); auto const& [key, value] : j.items())
       {
-        auto& string = strings.insert({ item.key(), {} }).first->second;
+        auto& string = strings.insert({ key, {} }).first->second;
         if(string.strings.size() != langsCount) string.strings.resize(langsCount);
-        string.strings[langIndex] = item.value();
+        string.strings[langIndex] = value;
       }
     }
   }

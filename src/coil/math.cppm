@@ -1,6 +1,7 @@
 module;
 
 #include <cmath>
+#include <compare>
 #include <concepts>
 #include <iterator>
 

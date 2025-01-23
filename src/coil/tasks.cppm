@@ -118,7 +118,7 @@ export namespace Coil
     class InitialAwaiter
     {
     public:
-      InitialAwaiter(std::coroutine_handle<>&& coroutine)
+      InitialAwaiter(std::coroutine_handle<> coroutine)
       : _coroutine(std::move(coroutine)) {}
 
       bool await_ready() const
@@ -142,7 +142,7 @@ export namespace Coil
     class FinalAwaiter
     {
     public:
-      FinalAwaiter(std::coroutine_handle<>&& coroutine)
+      FinalAwaiter(std::coroutine_handle<> coroutine)
       : _coroutine(std::move(coroutine)) {}
 
       bool await_ready() const noexcept

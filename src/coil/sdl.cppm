@@ -2,6 +2,8 @@ module;
 
 #include <SDL2/SDL.h>
 #include <functional>
+#include <memory>
+#include <string>
 #include <unordered_map>
 
 export module coil.core.sdl;

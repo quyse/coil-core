@@ -6,6 +6,7 @@ module;
 #include <filesystem>
 #include <string>
 #include <string_view>
+#include <variant>
 
 #if defined(COIL_PLATFORM_WINDOWS)
 #include "windows.hpp"

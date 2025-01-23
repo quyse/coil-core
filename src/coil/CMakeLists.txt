@@ -40,16 +40,18 @@ endif()
 list(APPEND coil_core_all_libraries unicode)
 
 if(WIN32)
-  add_library(coil_core_windows STATIC
-    windows.cpp
+  add_library(coil_core_windows STATIC)
+  target_sources(coil_core_windows PUBLIC FILE_SET CXX_MODULES FILES
+    windows.cppm
   )
-  set_property(TARGET coil_core_windows PROPERTY PUBLIC_HEADER
+  target_sources(coil_core_windows PUBLIC FILE_SET HEADERS FILES
     windows.hpp
   )
   target_link_libraries(coil_core_windows
     PUBLIC
       coil_core_base
   )
+  target_compile_features(coil_core_windows PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries windows)
 endif()
 if(WIN32)
@@ -799,17 +801,16 @@ endif()
 list(APPEND coil_core_all_libraries video)
 
 if(WIN32)
-  add_library(coil_core_wincoreaudio STATIC
-    wincoreaudio.cpp
-  )
-  set_property(TARGET coil_core_wincoreaudio PROPERTY PUBLIC_HEADER
-    wincoreaudio.hpp
+  add_library(coil_core_wincoreaudio STATIC)
+  target_sources(coil_core_wincoreaudio PUBLIC FILE_SET CXX_MODULES FILES
+    wincoreaudio.cppm
   )
   target_link_libraries(coil_core_wincoreaudio
     PUBLIC
       coil_core_audio
       coil_core_windows
   )
+  target_compile_features(coil_core_wincoreaudio PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries wincoreaudio)
 endif()
 if(WIN32)

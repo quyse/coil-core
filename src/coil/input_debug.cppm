@@ -2,6 +2,7 @@ module;
 
 #include <concepts>
 #include <ostream>
+#include <variant>
 
 export module coil.core.input.debug;
 
