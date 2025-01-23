@@ -903,6 +903,9 @@ if(TARGET CURL::libcurl)
   target_sources(coil_core_curl PUBLIC FILE_SET CXX_MODULES FILES
     curl.cppm
   )
+  target_sources(coil_core_curl PUBLIC FILE_SET HEADERS FILES
+    curl.hpp
+  )
   target_link_libraries(coil_core_curl
     PUBLIC
       coil_core_tasks
