@@ -36,7 +36,7 @@ Some WIP documentation.
 ## Platform support
 
 * Linux
-* Windows
+* Windows (broken currently)
 * macOS (planned)
 
 ## Building
@@ -44,8 +44,8 @@ Some WIP documentation.
 [NixOS](https://nixos.org/) is the main development platform, and the Nix configuration is the easiest to use. It contains the following CI-tested attributes:
 
 * `coil-core-nixos` - built using [nixpkgs](https://github.com/NixOS/nixpkgs) dependencies, for use on NixOS
-* `coil-core-ubuntu` - built using Ubuntu LTS
-* `coil-core-windows` - Windows build, using MSVC/clang toolchain
+* ~~`coil-core-ubuntu`~~ (broken currently) - built using Ubuntu LTS
+* ~~`coil-core-windows`~~ (broken currently) - Windows build, using MSVC/clang toolchain
 
 ### Building without Nix
 
