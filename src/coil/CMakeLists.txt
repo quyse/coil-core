@@ -430,6 +430,17 @@ endif()
 list(APPEND coil_core_all_libraries image_transform)
 
 if(TRUE)
+  add_library(coil_core_scene STATIC)
+  target_sources(coil_core_scene PUBLIC FILE_SET CXX_MODULES FILES
+    scene.cppm
+    scene_signals.cppm
+  )
+  target_compile_features(coil_core_scene PUBLIC cxx_std_20)
+  list(APPEND coil_core_libraries scene)
+endif()
+list(APPEND coil_core_all_libraries scene)
+
+if(TRUE)
   add_library(coil_core_render STATIC)
   target_sources(coil_core_render PUBLIC FILE_SET CXX_MODULES FILES
     render.cppm
