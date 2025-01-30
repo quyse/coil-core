@@ -20,6 +20,7 @@ if(TRUE)
   target_sources(coil_core_base PUBLIC FILE_SET CXX_MODULES FILES
     base.cppm
     base_debug.cppm
+    base_signals.cppm
   )
   target_sources(coil_core_base PUBLIC FILE_SET HEADERS FILES
     base.hpp
@@ -433,7 +434,6 @@ if(TRUE)
   add_library(coil_core_scene STATIC)
   target_sources(coil_core_scene PUBLIC FILE_SET CXX_MODULES FILES
     scene.cppm
-    scene_signals.cppm
   )
   target_compile_features(coil_core_scene PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries scene)

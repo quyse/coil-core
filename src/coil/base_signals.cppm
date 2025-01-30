@@ -2,7 +2,7 @@ module;
 
 #include <optional>
 
-export module coil.core.scene.signals;
+export module coil.core.base.signals;
 
 export namespace Coil
 {
@@ -313,19 +313,4 @@ export namespace Coil
       >(std::forward<F>(f), std::move(args)...)
     };
   }
-
-  // convenience operators
-#define OP(op) \
-  template <typename A, typename B> \
-  auto operator op(SignalPtr<A> const& a, SignalPtr<B> const& b) -> SignalPtr<decltype(std::declval<A>() op std::declval<B>())> \
-  { \
-    return MakeDependentSignal([](auto const& a, auto const& b) { return a op b; }, a, b); \
-  }
-
-  OP(+)
-  OP(-)
-  OP(*)
-  OP(/)
-
-#undef OP
 }
