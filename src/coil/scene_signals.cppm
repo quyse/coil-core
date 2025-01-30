@@ -6,12 +6,16 @@ export module coil.core.scene.signals;
 
 export namespace Coil
 {
+  template <typename T>
+  class SignalPtr;
+
   // base signal class, doesn't know what type it returns,
   // but knows what signals depend on it
   class SignalBase
   {
   public:
     SignalBase() = default;
+    // signals are non-copyable and non-movable
     SignalBase(SignalBase const&) = delete;
     SignalBase(SignalBase&&) = delete;
     SignalBase& operator=(SignalBase const&) = delete;
@@ -32,30 +36,37 @@ export namespace Coil
       dependants_.Recalculate();
     }
 
-    struct Cell;
+  public:
+    class Cell;
 
-    struct CellHead
+    class CellHead
     {
+    public:
       void Recalculate()
       {
         for(Cell* pCell = pNext_; pCell; pCell = pCell->pNext_)
         {
-          pCell->pSignal_->Recalculate();
+          pCell->Recalculate();
         }
       }
 
+    private:
       Cell* pNext_ = nullptr;
+
+      friend Cell;
     };
 
-    struct Cell : public CellHead
+    class Cell : public CellHead
     {
-      Cell(SignalBase* pSignal)
-      : pSignal_{pSignal} {}
-
+    public:
       ~Cell()
       {
         Remove();
       }
+
+      // convenience method
+      template <typename T>
+      void SubscribeTo(SignalPtr<T> pSignal);
 
       void AddTo(CellHead& head)
       {
@@ -73,10 +84,52 @@ export namespace Coil
         pPrev_ = nullptr;
       }
 
+      virtual void Recalculate() = 0;
+
+    private:
       CellHead* pPrev_ = nullptr;
+    };
+
+    // cell which passes recalculate to its signal
+    class SignalCell final : public Cell
+    {
+    public:
+      SignalCell(SignalBase* pSignal)
+      : pSignal_{pSignal} {}
+
+      void Recalculate() override
+      {
+        pSignal_->Recalculate();
+      }
+
+    private:
       SignalBase* pSignal_ = nullptr;
     };
 
+    // cell which tracks if recalculate was called
+    class WatchCell final : public Cell
+    {
+    public:
+      bool CheckDirty()
+      {
+        if(dirty_)
+        {
+          dirty_ = false;
+          return true;
+        }
+        return false;
+      }
+
+      void Recalculate() override
+      {
+        dirty_ = true;
+      }
+
+    private:
+      bool dirty_ = false;
+    };
+
+  protected:
     template <typename T>
     struct Dependency;
 
@@ -112,11 +165,17 @@ export namespace Coil
     : SignalPtr::shared_ptr{std::move(pSignal)}
     {}
 
-    T Get() const
+    T const& Get() const
     {
       return this->get()->Get();
     }
   };
+
+  template <typename T>
+  void SignalBase::Cell::SubscribeTo(SignalPtr<T> pSignal)
+  {
+    AddTo(pSignal->dependants_);
+  }
 
   template <typename T>
   struct SignalBase::Dependency
@@ -129,11 +188,11 @@ export namespace Coil
     // not in constructor, because can be moved afterwards
     void Init()
     {
-      cell_.AddTo(pSignal_->dependants_);
+      cell_.SubscribeTo(pSignal_);
     }
 
     SignalPtr<T> pSignal_;
-    Cell cell_;
+    SignalCell cell_;
   };
 
   template <typename T>
@@ -171,13 +230,9 @@ export namespace Coil
     template <typename TT>
     void Set(TT&& arg)
     {
-      T newValue = std::forward<TT>(arg);
-      if(value_ != newValue)
-      {
-        value_ = std::move(newValue);
-        this->dirty_ = false;
-        this->RecalculateDependants();
-      }
+      value_ = std::forward<TT>(arg);
+      this->dirty_ = false;
+      this->RecalculateDependants();
     }
 
   private:
@@ -191,7 +246,7 @@ export namespace Coil
     template <typename FF, typename... AArgs>
     DependentSignal(FF&& f, SignalPtr<AArgs>... pSignals)
     : f_{std::forward<FF>(f)}
-    , dependencies_{{std::move(pSignals), this}...}
+    , dependencies_(SignalBase::Dependency{std::move(pSignals), this}...)
     {
       std::apply([](SignalBase::Dependency<Args>&... dependencies)
       {
@@ -203,16 +258,11 @@ export namespace Coil
     {
       if(!optValue_.has_value() || this->dirty_)
       {
-        T newValue = std::apply([&](SignalBase::Dependency<Args> const&... dependencies) -> T
+        optValue_ = {std::apply([&](SignalBase::Dependency<Args> const&... dependencies) -> T
         {
           return f_(dependencies.pSignal_->Get()...);
-        }, dependencies_);
+        }, dependencies_)};
         this->dirty_ = false;
-        if(!optValue_.has_value() || optValue_.value() != newValue)
-        {
-          optValue_ = {std::move(newValue)};
-          this->RecalculateDependants();
-        }
       }
       return optValue_.value();
     }
