@@ -5,240 +5,195 @@ module;
 
 export module coil.core.scene;
 
+import coil.core.base.signals;
+import coil.core.util;
+
 export namespace Coil
 {
   template <typename Object, typename Manager>
-  concept IsSimpleSceneObjectManagedBy = requires(Object& object, Manager& manager)
+  concept IsSceneObjectManagedBy = requires(Object& object, Manager& manager)
   {
     manager.RegisterObject(object);
     manager.UnregisterObject(object);
   };
 
-  // object can decide to control registration themselves
-  template <typename Object>
-  concept IsCompoundSceneObject = requires(Object& object)
+  template <typename T>
+  concept IsSceneSignal = requires(T t)
   {
-    // just checking that methods are in place
-    object.RegisterCompoundSceneObject(std::tuple{});
-    object.UnregisterCompoundSceneObject(std::tuple{});
+    t.Get();
   };
 
-  template <typename Object, typename Manager>
-  concept IsCompoundSceneObjectManagedBy = Object::template ManagedBy<Manager>;
-
-  template <typename Object, typename Manager>
-  concept IsSceneObjectManagedBy = IsSimpleSceneObjectManagedBy<Object, Manager> || IsCompoundSceneObjectManagedBy<Object, Manager>;
-
-  template <typename Object, typename... Managers>
-  struct CompoundSceneObjectHelper
-  {
-    template <size_t I, typename F, typename... FilteredManagers>
-    static auto ApplyFilteredManagers(F&& f, std::tuple<Managers&...> const& managers, FilteredManagers&... filteredManagers)
-    {
-      if constexpr(I < sizeof...(Managers))
-      {
-        using Manager = std::tuple_element_t<I, std::tuple<Managers...>>;
-        if constexpr(IsCompoundSceneObjectManagedBy<Object, Manager>)
-        {
-          return ApplyFilteredManagers<I + 1, F, FilteredManagers..., Manager>(std::forward<F>(f), managers, filteredManagers..., std::get<I>(managers));
-        }
-        else
-        {
-          return ApplyFilteredManagers<I + 1, F, FilteredManagers...>(std::forward<F>(f), managers, filteredManagers...);
-        }
-      }
-      else
-      {
-        return std::forward<F>(f)(filteredManagers...);
-      }
-    }
-  };
-
-  class SceneObjectBase
-  {
-  public:
-    virtual void Unregister() = 0;
-    virtual ~SceneObjectBase() {}
-  };
-
-  using SceneObjectPtr = std::shared_ptr<SceneObjectBase>;
-
-  template <typename Object, typename... Managers>
-  void RegisterSceneObject(Object& object, std::tuple<Managers&...> const& managers)
-  {
-    if constexpr(IsCompoundSceneObject<Object>)
-    {
-      // skip registration altogether if the object is not interested in any managers
-      if constexpr((IsCompoundSceneObjectManagedBy<Object, Managers> || ...))
-      {
-        // register with only interesting managers
-        CompoundSceneObjectHelper<Object, Managers...>::template ApplyFilteredManagers<0>([&]<typename... FilteredManagers>(FilteredManagers&... filteredManagers)
-        {
-          object.RegisterCompoundSceneObject(std::tuple<FilteredManagers&...>{filteredManagers...});
-        }, managers);
-      }
-    }
-    else
-    {
-      std::apply([&](Managers&... managers)
-      {
-        ([&](Managers& manager)
-        {
-          if constexpr(IsSimpleSceneObjectManagedBy<Object, Managers>)
-          {
-            manager.RegisterObject(object);
-          }
-        }(managers), ...);
-      }, managers);
-    }
-  }
-
-  template <typename Object, typename... Managers>
-  void UnregisterSceneObject(Object& object, std::tuple<Managers&...> const& managers)
-  {
-    if constexpr(IsCompoundSceneObject<Object>)
-    {
-      // skip unregistration altogether if the object was not interested in any managers
-      if constexpr((IsCompoundSceneObjectManagedBy<Object, Managers> || ...))
-      {
-        // unregister with only interesting managers
-        CompoundSceneObjectHelper<Object, Managers...>::template ApplyFilteredManagers<0>([&]<typename... FilteredManagers>(FilteredManagers&... filteredManagers)
-        {
-          object.UnregisterCompoundSceneObject(std::tuple<FilteredManagers&...>{filteredManagers...});
-        }, managers);
-      }
-    }
-    else
-    {
-      std::apply([&](Managers&... managers)
-      {
-        ([&](Managers& manager)
-        {
-          if constexpr(IsSimpleSceneObjectManagedBy<Object, Managers>)
-          {
-            manager.UnregisterObject(object);
-          }
-        }(managers), ...);
-      }, managers);
-    }
-  }
-
-  template <typename... Managers>
+  template <IsDecayed Object>
   class Scene
   {
   private:
-    template <typename Object>
-    class SceneObject final : public SceneObjectBase
-    {
-    public:
-      SceneObject(SceneObject const&) = delete;
-      SceneObject(SceneObject&&) = delete;
-
-      template <typename... Args>
-      SceneObject(Args&&... args)
-      : object_{std::forward<Args>(args)...} {}
-
-      ~SceneObject()
-      {
-        Unregister();
-      }
-
-      void Register(Scene const* pScene)
-      {
-        Unregister();
-
-        pScene_ = pScene;
-
-        RegisterSceneObject<Object, Managers...>(object_, pScene_->managers_);
-      }
-
-      void Unregister() override
-      {
-        if(!pScene_) return;
-
-        UnregisterSceneObject<Object, Managers...>(object_, pScene_->managers_);
-
-        pScene_ = nullptr;
-      }
-
-    private:
-      Scene const* pScene_ = nullptr;
-      Object object_;
-    };
+    Object object_;
 
   public:
-    Scene(Managers&... managers)
-    : managers_{managers...} {}
+    template <IsSameDecayed<Object> T>
+    Scene(T&& object)
+    : object_{std::forward<T>(object)} {}
 
-    template <typename Object>
-    SceneObjectPtr AddObject(Object&& object)
+    template <typename... Managers>
+    void Register(std::tuple<Managers&...> const& managers)
     {
-      auto pObject = std::make_shared<SceneObject<Object>>(std::forward<Object>(object));
-      pObjects_.insert(pObject);
-      pObject->Register(this);
-      return pObject;
-    }
-
-    template <typename Object, typename... Args>
-    SceneObjectPtr AddObject(Args&&... args)
-    {
-      auto pObject = std::make_shared<SceneObject<Object>>(std::forward<Args>(args)...);
-      pObjects_.insert(pObject);
-      pObject->Register(this);
-      return pObject;
-    }
-
-    template <typename Object>
-    void RemoveObject(SceneObjectPtr const& pObject)
-    {
-      pObject->Unregister();
-      pObjects_.erase(pObject);
-    }
-
-    ~Scene()
-    {
-      // unregister objects manually, in case shared pointers are held by someone else
-      for(auto const& pObject : pObjects_)
+      std::apply([&](Managers&... managers)
       {
-        pObject->Unregister();
-      }
-      pObjects_.clear();
+        ([&](Managers& manager)
+        {
+          if constexpr(IsSceneObjectManagedBy<Object, Managers>)
+          {
+            manager.RegisterObject(object_);
+          }
+        }(managers), ...);
+      }, managers);
     }
 
-  private:
-    std::tuple<Managers&...> managers_;
-    std::unordered_set<SceneObjectPtr> pObjects_;
+    template <typename... Managers>
+    void Unregister(std::tuple<Managers&...> const& managers)
+    {
+      std::apply([&](Managers&... managers)
+      {
+        ([&](Managers& manager)
+        {
+          if constexpr(IsSceneObjectManagedBy<Object, Managers>)
+          {
+            manager.UnregisterObject(object_);
+          }
+        }(managers), ...);
+      }, managers);
+    }
+
+    template <typename... Managers>
+    void Update(std::tuple<Managers&...> const& managers)
+    {
+    }
   };
 
-  template <typename... Objects>
-  class CompoundSceneObject
+  template <IsDecayed Object>
+  requires IsSceneSignal<Object>
+  class Scene<Object>
   {
-  public:
-    CompoundSceneObject(Objects&&... objects)
-    : objects_{std::forward<Objects>(objects)...} {}
-
-    template <typename Manager>
-    static constexpr bool ManagedBy = (IsSceneObjectManagedBy<Objects, Manager> || ...);
-
-    template <typename... Managers>
-    void RegisterCompoundSceneObject(std::tuple<Managers&...> const& managers)
-    {
-      std::apply([&](Objects&... objects)
-      {
-        (RegisterSceneObject<Objects, Managers...>(objects, managers), ...);
-      }, objects_);
-    }
-
-    template <typename... Managers>
-    void UnregisterCompoundSceneObject(std::tuple<Managers&...> const& managers)
-    {
-      std::apply([&](Objects&... objects)
-      {
-        (UnregisterSceneObject<Objects, Managers...>(objects, managers), ...);
-      }, objects_);
-    }
-
   private:
-    std::tuple<Objects...> objects_;
+    Object object_;
+
+    using ResultObject = std::decay_t<decltype(object_.Get())>;
+
+    SignalBase::WatchCell cell_;
+    Scene<ResultObject> resultContainer_;
+
+  public:
+    template <IsSameDecayed<Object> T>
+    Scene(T&& object)
+    : object_{std::forward<T>(object)}
+    , resultContainer_{object_.Get()}
+    {}
+
+  public:
+    template <typename... Managers>
+    void Register(std::tuple<Managers&...> const& managers)
+    {
+      cell_.SubscribeTo(object_);
+      resultContainer_.template Register<Managers...>(managers);
+    }
+
+    template <typename... Managers>
+    void Unregister(std::tuple<Managers&...> const& managers)
+    {
+      resultContainer_.template Unregister<Managers...>(managers);
+      cell_.Remove();
+    }
+
+    template <typename... Managers>
+    void Update(std::tuple<Managers&...> const& managers)
+    {
+      if(cell_.CheckDirty())
+      {
+        resultContainer_.template Unregister<Managers...>(managers);
+        resultContainer_ = Scene<ResultObject>{object_.Get()};
+        resultContainer_.template Register<Managers...>(managers);
+      }
+    }
   };
+
+  template <IsDecayed... Objects>
+  class Scene<std::tuple<Objects...>>
+  {
+  private:
+    std::tuple<Scene<Objects>...> containers_;
+
+  public:
+    template <IsSameDecayed<std::tuple<Objects...>> T>
+    Scene(T&& objects)
+    : containers_{std::forward<T>(objects)} {}
+
+    template <typename... Managers>
+    void Register(std::tuple<Managers&...> const& managers)
+    {
+      std::apply([&](Scene<Objects>&... containers)
+      {
+        (containers.template Register<Managers...>(managers), ...);
+      }, containers_);
+    }
+
+    template <typename... Managers>
+    void Unregister(std::tuple<Managers&...> const& managers)
+    {
+      std::apply([&](Scene<Objects>&... containers)
+      {
+        (containers.template Unregister<Managers...>(managers), ...);
+      }, containers_);
+    }
+
+    template <typename... Managers>
+    void Update(std::tuple<Managers&...> const& managers)
+    {
+      std::apply([&](Scene<Objects>&... containers)
+      {
+        (containers.template Update<Managers...>(managers), ...);
+      }, containers_);
+    }
+  };
+
+  template <IsDecayed Object>
+  class Scene<std::optional<Object>>
+  {
+  private:
+    std::optional<Scene<Object>> optContainer_;
+
+  public:
+    template <IsSameDecayed<std::optional<Object>> T>
+    Scene(T&& object)
+    : optContainer_{std::forward<T>(object)} {}
+
+    template <typename... Managers>
+    void Register(std::tuple<Managers&...> const& managers)
+    {
+      if(optContainer_.has_value())
+      {
+        optContainer_.value().template Register<Managers...>(managers);
+      }
+    }
+
+    template <typename... Managers>
+    void Unregister(std::tuple<Managers&...> const& managers)
+    {
+      if(optContainer_.has_value())
+      {
+        optContainer_.value().template Unregister<Managers...>(managers);
+      }
+    }
+
+    template <typename... Managers>
+    void Update(std::tuple<Managers&...> const& managers)
+    {
+      if(optContainer_.has_value())
+      {
+        optContainer_.value().template Update<Managers...>(managers);
+      }
+    }
+  };
+
+  template <typename T>
+  Scene(T&&) -> Scene<std::decay_t<T>>;
 }

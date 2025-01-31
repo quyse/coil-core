@@ -435,6 +435,11 @@ if(TRUE)
   target_sources(coil_core_scene PUBLIC FILE_SET CXX_MODULES FILES
     scene.cppm
   )
+  target_link_libraries(coil_core_scene
+    PUBLIC
+      coil_core_base
+      coil_core_util
+  )
   target_compile_features(coil_core_scene PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries scene)
 endif()

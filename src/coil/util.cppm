@@ -35,6 +35,12 @@ export namespace Coil
   struct Tuple<>
   {
   };
+
+  template <typename T>
+  concept IsDecayed = std::same_as<T, std::decay_t<T>>;
+
+  template <typename P, typename Q>
+  concept IsSameDecayed = std::same_as<std::decay_t<P>, Q>;
 }
 
 namespace std
