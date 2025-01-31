@@ -197,6 +197,11 @@ lib.makeExtensible (self: with self; {
       # broken with modules
       # coil-core-windows
     ;
+    # build at least windows deps
+    coil-core-windows-deps = pkgs.mkShell {
+      name = "coil-core-windows-deps";
+      inputsFrom = [coil-core-windows];
+    };
     boost-windows = windows-pkgs.boost;
   };
 })
