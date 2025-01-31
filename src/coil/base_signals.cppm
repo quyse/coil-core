@@ -21,7 +21,7 @@ export namespace Coil
     SignalBase& operator=(SignalBase const&) = delete;
     SignalBase& operator=(SignalBase&&) = delete;
 
-    virtual ~SignalBase() {}
+    virtual ~SignalBase() = default;
 
   protected:
     void Recalculate()

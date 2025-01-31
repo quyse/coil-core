@@ -69,7 +69,7 @@ export namespace Coil
   private:
     struct FieldInfoBase
     {
-      virtual ~FieldInfoBase() {}
+      virtual ~FieldInfoBase() = default;
       virtual Task<void> SelfLoad(StructTemplate<AssetStructAdapter>& s, Book& book, AssetManager& assetManager, std::string const& namePrefix) = 0;
     };
 

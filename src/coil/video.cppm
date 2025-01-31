@@ -173,7 +173,7 @@ export namespace Coil
   class VideoStreamSource
   {
   public:
-    virtual ~VideoStreamSource() {}
+    virtual ~VideoStreamSource() = default;
 
     virtual VideoStream& CreateStream(Book& book) = 0;
   };

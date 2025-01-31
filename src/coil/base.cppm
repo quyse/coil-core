@@ -83,7 +83,7 @@ export namespace Coil
     {
       ObjectHeader(ObjectHeader* prev)
       : prev(prev) {}
-      virtual ~ObjectHeader() {}
+      virtual ~ObjectHeader() = default;
 
       ObjectHeader* prev;
     };

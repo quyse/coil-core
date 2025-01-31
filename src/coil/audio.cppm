@@ -60,7 +60,7 @@ export namespace Coil
   class AudioStream
   {
   public:
-    virtual ~AudioStream() {}
+    virtual ~AudioStream() = default;
 
     // get stream format
     // must be constant while stream exists
@@ -79,6 +79,8 @@ export namespace Coil
   class AudioDevice
   {
   public:
+    virtual ~AudioDevice() = default;
+
     // resume or stop playing
     virtual void SetPlaying(bool playing) = 0;
   };
@@ -87,7 +89,7 @@ export namespace Coil
   class AudioStreamSource
   {
   public:
-    virtual ~AudioStreamSource() {}
+    virtual ~AudioStreamSource() = default;
 
     // create new stream playing audio from start
     virtual AudioStream& CreateStream(Book& book) = 0;

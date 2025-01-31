@@ -33,7 +33,7 @@ export namespace Coil
     ShaderDataType& operator=(ShaderDataType const&) = delete;
     ShaderDataType& operator=(ShaderDataType&&) = delete;
 
-    virtual ~ShaderDataType() {};
+    virtual ~ShaderDataType() = default;
 
     virtual ShaderDataKind GetKind() const = 0;
     virtual uint32_t GetSize() const = 0;
@@ -383,7 +383,7 @@ export namespace Coil
 
   struct ShaderNode
   {
-    virtual ~ShaderNode() {}
+    virtual ~ShaderNode() = default;
 
     virtual ShaderNodeType GetNodeType() const = 0;
   };

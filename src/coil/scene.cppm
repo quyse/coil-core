@@ -1,7 +1,7 @@
 module;
 
+#include <optional>
 #include <tuple>
-#include <unordered_set>
 
 export module coil.core.scene;
 
@@ -89,7 +89,6 @@ export namespace Coil
     , resultContainer_{object_.Get()}
     {}
 
-  public:
     template <typename... Managers>
     void Register(std::tuple<Managers&...> const& managers)
     {
