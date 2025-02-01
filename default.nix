@@ -32,6 +32,8 @@ lib.makeExtensible (self: with self; {
           # work around linking issue https://github.com/NixOS/nixpkgs/issues/371540
           "-fno-builtin"
         ]}"
+        # optimization
+        "-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON"
       ];
       __structuredAttrs = true;
     });
