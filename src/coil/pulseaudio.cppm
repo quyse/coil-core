@@ -118,7 +118,7 @@ export namespace Coil
     }
 
     template <typename F>
-    void LoopUntil(F&& f)
+    void LoopUntil(F const& f)
     {
       for(;;)
       {
@@ -147,7 +147,7 @@ export namespace Coil
         if(!_currentBuffer)
         {
           // read packet
-          _currentBuffer = _outputStream.Read(deviceBufferSize / _frameSize);
+          _currentBuffer = _outputStream.Read((int32_t)(deviceBufferSize / _frameSize));
         }
 
         // get data from current buffer
