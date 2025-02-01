@@ -147,7 +147,7 @@ export namespace Coil
   class RawImage : public RawImageSlice<T, n>
   {
   public:
-    RawImage(ivec<n> const& size = {})
+    RawImage(ivec<n> const& size = {}, T initial = {})
     {
       this->size = size;
       int32_t p = 1;
@@ -156,7 +156,7 @@ export namespace Coil
         this->pitch(i) = p;
         p *= this->size(i);
       }
-      _pixels.assign(p, {});
+      _pixels.assign(p, initial);
       this->pixels = _pixels.data();
     }
 
