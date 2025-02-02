@@ -170,7 +170,7 @@ int COIL_ENTRY_POINT(std::vector<std::string> args)
   actionSetRegistration.Register(playerInputManager);
   auto actionSetId = playerInputManager.GetActionSetId("InGame");
 
-  RenderContext renderContext;
+  RenderContext renderContext{RenderContext::RenderType::Instances};
 
   window.RunGenerator([&]() -> Generator<std::tuple<>>
   {

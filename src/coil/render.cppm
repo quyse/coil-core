@@ -15,87 +15,94 @@ export namespace Coil
   class RenderContext
   {
   public:
-    RenderContext()
+    enum class RenderType
+    {
+      Triangles,
+      Instances,
+    };
+
+    RenderContext(RenderType renderType)
+    : renderType_{renderType}
     {
       Reset();
     }
 
     void Begin(GraphicsContext& context)
     {
-      _pContext = &context;
-      _maxBufferSize = _pContext->GetMaxBufferSize();
+      pContext_ = &context;
+      maxBufferSize_ = pContext_->GetMaxBufferSize();
       Reset();
     }
 
     void Reset()
     {
-      _indicesCount = 0;
-      for(auto& i : _instanceData)
+      indicesCount_ = 0;
+      for(auto& i : instanceData_)
         i.second.data.clear();
-      _instancesCount = 0;
+      instancesCount_ = 0;
     }
 
     void SetPipeline(GraphicsPipeline& pipeline)
     {
       Flush();
-      _pContext->BindPipeline(pipeline);
+      pContext_->BindPipeline(pipeline);
     }
 
     void SetMesh(GraphicsMesh& mesh)
     {
       Flush();
-      _pContext->BindMesh(mesh);
-      _indicesCount = mesh.GetCount();
-      _instancesCount = 0;
+      pContext_->BindMesh(mesh);
+      indicesCount_ = mesh.GetCount();
+      instancesCount_ = 0;
     }
 
     void SetUniformBuffer(GraphicsSlotSetId slotSetId, GraphicsSlotId slotId, Buffer const& buffer)
     {
       Flush();
-      _pContext->BindUniformBuffer(slotSetId, slotId, buffer);
+      pContext_->BindUniformBuffer(slotSetId, slotId, buffer);
     }
 
     void SetImage(GraphicsSlotSetId slotSetId, GraphicsSlotId slotId, GraphicsImage& image)
     {
       Flush();
-      _pContext->BindImage(slotSetId, slotId, image);
+      pContext_->BindImage(slotSetId, slotId, image);
     }
 
     void SetInstanceData(uint32_t slot, Buffer const& buffer)
     {
-      auto& slotData = _instanceData[slot];
+      auto& slotData = instanceData_[slot];
       slotData.data.insert(slotData.data.end(), (uint8_t*)buffer.data, (uint8_t*)buffer.data + buffer.size);
     }
 
     void EndInstance()
     {
-      ++_instancesCount;
+      ++instancesCount_;
     }
 
     void Flush()
     {
-      if(!_instancesCount) return;
+      if(!instancesCount_) return;
 
       // calculate number of instances per step
       uint32_t instancesPerStep = std::numeric_limits<uint32_t>::max();
-      for(auto& i : _instanceData)
+      for(auto& i : instanceData_)
       {
         if(!i.second.data.empty())
         {
-          i.second.stride = i.second.data.size() / _instancesCount;
-          instancesPerStep = std::min(instancesPerStep, _maxBufferSize / i.second.stride);
+          i.second.stride = i.second.data.size() / instancesCount_;
+          instancesPerStep = std::min(instancesPerStep, maxBufferSize_ / i.second.stride);
         }
       }
 
       // perform steps
-      for(uint32_t k = 0; k < _instancesCount; k += instancesPerStep)
+      for(uint32_t k = 0; k < instancesCount_; k += instancesPerStep)
       {
-        uint32_t instancesToRender = std::min(_instancesCount - k, instancesPerStep);
-        for(auto& i : _instanceData)
+        uint32_t instancesToRender = std::min(instancesCount_ - k, instancesPerStep);
+        for(auto& i : instanceData_)
         {
           if(!i.second.data.empty())
           {
-            _pContext->BindDynamicVertexBuffer(i.first,
+            pContext_->BindDynamicVertexBuffer(i.first,
               Buffer(
                 (uint8_t const*)i.second.data.data() + k * i.second.stride,
                 instancesToRender * i.second.stride
@@ -103,23 +110,32 @@ export namespace Coil
             );
           }
         }
-        _pContext->Draw(_indicesCount, instancesToRender);
+        switch(renderType_)
+        {
+        case RenderType::Triangles:
+          pContext_->Draw(instancesToRender * 3);
+          break;
+        case RenderType::Instances:
+          pContext_->Draw(indicesCount_, instancesToRender);
+          break;
+        }
       }
 
       Reset();
     }
 
   private:
-    GraphicsContext* _pContext = nullptr;
-    uint32_t _maxBufferSize = 0;
-    uint32_t _indicesCount;
+    GraphicsContext* pContext_ = nullptr;
+    uint32_t maxBufferSize_ = 0;
+    uint32_t indicesCount_;
     struct InstanceData
     {
       uint32_t stride;
       std::vector<uint8_t> data;
     };
-    std::unordered_map<uint32_t, InstanceData> _instanceData;
-    uint32_t _instancesCount;
+    std::unordered_map<uint32_t, InstanceData> instanceData_;
+    uint32_t instancesCount_;
+    RenderType renderType_;
   };
 
   template <typename Knob>
@@ -135,17 +151,17 @@ export namespace Coil
   {
   public:
     RenderPipelineKnob(GraphicsPipeline& pipeline)
-    : _pipeline(pipeline) {}
+    : pipeline_(pipeline) {}
 
     using Key = GraphicsPipeline*;
     Key GetKey() const
     {
-      return &_pipeline;
+      return &pipeline_;
     }
 
     void Apply(RenderContext& context) const
     {
-      context.SetPipeline(_pipeline);
+      context.SetPipeline(pipeline_);
     }
     bool Apply(RenderContext& context, RenderPipelineKnob const& previousKnob) const
     {
@@ -157,7 +173,7 @@ export namespace Coil
     }
 
   private:
-    GraphicsPipeline& _pipeline;
+    GraphicsPipeline& pipeline_;
   };
 
   // Uniform buffer knob.
@@ -167,17 +183,17 @@ export namespace Coil
   {
   public:
     RenderUniformBufferKnob(Struct const& data)
-    : _data(data) {}
+    : data_(data) {}
 
     using Key = Struct const*;
     Key GetKey() const
     {
-      return &_data;
+      return &data_;
     }
 
     void Apply(RenderContext& context) const
     {
-      context.SetUniformBuffer(slotSetId, slotId, Buffer(&_data, sizeof(_data)));
+      context.SetUniformBuffer(slotSetId, slotId, Buffer(&data_, sizeof(data_)));
     }
     bool Apply(RenderContext& context, RenderUniformBufferKnob const& previousKnob) const
     {
@@ -189,7 +205,7 @@ export namespace Coil
     }
 
   private:
-    Struct const& _data;
+    Struct const& data_;
   };
 
   // Image knob.
@@ -198,17 +214,17 @@ export namespace Coil
   {
   public:
     RenderImageKnob(GraphicsImage& image)
-    : _image(image) {}
+    : image_(image) {}
 
     using Key = GraphicsImage*;
     Key GetKey() const
     {
-      return &_image;
+      return &image_;
     }
 
     void Apply(RenderContext& context) const
     {
-      context.SetImage(slotSetId, slotId, _image);
+      context.SetImage(slotSetId, slotId, image_);
     }
     bool Apply(RenderContext& context, RenderImageKnob const& previousKnob) const
     {
@@ -220,24 +236,24 @@ export namespace Coil
     }
 
   private:
-    GraphicsImage& _image;
+    GraphicsImage& image_;
   };
 
   class RenderMeshKnob
   {
   public:
     RenderMeshKnob(GraphicsMesh& mesh)
-    : _mesh(mesh) {}
+    : mesh_(mesh) {}
 
     using Key = GraphicsMesh*;
     Key GetKey() const
     {
-      return &_mesh;
+      return &mesh_;
     }
 
     void Apply(RenderContext& context) const
     {
-      context.SetMesh(_mesh);
+      context.SetMesh(mesh_);
     }
     bool Apply(RenderContext& context, RenderMeshKnob const& previousKnob) const
     {
@@ -249,7 +265,44 @@ export namespace Coil
     }
 
   private:
-    GraphicsMesh& _mesh;
+    GraphicsMesh& mesh_;
+  };
+
+  // dynamic triangle mesh data
+  template <typename Vertex, uint32_t slot = 0>
+  class RenderTriangleKnob
+  {
+  public:
+    RenderTriangleKnob(Vertex const (&vertices)[3])
+    {
+      std::copy(vertices, vertices + 3, vertices_);
+    }
+
+    // all triangle knobs should be considered different
+    // use it's own address as key
+    using Key = RenderTriangleKnob const*;
+    Key GetKey() const
+    {
+      return this;
+    }
+
+    void Apply(RenderContext& context) const
+    {
+      context.SetInstanceData(slot, Buffer{&vertices_, sizeof(vertices_)});
+    }
+    bool Apply(RenderContext& context, RenderTriangleKnob const& previousKnob) const
+    {
+      Apply(context);
+      return true;
+    }
+
+    static constexpr RenderContext::RenderType GetRenderType()
+    {
+      return RenderContext::RenderType::Triangles;
+    }
+
+  private:
+    Vertex vertices_[3];
   };
 
   // Instance data knob.
@@ -259,7 +312,7 @@ export namespace Coil
   {
   public:
     RenderInstanceDataKnob(Struct const& data)
-    : _data(data) {}
+    : data_(data) {}
 
     // all instance data knobs should be considered different
     // use it's own address as key
@@ -271,7 +324,7 @@ export namespace Coil
 
     void Apply(RenderContext& context) const
     {
-      context.SetInstanceData(slot, Buffer(&_data, sizeof(_data)));
+      context.SetInstanceData(slot, Buffer(&data_, sizeof(data_)));
     }
     bool Apply(RenderContext& context, RenderInstanceDataKnob const& previousKnob) const
     {
@@ -279,8 +332,13 @@ export namespace Coil
       return true;
     }
 
+    static constexpr RenderContext::RenderType GetRenderType()
+    {
+      return RenderContext::RenderType::Instances;
+    }
+
   private:
-    Struct _data;
+    Struct data_;
   };
 
   // Pseudo-knob just for ordering rendering.
@@ -289,12 +347,12 @@ export namespace Coil
   {
   public:
     RenderOrderKnob(T const& key)
-    : _key(key) {}
+    : key_(key) {}
 
     using Key = T;
     Key GetKey() const
     {
-      return _key;
+      return key_;
     }
 
     void Apply(RenderContext& context) const
@@ -308,8 +366,42 @@ export namespace Coil
     }
 
   private:
-    T _key;
+    T key_;
   };
+
+  template <typename Knob>
+  concept RenderKnobSetsRenderType = IsRenderKnob<Knob> && requires
+  {
+    { Knob::GetRenderType() } -> std::same_as<RenderContext::RenderType>;
+  };
+
+  // get render type of knobs
+  // should be the same for all knobs which set it
+  template <IsRenderKnob... Knobs>
+  requires (RenderKnobSetsRenderType<Knobs> || ...)
+  consteval RenderContext::RenderType GetRenderKnobsRenderType()
+  {
+    std::optional<RenderContext::RenderType> renderType;
+    ([&]<typename Knob>()
+    {
+      if constexpr(RenderKnobSetsRenderType<Knob>)
+      {
+        RenderContext::RenderType const knobRenderType = Knob::GetRenderType();
+        if(renderType.has_value())
+        {
+          if(renderType.value() != knobRenderType)
+          {
+            throw std::runtime_error{"render knobs set different render types"};
+          }
+        }
+        else
+        {
+          renderType = {knobRenderType};
+        }
+      }
+    }.template operator()<Knobs>(), ...);
+    return renderType.value();
+  }
 
   // Tuple knob for combining knobs.
   template <IsRenderKnob... Knobs>
@@ -317,7 +409,7 @@ export namespace Coil
   {
   public:
     RenderTupleKnob(Knobs&&... knobs)
-    : _knobs(std::move(knobs)...) {}
+    : knobs_(std::move(knobs)...) {}
 
     using Key = std::tuple<typename Knobs::Key...>;
     Key GetKey() const
@@ -325,7 +417,7 @@ export namespace Coil
       return std::apply([](Knobs const&... knobs) -> Key
       {
         return { knobs.GetKey()... };
-      }, _knobs);
+      }, knobs_);
     }
 
     void Apply(RenderContext& context) const
@@ -333,11 +425,16 @@ export namespace Coil
       std::apply([&](Knobs const&... knobs)
       {
         (knobs.Apply(context), ...);
-      }, _knobs);
+      }, knobs_);
     }
     bool Apply(RenderContext& context, RenderTupleKnob const& previousKnob) const
     {
       return PartialApply(context, previousKnob, std::index_sequence_for<Knobs...>());
+    }
+
+    static constexpr RenderContext::RenderType GetRenderType() requires (RenderKnobSetsRenderType<Knobs> || ...)
+    {
+      return GetRenderKnobsRenderType<Knobs...>();
     }
 
   private:
@@ -365,15 +462,15 @@ export namespace Coil
     template <size_t i>
     void ApplySubKnob(RenderContext& context) const
     {
-      std::get<i>(_knobs).Apply(context);
+      std::get<i>(knobs_).Apply(context);
     }
     template <size_t i>
     bool PartialApplySubKnob(RenderContext& context, RenderTupleKnob const& previousKnob) const
     {
-      return std::get<i>(_knobs).Apply(context, std::get<i>(previousKnob._knobs));
+      return std::get<i>(knobs_).Apply(context, std::get<i>(previousKnob.knobs_));
     }
 
-    std::tuple<Knobs...> _knobs;
+    std::tuple<Knobs...> knobs_;
   };
 
   // Variant knob for providing multiple paths for knobs.
@@ -384,7 +481,7 @@ export namespace Coil
     template <IsRenderKnob Knob>
     requires (std::constructible_from<std::variant<Knobs...>, Knob&&>)
     RenderVariantKnob(Knob&& knob)
-    : _knob(std::move(knob)) {}
+    : knob_(std::move(knob)) {}
 
     using Key = std::variant<typename Knobs::Key...>;
     Key GetKey() const
@@ -392,7 +489,7 @@ export namespace Coil
       return std::visit([](auto const& knob) -> Key
       {
         return knob;
-      }, _knob);
+      }, knob_);
     }
 
     void Apply(RenderContext& context) const
@@ -400,7 +497,7 @@ export namespace Coil
       std::apply([&](auto const& knob)
       {
         knob.Apply(context);
-      }, _knob);
+      }, knob_);
     }
     bool Apply(RenderContext& context, RenderVariantKnob const& previousKnob) const
     {
@@ -415,64 +512,67 @@ export namespace Coil
           subKnob.Apply(context);
           return true;
         }
-      }, _knob, previousKnob._knob);
+      }, knob_, previousKnob.knob_);
     }
 
   private:
-    std::variant<Knobs...> _knob;
+    std::variant<Knobs...> knob_;
   };
 
   // render cache implementation
-  template <IsRenderKnob Knob>
+  template <RenderKnobSetsRenderType Knob>
   class RenderCacheImpl
   {
   public:
+    RenderCacheImpl()
+    : context_{Knob::GetRenderType()} {}
+
     void Reset()
     {
-      _instances.clear();
-      _instanceIndices.clear();
+      instances_.clear();
+      instanceIndices_.clear();
     }
 
     template <typename... Args>
     void Render(Args&&... args)
     {
       // add instance
-      _instanceIndices.push_back(_instances.size());
-      _instances.push_back({ std::forward<Args>(args)... });
+      instanceIndices_.push_back(instances_.size());
+      instances_.push_back({ std::forward<Args>(args)... });
     }
 
     void Flush(GraphicsContext& context)
     {
-      _context.Begin(context);
+      context_.Begin(context);
 
       // sort instances
-      std::sort(_instanceIndices.begin(), _instanceIndices.end(), [&](size_t a, size_t b)
+      std::sort(instanceIndices_.begin(), instanceIndices_.end(), [&](size_t a, size_t b)
       {
-        return _instances[a].GetKey() < _instances[b].GetKey();
+        return instances_[a].GetKey() < instances_[b].GetKey();
       });
 
       // apply instances in order
-      for(size_t i = 0; i < _instanceIndices.size(); ++i)
+      for(size_t i = 0; i < instanceIndices_.size(); ++i)
       {
-        auto const& instance = _instances[_instanceIndices[i]];
+        auto const& instance = instances_[instanceIndices_[i]];
 
         if(i > 0)
-          instance.Apply(_context, _instances[_instanceIndices[i - 1]]);
+          instance.Apply(context_, instances_[instanceIndices_[i - 1]]);
         else
-          instance.Apply(_context);
+          instance.Apply(context_);
 
-        _context.EndInstance();
+        context_.EndInstance();
       }
 
       Reset();
 
-      _context.Flush();
+      context_.Flush();
     }
 
   private:
-    std::vector<Knob> _instances;
-    std::vector<size_t> _instanceIndices;
-    RenderContext _context;
+    std::vector<Knob> instances_;
+    std::vector<size_t> instanceIndices_;
+    RenderContext context_;
   };
 
   // convenience wrapper

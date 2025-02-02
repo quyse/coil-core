@@ -109,7 +109,7 @@ int COIL_ENTRY_POINT(std::vector<std::string> args)
 
   InputManager& inputManager = window.GetInputManager();
 
-  RenderContext renderContext;
+  RenderContext renderContext{RenderContext::RenderType::Instances};
 
   window.Run([&]()
   {
