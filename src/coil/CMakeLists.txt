@@ -451,6 +451,7 @@ if(TRUE)
     render.cppm
     render_canvas.cppm
     render_math.cppm
+    render_polygons.cppm
   )
   target_link_libraries(coil_core_render
     PUBLIC

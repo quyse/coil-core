@@ -77,25 +77,37 @@ export namespace Coil
 
   template <typename T>
   struct VertexFormatTraits;
+
+  template <IsVertexFormatScalar T>
+  struct VertexFormatTraits<T>
+  {
+    using Value = T;
+    static constexpr size_t components = 1;
+    static constexpr size_t size = sizeof(T);
+    static constexpr VertexFormat format = VertexFormat{VertexFormatScalarTraits<T>::format, 1, sizeof(T)};
+  };
+
   template <IsVertexFormatScalar T, size_t n>
   struct VertexFormatTraits<xvec<T, n, 0>>
   {
     using Value = xvec<T, n>;
     static constexpr size_t components = n;
     static constexpr size_t size = sizeof(xvec<T, n, 0>);
-    static constexpr VertexFormat format = VertexFormat(VertexFormatScalarTraits<T>::format, n, sizeof(xvec<T, n, 0>));
+    static constexpr VertexFormat format = VertexFormat{VertexFormatScalarTraits<T>::format, n, sizeof(xvec<T, n, 0>)};
   };
+
   template <typename T>
   struct VertexFormatTraits<xquat<T, 0>> : public VertexFormatTraits<xvec<T, 4, 0>>
   {
     using Value = xquat<T>;
   };
+
   template <IsVertexFormatNormScalar T, size_t n>
   struct VertexFormatTraits<norm_xvec<T, n>>
   {
     using Value = xvec<float, n>;
     static constexpr size_t components = n;
     static constexpr size_t size = sizeof(norm_xvec<T, n>);
-    static constexpr VertexFormat format = VertexFormat(VertexFormatScalarTraits<T>::normFormat, n, sizeof(norm_xvec<T, n>));
+    static constexpr VertexFormat format = VertexFormat{VertexFormatScalarTraits<T>::normFormat, n, sizeof(norm_xvec<T, n>)};
   };
 }
