@@ -1286,6 +1286,8 @@ export namespace Coil
     // arithmetic
     template <IsScalarOrVector T> ShaderExpression<T> abs(ShaderExpression<T> const& a)
     { return ShaderOperation<ShaderOperationType::Abs, T>(a); }
+    template <IsScalarOrVector T> ShaderExpression<T> sqr(ShaderExpression<T> const& a)
+    { return a * a; }
     template <IsFloatScalarOrVector T> ShaderExpression<T> floor(ShaderExpression<T> const& a)
     { return ShaderOperation<ShaderOperationType::Floor, T>(a); }
     template <IsFloatScalarOrVector T> ShaderExpression<T> ceil(ShaderExpression<T> const& a)
