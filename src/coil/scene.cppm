@@ -2,6 +2,7 @@ module;
 
 #include <optional>
 #include <tuple>
+#include <vector>
 
 export module coil.core.scene;
 
@@ -21,6 +22,12 @@ export namespace Coil
   concept IsSceneSignal = requires(T t)
   {
     t.Get();
+  };
+
+  template <typename T>
+  concept SceneHasUpdate = requires(T t, std::tuple<> const& managers)
+  {
+    t.Update(managers);
   };
 
   template <IsDecayed Object>
@@ -62,11 +69,6 @@ export namespace Coil
           }
         }(managers), ...);
       }, managers);
-    }
-
-    template <typename... Managers>
-    void Update(std::tuple<Managers&...> const& managers)
-    {
     }
   };
 
@@ -145,12 +147,72 @@ export namespace Coil
     }
 
     template <typename... Managers>
+    requires (SceneHasUpdate<Scene<Objects>> || ...)
     void Update(std::tuple<Managers&...> const& managers)
     {
       std::apply([&](Scene<Objects>&... containers)
       {
-        (containers.template Update<Managers...>(managers), ...);
+        ([&]<typename Object>(Scene<Object>& container)
+        {
+          if constexpr(SceneHasUpdate<Object>)
+          {
+            container.template Update<Managers...>(managers);
+          }
+        }(containers), ...);
       }, containers_);
+    }
+  };
+
+  template <IsDecayed Object>
+  class Scene<std::vector<Object>>
+  {
+  private:
+    std::vector<Scene<Object>> containers_;
+
+  public:
+    Scene(std::vector<Object> const& objects)
+    {
+      containers_.reserve(objects.size());
+      for(size_t i = 0; i < objects.size(); ++i)
+      {
+        containers_.push_back(Scene<Object>{objects[i]});
+      }
+    }
+    Scene(std::vector<Object>&& objects)
+    {
+      containers_.reserve(objects.size());
+      for(size_t i = 0; i < objects.size(); ++i)
+      {
+        containers_.push_back(Scene<Object>{std::move(objects[i])});
+      }
+    }
+
+    template <typename... Managers>
+    void Register(std::tuple<Managers&...> const& managers)
+    {
+      for(size_t i = 0; i < containers_.size(); ++i)
+      {
+        containers_[i].template Register<Managers...>(managers);
+      }
+    }
+
+    template <typename... Managers>
+    void Unregister(std::tuple<Managers&...> const& managers)
+    {
+      for(size_t i = 0; i < containers_.size(); ++i)
+      {
+        containers_[i].template Unregister<Managers...>(managers);
+      }
+    }
+
+    template <typename... Managers>
+    requires SceneHasUpdate<Scene<Object>>
+    void Update(std::tuple<Managers&...> const& managers)
+    {
+      for(size_t i = 0; i < containers_.size(); ++i)
+      {
+        containers_[i].template Update<Managers...>(managers);
+      }
     }
   };
 
@@ -184,6 +246,7 @@ export namespace Coil
     }
 
     template <typename... Managers>
+    requires SceneHasUpdate<Scene<Object>>
     void Update(std::tuple<Managers&...> const& managers)
     {
       if(optContainer_.has_value())
