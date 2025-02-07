@@ -462,6 +462,25 @@ if(TRUE)
 endif()
 list(APPEND coil_core_all_libraries render)
 
+if(TRUE)
+  add_library(coil_core_render_realistic STATIC
+    render_realistic_opaque.cpp
+    render_realistic_screenspace.cpp
+  )
+  target_sources(coil_core_render_realistic PUBLIC FILE_SET CXX_MODULES FILES
+    render_realistic.cppm
+    render_realistic_formats.cppm
+  )
+  target_link_libraries(coil_core_render_realistic
+    PUBLIC
+      coil_core_graphics
+      coil_core_render
+  )
+  target_compile_features(coil_core_render_realistic PUBLIC cxx_std_20)
+  list(APPEND coil_core_libraries render_realistic)
+endif()
+list(APPEND coil_core_all_libraries render_realistic)
+
 if(TARGET SPIRV-Headers::SPIRV-Headers)
   add_library(coil_core_spirv STATIC)
   target_sources(coil_core_spirv PUBLIC FILE_SET CXX_MODULES FILES

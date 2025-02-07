@@ -474,64 +474,64 @@ export namespace Coil
 
   namespace PixelFormats
   {
-    constinit PixelFormat const uintR8
+    constexpr PixelFormat const uintR8
     {
       PixelFormat::Components::R,
       PixelFormat::Format::Uint,
       PixelFormat::Size::_8bit,
     };
-    constinit PixelFormat const uintR8S
+    constexpr PixelFormat const uintR8S
     {
       PixelFormat::Components::R,
       PixelFormat::Format::Uint,
       PixelFormat::Size::_8bit,
       true,
     };
-    constinit PixelFormat const uintRGB24
+    constexpr PixelFormat const uintRGB24
     {
       PixelFormat::Components::RGB,
       PixelFormat::Format::Uint,
       PixelFormat::Size::_24bit,
     };
-    constinit PixelFormat const uintRGB24S
+    constexpr PixelFormat const uintRGB24S
     {
       PixelFormat::Components::RGB,
       PixelFormat::Format::Uint,
       PixelFormat::Size::_24bit,
       true,
     };
-    constinit PixelFormat const uintRGBA32
+    constexpr PixelFormat const uintRGBA32
     {
       PixelFormat::Components::RGBA,
       PixelFormat::Format::Uint,
       PixelFormat::Size::_32bit,
     };
-    constinit PixelFormat const uintRGBA32S
+    constexpr PixelFormat const uintRGBA32S
     {
       PixelFormat::Components::RGBA,
       PixelFormat::Format::Uint,
       PixelFormat::Size::_32bit,
       true,
     };
-    constinit PixelFormat const floatR16
+    constexpr PixelFormat const floatR16
     {
       PixelFormat::Components::R,
       PixelFormat::Format::Float,
       PixelFormat::Size::_16bit,
     };
-    constinit PixelFormat const floatR32
+    constexpr PixelFormat const floatR32
     {
       PixelFormat::Components::R,
       PixelFormat::Format::Float,
       PixelFormat::Size::_32bit,
     };
-    constinit PixelFormat const floatRGB32
+    constexpr PixelFormat const floatRGB32
     {
       PixelFormat::Components::RGB,
       PixelFormat::Format::Float,
       PixelFormat::Size::_32bit,
     };
-    constinit PixelFormat const floatRGBA64
+    constexpr PixelFormat const floatRGBA64
     {
       PixelFormat::Components::RGBA,
       PixelFormat::Format::Float,

@@ -311,8 +311,9 @@ export namespace Coil
   class RenderInstanceDataKnob
   {
   public:
-    RenderInstanceDataKnob(Struct const& data)
-    : data_(data) {}
+    template <typename T>
+    RenderInstanceDataKnob(T&& data)
+    : data_{std::forward<T>(data)} {}
 
     // all instance data knobs should be considered different
     // use it's own address as key
@@ -324,7 +325,10 @@ export namespace Coil
 
     void Apply(RenderContext& context) const
     {
-      context.SetInstanceData(slot, Buffer(&data_, sizeof(data_)));
+      if constexpr(sizeof(data_) > 0)
+      {
+        context.SetInstanceData(slot, Buffer(&data_, sizeof(data_)));
+      }
     }
     bool Apply(RenderContext& context, RenderInstanceDataKnob const& previousKnob) const
     {
