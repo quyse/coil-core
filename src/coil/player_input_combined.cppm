@@ -29,7 +29,7 @@ export namespace Coil
       }, _managers);
     }
 
-    ButtonActionId GetButtonActionId(char const* name) override
+    ButtonActionId GetButtonActionId(std::string_view name) override
     {
       return std::apply([&](Managers&... managers) -> ButtonActionId
       {
@@ -39,7 +39,7 @@ export namespace Coil
       }, _managers);
     }
 
-    AnalogActionId GetAnalogActionId(char const* name) override
+    AnalogActionId GetAnalogActionId(std::string_view name) override
     {
       return std::apply([&](Managers&... managers) -> AnalogActionId
       {

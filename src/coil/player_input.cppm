@@ -48,8 +48,8 @@ export namespace Coil
     using AnalogActionId = uint64_t;
 
     virtual ActionSetId GetActionSetId(char const* name) = 0;
-    virtual ButtonActionId GetButtonActionId(char const* name) = 0;
-    virtual AnalogActionId GetAnalogActionId(char const* name) = 0;
+    virtual ButtonActionId GetButtonActionId(std::string_view name) = 0;
+    virtual AnalogActionId GetAnalogActionId(std::string_view name) = 0;
 
     virtual void Update() = 0;
     virtual void ActivateActionSet(ControllerId controllerId, ActionSetId actionSetId) = 0;
@@ -121,8 +121,8 @@ export namespace Coil
       }
 
     protected:
-      template <PlayerInputActionType actionType, auto f>
-      constexpr Field<actionType> RegisterField(char const* name)
+      template <PlayerInputActionType actionType, auto f, Literal name>
+      constexpr Field<actionType> RegisterField()
       {
         return {};
       }
@@ -147,8 +147,8 @@ export namespace Coil
     }
 
   protected:
-    template <PlayerInputActionType actionType, auto f>
-    std::tuple<> RegisterField(char const* name)
+    template <PlayerInputActionType actionType, auto f, Literal name>
+    std::tuple<> RegisterField()
     {
       Actions<actionType>::Get(*this).push_back(
       {
@@ -183,7 +183,7 @@ export namespace Coil
     // button actions
     std::vector<
       std::tuple<
-        char const*,
+        std::string_view,
         typename PlayerInputActionSetStateAdapter::Field<PlayerInputActionType::Button> ActionSet<PlayerInputActionSetStateAdapter>::*,
         PlayerInputManager::ButtonActionId
       >
@@ -191,7 +191,7 @@ export namespace Coil
     // analog actions
     std::vector<
       std::tuple<
-        char const*,
+        std::string_view,
         typename PlayerInputActionSetStateAdapter::Field<PlayerInputActionType::Analog> ActionSet<PlayerInputActionSetStateAdapter>::*,
         PlayerInputManager::AnalogActionId
       >

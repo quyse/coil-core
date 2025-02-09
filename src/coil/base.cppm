@@ -368,9 +368,14 @@ export namespace Coil
       std::copy_n(s, N, this->s);
     }
 
+    constexpr operator std::string_view() const
+    {
+      return std::string_view{s, n};
+    }
+
     friend std::ostream& operator<<(std::ostream& s, Literal const& l)
     {
-      return s << std::string_view(l.s, l.n);
+      return s << std::string_view{l.s, l.n};
     }
 
     char s[N];

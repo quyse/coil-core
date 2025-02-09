@@ -80,14 +80,14 @@ export namespace Coil
       return actionSetId;
     }
 
-    ButtonActionId GetButtonActionId(char const* name) override
+    ButtonActionId GetButtonActionId(std::string_view name) override
     {
-      return _buttonActionsIds.insert({ name, _buttonActionsIds.size() }).first->second;
+      return _buttonActionsIds.insert({ std::string{name}, _buttonActionsIds.size() }).first->second;
     }
 
-    AnalogActionId GetAnalogActionId(char const* name) override
+    AnalogActionId GetAnalogActionId(std::string_view name) override
     {
-      return _analogActionsIds.insert({ name, _analogActionsIds.size() }).first->second;
+      return _analogActionsIds.insert({ std::string{name}, _analogActionsIds.size() }).first->second;
     }
 
     void Update() override

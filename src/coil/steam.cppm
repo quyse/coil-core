@@ -1,6 +1,7 @@
 module;
 
 #include <steam/steam_api.h>
+#include <string_view>
 #include <unordered_map>
 
 export module coil.core.steam;
@@ -107,20 +108,20 @@ export namespace Coil
       return actionSetId;
     }
 
-    ButtonActionId GetButtonActionId(char const* name) override
+    ButtonActionId GetButtonActionId(std::string_view name) override
     {
       ButtonActionId actionId = _buttonActions.size();
       _buttonActions.push_back({
-        .name = name,
+        .name = std::string{name},
       });
       return actionId;
     }
 
-    AnalogActionId GetAnalogActionId(char const* name) override
+    AnalogActionId GetAnalogActionId(std::string_view name) override
     {
       AnalogActionId actionId = _analogActions.size();
       _analogActions.push_back({
-        .name = name,
+        .name = std::string{name},
       });
       return actionId;
     }
@@ -158,7 +159,7 @@ export namespace Coil
           auto& buttonAction = _buttonActions[i];
           if(!buttonAction.handle)
           {
-            buttonAction.handle = _steamInput().GetDigitalActionHandle(buttonAction.name);
+            buttonAction.handle = _steamInput().GetDigitalActionHandle(buttonAction.name.c_str());
           }
 
           auto& buttonState = controllerState.buttonStates[i];
@@ -173,7 +174,7 @@ export namespace Coil
           auto& analogAction = _analogActions[i];
           if(!analogAction.handle)
           {
-            analogAction.handle = _steamInput().GetAnalogActionHandle(analogAction.name);
+            analogAction.handle = _steamInput().GetAnalogActionHandle(analogAction.name.c_str());
           }
 
           auto& analogState = controllerState.analogStates[i];
@@ -230,14 +231,14 @@ export namespace Coil
     struct ButtonAction
     {
       InputDigitalActionHandle_t handle = 0;
-      char const* name = nullptr;
+      std::string name;
     };
     std::vector<ButtonAction> _buttonActions;
 
     struct AnalogAction
     {
       InputAnalogActionHandle_t handle = 0;
-      char const* name = nullptr;
+      std::string name;
     };
     std::vector<AnalogAction> _analogActions;
 

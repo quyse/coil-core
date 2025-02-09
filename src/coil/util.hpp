@@ -28,6 +28,6 @@
 // meta struct field with custom label
 #define COIL_META_STRUCT_FIELD_LABEL(type, name, label) \
   typename Adapter::template Field<type> name = \
-    this->template RegisterField<type, COIL_META_MEMBER_PTR(name)>(label)
+    this->template RegisterField<type, COIL_META_MEMBER_PTR(name), label>()
 // meta struct field
 #define COIL_META_STRUCT_FIELD(type, name) COIL_META_STRUCT_FIELD_LABEL(type, name, #name)

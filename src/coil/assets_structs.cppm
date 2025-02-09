@@ -54,8 +54,8 @@ export namespace Coil
       }
 
     protected:
-      template <typename FieldType, auto fieldPtr>
-      Field<FieldType> RegisterField(std::string_view name)
+      template <typename FieldType, auto fieldPtr, Literal name>
+      Field<FieldType> RegisterField()
       {
         return {};
       }
@@ -76,7 +76,7 @@ export namespace Coil
     template <typename FieldType>
     struct FieldInfo : public FieldInfoBase
     {
-      FieldInfo(std::string&& name, typename AssetStructAdapter::template Field<FieldType> StructTemplate<AssetStructAdapter>::* ptr)
+      FieldInfo(std::string name, typename AssetStructAdapter::template Field<FieldType> StructTemplate<AssetStructAdapter>::* ptr)
       : name(std::move(name)), ptr(ptr) {}
 
       Task<void> SelfLoad(StructTemplate<AssetStructAdapter>& s, Book& book, AssetManager& assetManager, std::string const& namePrefix) override
@@ -101,10 +101,10 @@ export namespace Coil
     };
 
   protected:
-    template <typename FieldType, auto fieldPtr>
-    Field<FieldType> RegisterField(std::string&& name)
+    template <typename FieldType, auto fieldPtr, Literal name>
+    Field<FieldType> RegisterField()
     {
-      _fields.push_back(std::make_unique<FieldInfo<FieldType>>(std::move(name), fieldPtr.template operator()<StructTemplate<AssetStructAdapter>>()));
+      _fields.push_back(std::make_unique<FieldInfo<FieldType>>(std::string{name}, fieldPtr.template operator()<StructTemplate<AssetStructAdapter>>()));
       return {};
     };
 
