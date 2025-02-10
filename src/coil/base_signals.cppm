@@ -235,6 +235,18 @@ export namespace Coil
       this->RecalculateDependants();
     }
 
+    template <typename TT>
+    void SetIfDiffers(TT&& arg) requires requires
+    {
+      { this->value_ != arg } -> std::same_as<bool>;
+    }
+    {
+      if(value_ != arg)
+      {
+        Set<TT>(std::forward<TT>(arg));
+      }
+    }
+
   private:
     T value_;
   };
@@ -281,9 +293,19 @@ export namespace Coil
     : SignalVarPtr::SignalPtr{std::move(pSignal)}
     {}
 
-    void Set(T const& value)
+    template <typename TT>
+    void Set(TT&& arg) const
     {
-      static_cast<VariableSignal<T>*>(this->get())->Set(value);
+      static_cast<VariableSignal<T>*>(this->get())->Set(std::forward<TT>(arg));
+    }
+
+    template <typename TT>
+    void SetIfDiffers(TT&& arg) const requires requires
+    {
+      static_cast<VariableSignal<T>*>(this->get())->SetIfDiffers(std::forward<TT>(arg));
+    }
+    {
+      static_cast<VariableSignal<T>*>(this->get())->SetIfDiffers(std::forward<TT>(arg));
     }
   };
 
