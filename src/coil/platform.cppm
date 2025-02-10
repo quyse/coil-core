@@ -5,11 +5,11 @@ module;
 
 export module coil.core.platform;
 
+import coil.core.base.generator;
 import coil.core.base;
 import coil.core.graphics;
 import coil.core.input;
 import coil.core.math;
-import coil.core.util.generator;
 
 export namespace Coil
 {

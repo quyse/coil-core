@@ -1,11 +1,13 @@
+#include <coil/base_meta.hpp>
 #include <coil/entrypoint.hpp>
-#include <coil/util.hpp>
 #include <coroutine>
 #include <iostream>
 
 import coil.core.appidentity;
 import coil.core.assets.structs;
 import coil.core.assets;
+import coil.core.base.generator;
+import coil.core.base.util;
 import coil.core.base;
 import coil.core.fs;
 import coil.core.graphics.shaders;
@@ -24,8 +26,6 @@ import coil.core.sdl.vulkan;
 import coil.core.sdl;
 import coil.core.steam;
 import coil.core.tasks;
-import coil.core.util.generator;
-import coil.core.util;
 import coil.core.vulkan;
 
 using namespace Coil;

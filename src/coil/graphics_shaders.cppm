@@ -8,10 +8,10 @@ module;
 
 export module coil.core.graphics.shaders;
 
+import coil.core.base.util;
 import coil.core.base;
 import coil.core.graphics.format;
 import coil.core.math;
-import coil.core.util;
 
 export namespace Coil
 {

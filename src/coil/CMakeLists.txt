@@ -20,10 +20,13 @@ if(TRUE)
   target_sources(coil_core_base PUBLIC FILE_SET CXX_MODULES FILES
     base.cppm
     base_debug.cppm
+    base_generator.cppm
     base_signals.cppm
+    base_util.cppm
   )
   target_sources(coil_core_base PUBLIC FILE_SET HEADERS FILES
     base.hpp
+    base_meta.hpp
   )
   target_compile_features(coil_core_base PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries base)
@@ -58,20 +61,6 @@ endif()
 if(WIN32)
   list(APPEND coil_core_all_libraries windows)
 endif()
-
-if(TRUE)
-  add_library(coil_core_util STATIC)
-  target_sources(coil_core_util PUBLIC FILE_SET CXX_MODULES FILES
-    util.cppm
-    util_generator.cppm
-  )
-  target_sources(coil_core_util PUBLIC FILE_SET HEADERS FILES
-    util.hpp
-  )
-  target_compile_features(coil_core_util PUBLIC cxx_std_20)
-  list(APPEND coil_core_libraries util)
-endif()
-list(APPEND coil_core_all_libraries util)
 
 if(TRUE)
   add_library(coil_core_entrypoint INTERFACE)
@@ -369,10 +358,10 @@ if(TRUE)
   )
   target_link_libraries(coil_core_platform
     PUBLIC
+      coil_core_base
       coil_core_graphics
       coil_core_input
       coil_core_math
-      coil_core_util
   )
   target_compile_features(coil_core_platform PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries platform)
@@ -392,7 +381,6 @@ if(TRUE)
       coil_core_image
       coil_core_math
       coil_core_tasks
-      coil_core_util
   )
   target_compile_features(coil_core_graphics PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries graphics)
@@ -438,7 +426,6 @@ if(TRUE)
   target_link_libraries(coil_core_scene
     PUBLIC
       coil_core_base
-      coil_core_util
   )
   target_compile_features(coil_core_scene PUBLIC cxx_std_20)
   list(APPEND coil_core_libraries scene)
@@ -1040,7 +1027,6 @@ if(TARGET coil_core_steam)
     coil_core_sdl
     coil_core_sdl_vulkan
     coil_core_steam
-    coil_core_util
     coil_core_vulkan
   )
   list(APPEND coil_core_examples example_steam)

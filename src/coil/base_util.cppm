@@ -4,7 +4,7 @@ module;
 #include <string_view>
 #include <tuple>
 
-export module coil.core.util;
+export module coil.core.base.util;
 
 export namespace Coil
 {

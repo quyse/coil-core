@@ -7,7 +7,7 @@ module;
 export module coil.core.scene;
 
 import coil.core.base.signals;
-import coil.core.util;
+import coil.core.base.util;
 
 export namespace Coil
 {
