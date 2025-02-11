@@ -4,6 +4,8 @@ module;
 
 export module coil.core.base.signals;
 
+import coil.core.base.events;
+
 export namespace Coil
 {
   template <typename T>
@@ -11,85 +13,20 @@ export namespace Coil
 
   // base signal class, doesn't know what type it returns,
   // but knows what signals depend on it
-  class SignalBase
+  class SignalBase : public Event<>
   {
   public:
     SignalBase() = default;
-    // signals are non-copyable and non-movable
-    SignalBase(SignalBase const&) = delete;
-    SignalBase(SignalBase&&) = delete;
-    SignalBase& operator=(SignalBase const&) = delete;
-    SignalBase& operator=(SignalBase&&) = delete;
-
-    virtual ~SignalBase() = default;
 
   protected:
-    void Recalculate()
+    void Notify() override
     {
       if(dirty_) return;
       dirty_ = true;
-      RecalculateDependants();
-    }
-
-    void RecalculateDependants() const
-    {
-      dependants_.Recalculate();
+      Event<>::Notify();
     }
 
   public:
-    class Cell;
-
-    class CellHead
-    {
-    public:
-      void Recalculate()
-      {
-        for(Cell* pCell = pNext_; pCell; pCell = pCell->pNext_)
-        {
-          pCell->Recalculate();
-        }
-      }
-
-    private:
-      Cell* pNext_ = nullptr;
-
-      friend Cell;
-    };
-
-    class Cell : public CellHead
-    {
-    public:
-      ~Cell()
-      {
-        Remove();
-      }
-
-      // convenience method
-      template <typename T>
-      void SubscribeTo(SignalPtr<T> pSignal);
-
-      void AddTo(CellHead& head)
-      {
-        Remove();
-        pNext_ = head.pNext_;
-        head.pNext_ = this;
-      }
-
-      void Remove()
-      {
-        if(!pNext_ && !pPrev_) return;
-        if(pNext_) pNext_->pPrev_ = pPrev_;
-        if(pPrev_) pPrev_->pNext_ = pNext_;
-        pNext_ = nullptr;
-        pPrev_ = nullptr;
-      }
-
-      virtual void Recalculate() = 0;
-
-    private:
-      CellHead* pPrev_ = nullptr;
-    };
-
     // cell which passes recalculate to its signal
     class SignalCell final : public Cell
     {
@@ -97,9 +34,9 @@ export namespace Coil
       SignalCell(SignalBase* pSignal)
       : pSignal_{pSignal} {}
 
-      void Recalculate() override
+      void Notify() override
       {
-        pSignal_->Recalculate();
+        pSignal_->Notify();
       }
 
     private:
@@ -120,7 +57,7 @@ export namespace Coil
         return false;
       }
 
-      void Recalculate() override
+      void Notify() override
       {
         dirty_ = true;
       }
@@ -133,7 +70,6 @@ export namespace Coil
     template <typename T>
     struct Dependency;
 
-    mutable CellHead dependants_;
     mutable bool dirty_ = true;
   };
 
@@ -170,12 +106,6 @@ export namespace Coil
       return this->get()->Get();
     }
   };
-
-  template <typename T>
-  void SignalBase::Cell::SubscribeTo(SignalPtr<T> pSignal)
-  {
-    AddTo(pSignal->dependants_);
-  }
 
   template <typename T>
   struct SignalBase::Dependency
@@ -232,11 +162,11 @@ export namespace Coil
     {
       value_ = std::forward<TT>(arg);
       this->dirty_ = false;
-      this->RecalculateDependants();
+      this->NotifyDependants();
     }
 
     template <typename TT>
-    void SetIfDiffers(TT&& arg) requires requires
+    bool SetIfDiffers(TT&& arg) requires requires
     {
       { this->value_ != arg } -> std::same_as<bool>;
     }
@@ -244,6 +174,11 @@ export namespace Coil
       if(value_ != arg)
       {
         Set<TT>(std::forward<TT>(arg));
+        return true;
+      }
+      else
+      {
+        return false;
       }
     }
 
@@ -300,12 +235,12 @@ export namespace Coil
     }
 
     template <typename TT>
-    void SetIfDiffers(TT&& arg) const requires requires
+    bool SetIfDiffers(TT&& arg) const requires requires
     {
-      static_cast<VariableSignal<T>*>(this->get())->SetIfDiffers(std::forward<TT>(arg));
+      { static_cast<VariableSignal<T>*>(this->get())->SetIfDiffers(std::forward<TT>(arg)) } -> std::same_as<bool>;
     }
     {
-      static_cast<VariableSignal<T>*>(this->get())->SetIfDiffers(std::forward<TT>(arg));
+      return static_cast<VariableSignal<T>*>(this->get())->SetIfDiffers(std::forward<TT>(arg));
     }
   };
 

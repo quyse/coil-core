@@ -20,6 +20,7 @@ if(TRUE)
   target_sources(coil_core_base PUBLIC FILE_SET CXX_MODULES FILES
     base.cppm
     base_debug.cppm
+    base_events.cppm
     base_generator.cppm
     base_signals.cppm
     base_util.cppm
