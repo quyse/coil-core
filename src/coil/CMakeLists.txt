@@ -21,6 +21,7 @@ if(TRUE)
     base.cppm
     base_debug.cppm
     base_events.cppm
+    base_events_map.cppm
     base_generator.cppm
     base_signals.cppm
     base_util.cppm

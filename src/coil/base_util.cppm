@@ -6,6 +6,21 @@ module;
 
 export module coil.core.base.util;
 
+namespace Coil
+{
+  template <typename T>
+  struct ConstRefExceptScalarOfHelper
+  {
+    using Type = T const&;
+  };
+  template <typename T>
+  requires std::is_scalar_v<T>
+  struct ConstRefExceptScalarOfHelper<T>
+  {
+    using Type = T;
+  };
+}
+
 export namespace Coil
 {
   // tuple with guaranteed order of initialization
@@ -41,6 +56,9 @@ export namespace Coil
 
   template <typename P, typename Q>
   concept IsSameDecayed = std::same_as<std::decay_t<P>, Q>;
+
+  template <typename T>
+  using ConstRefExceptScalarOf = typename ConstRefExceptScalarOfHelper<T>::Type;
 }
 
 namespace std

@@ -4,6 +4,8 @@ module;
 
 export module coil.core.base.events;
 
+import coil.core.base.util;
+
 namespace Coil
 {
   // helper for skipping argument if it's void
@@ -42,13 +44,13 @@ export namespace Coil
 
     virtual ~Event() = default;
 
-    virtual void Notify(Args const&... args)
+    virtual void Notify(ConstRefExceptScalarOf<Args>... args)
     {
       NotifyDependants(args...);
     }
 
   protected:
-    void NotifyDependants(Args const&... args) const
+    void NotifyDependants(ConstRefExceptScalarOf<Args>... args) const
     {
       dependants_.Notify(args...);
     }
@@ -59,7 +61,7 @@ export namespace Coil
     class CellHead
     {
     public:
-      void Notify(Args const&... args)
+      void Notify(ConstRefExceptScalarOf<Args>... args)
       {
         for(Cell* pCell = pNext_; pCell; pCell = pCell->pNext_)
         {
@@ -103,7 +105,7 @@ export namespace Coil
         pPrev_ = nullptr;
       }
 
-      virtual void Notify(Args const&... args) = 0;
+      virtual void Notify(ConstRefExceptScalarOf<Args>... args) = 0;
 
     private:
       CellHead* pPrev_ = nullptr;
@@ -111,7 +113,7 @@ export namespace Coil
 
     // cell which passes events to a handler
     template <typename Handler>
-    requires requires(Handler handler, Args const&... args)
+    requires requires(Handler handler, ConstRefExceptScalarOf<Args>... args)
     {
       handler(args...);
     }
@@ -121,7 +123,7 @@ export namespace Coil
       HandlerCell(Handler&& handler)
       : handler_{std::forward<Handler>(handler)} {}
 
-      void Notify(Args const&... args) override
+      void Notify(ConstRefExceptScalarOf<Args>... args) override
       {
         handler_(args...);
       }
@@ -154,7 +156,7 @@ export namespace Coil
     : EventPtr::shared_ptr{std::move(pEvent)}
     {}
 
-    void Notify(Args const&... args) const
+    void Notify(ConstRefExceptScalarOf<Args>... args) const
     {
       this->get()->Notify(args...);
     }
@@ -174,7 +176,7 @@ export namespace Coil
     }
 
   private:
-    void NotifyFromDependency(Args const&... args)
+    void NotifyFromDependency(ConstRefExceptScalarOf<Args>... args)
     {
       if constexpr(std::same_as<EventHandlerResult<Handler, Args...>, void>)
       {
@@ -193,7 +195,7 @@ export namespace Coil
       DependencyCell(DependentEvent* pEvent)
       : pEvent_{pEvent} {}
 
-      void Notify(Args const&... args) override
+      void Notify(ConstRefExceptScalarOf<Args>... args) override
       {
         pEvent_->NotifyFromDependency(args...);
       }
