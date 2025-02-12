@@ -1,7 +1,11 @@
 module;
 
 #include <vulkan/vulkan.h>
+#include <functional>
 #include <map>
+#include <unordered_map>
+#include <variant>
+#include <vector>
 
 export module coil.core.vulkan;
 

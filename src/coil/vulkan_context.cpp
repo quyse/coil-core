@@ -3,6 +3,7 @@ module;
 #include <vulkan/vulkan.h>
 #include <concepts>
 #include <cstring>
+#include <variant>
 #include <vector>
 
 module coil.core.vulkan;

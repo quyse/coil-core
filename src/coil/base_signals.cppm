@@ -1,5 +1,6 @@
 module;
 
+#include <memory>
 #include <optional>
 
 export module coil.core.base.signals;

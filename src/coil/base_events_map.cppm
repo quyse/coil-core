@@ -1,5 +1,6 @@
 module;
 
+#include <memory>
 #include <unordered_map>
 
 export module coil.core.base.events.map;

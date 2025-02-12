@@ -4,6 +4,7 @@ module;
 #include <memory>
 #include <mutex>
 #include <unordered_set>
+#include <vector>
 
 export module coil.core.audio.soft;
 

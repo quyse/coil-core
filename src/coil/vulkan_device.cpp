@@ -1,7 +1,9 @@
 module;
 
 #include <vulkan/vulkan.h>
+#include <algorithm>
 #include <functional>
+#include <variant>
 
 module coil.core.vulkan;
 

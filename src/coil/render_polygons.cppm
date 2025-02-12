@@ -1,5 +1,6 @@
 module;
 
+#include <alloca.h>
 #include <span>
 
 export module coil.core.render.polygons;

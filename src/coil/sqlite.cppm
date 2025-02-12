@@ -2,6 +2,7 @@ module;
 
 #include <sqlite3.h>
 #include <concepts>
+#include <optional>
 #include <string>
 
 export module coil.core.sqlite;

@@ -3,6 +3,7 @@ module;
 #include <cmath>
 #include <compare>
 #include <concepts>
+#include <cstdlib>
 #include <iterator>
 
 export module coil.core.math;

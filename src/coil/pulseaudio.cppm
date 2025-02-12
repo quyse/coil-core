@@ -1,6 +1,7 @@
 module;
 
 #include <pulse/pulseaudio.h>
+#include <bit>
 #include <thread>
 
 export module coil.core.audio.pulseaudio;

@@ -3,6 +3,7 @@ module;
 #include <concepts>
 #include <cstdint>
 #include <tuple>
+#include <utility>
 
 export module coil.core.localization;
 

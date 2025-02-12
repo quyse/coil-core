@@ -1,4 +1,5 @@
 #include <coil/entrypoint.hpp>
+#include <variant>
 
 import coil.core.appidentity;
 import coil.core.base;

@@ -1,6 +1,9 @@
 module;
 
+#include <cmath>
 #include <map>
+#include <string_view>
+#include <unordered_map>
 
 export module coil.core.fonts.cache;
 

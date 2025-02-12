@@ -1,7 +1,9 @@
 module;
 
+#include <algorithm>
 #include <functional>
 #include <unordered_map>
+#include <variant>
 #include <vector>
 
 export module coil.core.render;

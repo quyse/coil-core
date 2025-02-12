@@ -6,7 +6,7 @@ include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 include(CTest)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 26)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
@@ -30,7 +30,7 @@ if(TRUE)
     base.hpp
     base_meta.hpp
   )
-  target_compile_features(coil_core_base PUBLIC cxx_std_20)
+  target_compile_features(coil_core_base PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries base)
 endif()
 list(APPEND coil_core_all_libraries base)
@@ -40,7 +40,7 @@ if(TRUE)
   target_sources(coil_core_unicode PUBLIC FILE_SET CXX_MODULES FILES
     unicode.cppm
   )
-  target_compile_features(coil_core_unicode PUBLIC cxx_std_20)
+  target_compile_features(coil_core_unicode PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries unicode)
 endif()
 list(APPEND coil_core_all_libraries unicode)
@@ -57,7 +57,7 @@ if(WIN32)
     PUBLIC
       coil_core_base
   )
-  target_compile_features(coil_core_windows PUBLIC cxx_std_20)
+  target_compile_features(coil_core_windows PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries windows)
 endif()
 if(WIN32)
@@ -92,7 +92,7 @@ if(TRUE)
     INTERFACE
       $<$<BOOL:${WIN32}>:$<IF:$<BOOL:${MSVC}>,/subsystem:console,-mconsole>>
   )
-  target_compile_features(coil_core_entrypoint_console PUBLIC cxx_std_20)
+  target_compile_features(coil_core_entrypoint_console PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries entrypoint_console)
 endif()
 list(APPEND coil_core_all_libraries entrypoint_console)
@@ -112,7 +112,7 @@ if(TRUE)
     INTERFACE
       $<$<BOOL:${WIN32}>:$<IF:$<BOOL:${MSVC}>,/subsystem:windows,-mwindows>>
   )
-  target_compile_features(coil_core_entrypoint_graphical PUBLIC cxx_std_20)
+  target_compile_features(coil_core_entrypoint_graphical PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries entrypoint_graphical)
 endif()
 list(APPEND coil_core_all_libraries entrypoint_graphical)
@@ -122,7 +122,7 @@ if(TRUE)
   target_sources(coil_core_appidentity PUBLIC FILE_SET CXX_MODULES FILES
     appidentity.cppm
   )
-  target_compile_features(coil_core_appidentity PUBLIC cxx_std_20)
+  target_compile_features(coil_core_appidentity PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries appidentity)
 endif()
 list(APPEND coil_core_all_libraries appidentity)
@@ -136,7 +136,7 @@ if(TRUE)
     PUBLIC
       coil_core_base
   )
-  target_compile_features(coil_core_data PUBLIC cxx_std_20)
+  target_compile_features(coil_core_data PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries data)
 endif()
 list(APPEND coil_core_all_libraries data)
@@ -152,7 +152,7 @@ if(TRUE)
       coil_core_json
       coil_core_tasks
   )
-  target_compile_features(coil_core_assets PUBLIC cxx_std_20)
+  target_compile_features(coil_core_assets PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries assets)
 endif()
 list(APPEND coil_core_all_libraries assets)
@@ -169,7 +169,7 @@ if(TRUE)
       coil_core_unicode
       $<$<BOOL:${WIN32}>:coil_core_windows>
   )
-  target_compile_features(coil_core_fs PUBLIC cxx_std_20)
+  target_compile_features(coil_core_fs PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries fs)
 endif()
 list(APPEND coil_core_all_libraries fs)
@@ -186,7 +186,7 @@ if(TARGET coil_core_appidentity)
       $<$<BOOL:${WIN32}>:coil_core_unicode>
       $<$<BOOL:${WIN32}>:coil_core_windows>
   )
-  target_compile_features(coil_core_process PUBLIC cxx_std_20)
+  target_compile_features(coil_core_process PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries process)
 endif()
 list(APPEND coil_core_all_libraries process)
@@ -198,7 +198,7 @@ if(TRUE)
     math_debug.cppm
     math_geometry.cppm
   )
-  target_compile_features(coil_core_math PUBLIC cxx_std_20)
+  target_compile_features(coil_core_math PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries math)
 endif()
 list(APPEND coil_core_all_libraries math)
@@ -217,7 +217,7 @@ if(TRUE)
     PUBLIC
       coil_core_math
   )
-  target_compile_features(coil_core_math_determ PUBLIC cxx_std_20)
+  target_compile_features(coil_core_math_determ PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries math_determ)
 endif()
 list(APPEND coil_core_all_libraries math_determ)
@@ -235,7 +235,7 @@ if(TRUE)
       coil_core_base
       coil_core_data
   )
-  target_compile_features(coil_core_tasks PUBLIC cxx_std_20)
+  target_compile_features(coil_core_tasks PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries tasks)
 endif()
 list(APPEND coil_core_all_libraries tasks)
@@ -254,7 +254,7 @@ if(TARGET nlohmann_json::nlohmann_json)
       coil_core_math
       nlohmann_json::nlohmann_json
   )
-  target_compile_features(coil_core_json PUBLIC cxx_std_20)
+  target_compile_features(coil_core_json PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries json)
 endif()
 list(APPEND coil_core_all_libraries json)
@@ -269,7 +269,7 @@ if(TRUE)
       coil_core_base
       $<$<BOOL:${WIN32}>:coil_core_windows>
   )
-  target_compile_features(coil_core_time PUBLIC cxx_std_20)
+  target_compile_features(coil_core_time PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries time)
 endif()
 list(APPEND coil_core_all_libraries time)
@@ -283,7 +283,7 @@ if(TRUE)
     PUBLIC
       coil_core_base
   )
-  target_compile_features(coil_core_text PUBLIC cxx_std_20)
+  target_compile_features(coil_core_text PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries text)
 endif()
 list(APPEND coil_core_all_libraries text)
@@ -297,7 +297,7 @@ if(TRUE)
     PUBLIC
       coil_core_text
   )
-  target_compile_features(coil_core_localization PUBLIC cxx_std_20)
+  target_compile_features(coil_core_localization PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries localization)
 endif()
 list(APPEND coil_core_all_libraries localization)
@@ -317,7 +317,7 @@ if(TRUE)
       coil_core_math
       coil_core_unicode
   )
-  target_compile_features(coil_core_input PUBLIC cxx_std_20)
+  target_compile_features(coil_core_input PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries input)
 endif()
 list(APPEND coil_core_all_libraries input)
@@ -332,7 +332,7 @@ if(TRUE)
     PUBLIC
       coil_core_base
   )
-  target_compile_features(coil_core_player_input PUBLIC cxx_std_20)
+  target_compile_features(coil_core_player_input PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries player_input)
 endif()
 list(APPEND coil_core_all_libraries player_input)
@@ -348,7 +348,7 @@ if(TRUE)
       coil_core_json
       coil_core_player_input
   )
-  target_compile_features(coil_core_player_input_native PUBLIC cxx_std_20)
+  target_compile_features(coil_core_player_input_native PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries player_input_native)
 endif()
 list(APPEND coil_core_all_libraries player_input_native)
@@ -365,7 +365,7 @@ if(TRUE)
       coil_core_input
       coil_core_math
   )
-  target_compile_features(coil_core_platform PUBLIC cxx_std_20)
+  target_compile_features(coil_core_platform PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries platform)
 endif()
 list(APPEND coil_core_all_libraries platform)
@@ -384,7 +384,7 @@ if(TRUE)
       coil_core_math
       coil_core_tasks
   )
-  target_compile_features(coil_core_graphics PUBLIC cxx_std_20)
+  target_compile_features(coil_core_graphics PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries graphics)
 endif()
 list(APPEND coil_core_all_libraries graphics)
@@ -400,7 +400,7 @@ if(TRUE)
       coil_core_base
       coil_core_math
   )
-  target_compile_features(coil_core_image PUBLIC cxx_std_20)
+  target_compile_features(coil_core_image PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries image)
 endif()
 list(APPEND coil_core_all_libraries image)
@@ -415,7 +415,7 @@ if(TRUE)
       coil_core_image
       coil_core_tasks
   )
-  target_compile_features(coil_core_image_transform PUBLIC cxx_std_20)
+  target_compile_features(coil_core_image_transform PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries image_transform)
 endif()
 list(APPEND coil_core_all_libraries image_transform)
@@ -429,7 +429,7 @@ if(TRUE)
     PUBLIC
       coil_core_base
   )
-  target_compile_features(coil_core_scene PUBLIC cxx_std_20)
+  target_compile_features(coil_core_scene PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries scene)
 endif()
 list(APPEND coil_core_all_libraries scene)
@@ -446,7 +446,7 @@ if(TRUE)
     PUBLIC
       coil_core_graphics
   )
-  target_compile_features(coil_core_render PUBLIC cxx_std_20)
+  target_compile_features(coil_core_render PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries render)
 endif()
 list(APPEND coil_core_all_libraries render)
@@ -465,7 +465,7 @@ if(TRUE)
       coil_core_graphics
       coil_core_render
   )
-  target_compile_features(coil_core_render_realistic PUBLIC cxx_std_20)
+  target_compile_features(coil_core_render_realistic PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries render_realistic)
 endif()
 list(APPEND coil_core_all_libraries render_realistic)
@@ -480,7 +480,7 @@ if(TARGET SPIRV-Headers::SPIRV-Headers)
       coil_core_graphics
       SPIRV-Headers::SPIRV-Headers
   )
-  target_compile_features(coil_core_spirv PUBLIC cxx_std_20)
+  target_compile_features(coil_core_spirv PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries spirv)
 endif()
 list(APPEND coil_core_all_libraries spirv)
@@ -508,7 +508,7 @@ if(TARGET coil_core_spirv AND TARGET Vulkan::Vulkan)
       coil_core_spirv
       Vulkan::Vulkan
   )
-  target_compile_features(coil_core_vulkan PUBLIC cxx_std_20)
+  target_compile_features(coil_core_vulkan PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries vulkan)
 endif()
 list(APPEND coil_core_all_libraries vulkan)
@@ -525,7 +525,7 @@ if(TARGET SDL2::SDL2)
       coil_core_unicode
       SDL2::SDL2
   )
-  target_compile_features(coil_core_sdl PUBLIC cxx_std_20)
+  target_compile_features(coil_core_sdl PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries sdl)
 endif()
 list(APPEND coil_core_all_libraries sdl)
@@ -540,7 +540,7 @@ if(TARGET coil_core_vulkan AND TARGET coil_core_sdl)
       coil_core_vulkan
       coil_core_sdl
   )
-  target_compile_features(coil_core_sdl_vulkan PUBLIC cxx_std_20)
+  target_compile_features(coil_core_sdl_vulkan PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries sdl_vulkan)
 endif()
 list(APPEND coil_core_all_libraries sdl_vulkan)
@@ -554,7 +554,7 @@ if(TRUE)
     PUBLIC
       coil_core_math
   )
-  target_compile_features(coil_core_logic PUBLIC cxx_std_20)
+  target_compile_features(coil_core_logic PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries logic)
 endif()
 list(APPEND coil_core_all_libraries logic)
@@ -571,7 +571,7 @@ if(TARGET PNG::PNG)
       coil_core_tasks
       PNG::PNG
   )
-  target_compile_features(coil_core_image_png PUBLIC cxx_std_20)
+  target_compile_features(coil_core_image_png PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries image_png)
 endif()
 list(APPEND coil_core_all_libraries image_png)
@@ -588,7 +588,7 @@ if(TARGET Squish::Squish)
     PRIVATE
       Squish::Squish
   )
-  target_compile_features(coil_core_image_compress PUBLIC cxx_std_20)
+  target_compile_features(coil_core_image_compress PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries image_compress)
 endif()
 list(APPEND coil_core_all_libraries image_compress)
@@ -603,7 +603,7 @@ if(TARGET zstd::libzstd_shared)
       coil_core_tasks
       zstd::libzstd_shared
   )
-  target_compile_features(coil_core_compress_zstd PUBLIC cxx_std_20)
+  target_compile_features(coil_core_compress_zstd PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries compress_zstd)
 endif()
 list(APPEND coil_core_all_libraries compress_zstd)
@@ -617,7 +617,7 @@ if(TRUE)
     PUBLIC
       coil_core_math
   )
-  target_compile_features(coil_core_mesh PUBLIC cxx_std_20)
+  target_compile_features(coil_core_mesh PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries mesh)
 endif()
 list(APPEND coil_core_all_libraries mesh)
@@ -635,7 +635,7 @@ if(TARGET coil_core_json)
       coil_core_data
       coil_core_json
   )
-  target_compile_features(coil_core_gltf PUBLIC cxx_std_20)
+  target_compile_features(coil_core_gltf PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries gltf)
 endif()
 list(APPEND coil_core_all_libraries gltf)
@@ -650,7 +650,7 @@ if(TARGET SQLite::SQLite3)
       coil_core_base
       SQLite::SQLite3
   )
-  target_compile_features(coil_core_sqlite PUBLIC cxx_std_20)
+  target_compile_features(coil_core_sqlite PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries sqlite)
 endif()
 list(APPEND coil_core_all_libraries sqlite)
@@ -667,7 +667,7 @@ if(TARGET MbedTLS::mbedcrypto)
       coil_core_base
       MbedTLS::mbedcrypto
   )
-  target_compile_features(coil_core_crypto PUBLIC cxx_std_20)
+  target_compile_features(coil_core_crypto PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries crypto)
 endif()
 list(APPEND coil_core_all_libraries crypto)
@@ -683,7 +683,7 @@ if(TRUE)
       coil_core_image
       coil_core_localization
   )
-  target_compile_features(coil_core_fonts PUBLIC cxx_std_20)
+  target_compile_features(coil_core_fonts PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries fonts)
 endif()
 list(APPEND coil_core_all_libraries fonts)
@@ -698,7 +698,7 @@ if(TARGET coil_core_fonts)
       coil_core_fonts
       coil_core_render
   )
-  target_compile_features(coil_core_render_fonts PUBLIC cxx_std_20)
+  target_compile_features(coil_core_render_fonts PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries render_fonts)
 endif()
 list(APPEND coil_core_all_libraries render_fonts)
@@ -715,7 +715,7 @@ if(TARGET Freetype::Freetype AND TARGET harfbuzz::harfbuzz)
       Freetype::Freetype
       harfbuzz::harfbuzz
   )
-  target_compile_features(coil_core_fthb PUBLIC cxx_std_20)
+  target_compile_features(coil_core_fthb PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries fthb)
 endif()
 list(APPEND coil_core_all_libraries fthb)
@@ -772,7 +772,7 @@ if(TARGET coil_core_wayland_protocols)
       PkgConfig::XkbCommon
   )
   target_include_directories(coil_core_wayland PRIVATE ${CMAKE_BINARY_DIR})
-  target_compile_features(coil_core_wayland PUBLIC cxx_std_20)
+  target_compile_features(coil_core_wayland PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries wayland)
 endif()
 if(UNIX)
@@ -789,7 +789,7 @@ if(TARGET coil_core_vulkan AND TARGET coil_core_wayland)
       coil_core_vulkan
       coil_core_wayland
   )
-  target_compile_features(coil_core_wayland_vulkan PUBLIC cxx_std_20)
+  target_compile_features(coil_core_wayland_vulkan PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries wayland_vulkan)
 endif()
 if(UNIX)
@@ -806,7 +806,7 @@ if(TRUE)
     PUBLIC
       coil_core_base
   )
-  target_compile_features(coil_core_audio PUBLIC cxx_std_20)
+  target_compile_features(coil_core_audio PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries audio)
 endif()
 list(APPEND coil_core_all_libraries audio)
@@ -820,7 +820,7 @@ if(TRUE)
     PUBLIC
       coil_core_image
   )
-  target_compile_features(coil_core_video PUBLIC cxx_std_20)
+  target_compile_features(coil_core_video PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries video)
 endif()
 list(APPEND coil_core_all_libraries video)
@@ -835,7 +835,7 @@ if(WIN32)
       coil_core_audio
       coil_core_windows
   )
-  target_compile_features(coil_core_wincoreaudio PUBLIC cxx_std_20)
+  target_compile_features(coil_core_wincoreaudio PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries wincoreaudio)
 endif()
 if(WIN32)
@@ -853,7 +853,7 @@ if(TARGET PulseAudio::PulseAudio)
       coil_core_audio
       PulseAudio::PulseAudio
   )
-  target_compile_features(coil_core_pulseaudio PUBLIC cxx_std_20)
+  target_compile_features(coil_core_pulseaudio PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries pulseaudio)
 endif()
 if(UNIX)
@@ -870,7 +870,7 @@ if(TARGET Ogg::ogg)
       coil_core_tasks
       Ogg::ogg
   )
-  target_compile_features(coil_core_ogg PUBLIC cxx_std_20)
+  target_compile_features(coil_core_ogg PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries ogg)
 endif()
 list(APPEND coil_core_all_libraries ogg)
@@ -885,7 +885,7 @@ if(TARGET Webm::Webm)
       coil_core_tasks
       Webm::Webm
   )
-  target_compile_features(coil_core_webm PUBLIC cxx_std_20)
+  target_compile_features(coil_core_webm PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries webm)
 endif()
 list(APPEND coil_core_all_libraries webm)
@@ -902,7 +902,7 @@ if(TARGET Opus::opus)
     PRIVATE
       Opus::opus
   )
-  target_compile_features(coil_core_opus PUBLIC cxx_std_20)
+  target_compile_features(coil_core_opus PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries opus)
 endif()
 list(APPEND coil_core_all_libraries opus)
@@ -918,7 +918,7 @@ if(TARGET libgav1::libgav1)
       coil_core_video
       libgav1::libgav1
   )
-  target_compile_features(coil_core_av1 PUBLIC cxx_std_20)
+  target_compile_features(coil_core_av1 PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries av1)
 endif()
 list(APPEND coil_core_all_libraries av1)
@@ -936,7 +936,7 @@ if(TARGET CURL::libcurl)
       coil_core_tasks
       CURL::libcurl
   )
-  target_compile_features(coil_core_curl PUBLIC cxx_std_20)
+  target_compile_features(coil_core_curl PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries curl)
 endif()
 list(APPEND coil_core_all_libraries curl)
@@ -951,7 +951,7 @@ if(TARGET Steam::Steam)
       coil_core_player_input
       Steam::Steam
   )
-  target_compile_features(coil_core_steam PUBLIC cxx_std_20)
+  target_compile_features(coil_core_steam PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries steam)
 endif()
 list(APPEND coil_core_all_libraries steam)

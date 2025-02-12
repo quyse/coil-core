@@ -1,5 +1,6 @@
 module;
 
+#include <optional>
 #include <vector>
 
 export module coil.core.fonts;

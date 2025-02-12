@@ -1,5 +1,6 @@
 module;
 
+#include <algorithm>
 #include <string_view>
 
 export module coil.core.video;

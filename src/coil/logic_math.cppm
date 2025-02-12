@@ -1,6 +1,7 @@
 module;
 
 #include <algorithm>
+#include <cmath>
 
 export module coil.core.logic.math;
 

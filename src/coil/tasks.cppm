@@ -1,17 +1,18 @@
 module;
 
 #include <concepts>
-#include <coroutine>
-#include <optional>
-#include <memory>
-#include <thread>
-#include <queue>
-#include <vector>
-#include <mutex>
 #include <condition_variable>
-#include <variant>
+#include <coroutine>
+#include <exception>
 #include <latch>
+#include <memory>
+#include <mutex>
+#include <optional>
+#include <queue>
+#include <thread>
 #include <type_traits>
+#include <variant>
+#include <vector>
 
 export module coil.core.tasks;
 

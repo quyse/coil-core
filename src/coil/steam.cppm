@@ -1,6 +1,7 @@
 module;
 
 #include <steam/steam_api.h>
+#include <memory>
 #include <string_view>
 #include <unordered_map>
 
