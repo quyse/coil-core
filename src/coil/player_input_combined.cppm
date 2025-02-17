@@ -1,11 +1,15 @@
 module;
 
 #include <concepts>
+#include <map>
 #include <tuple>
+#include <unordered_map>
 #include <vector>
 
 export module coil.core.player_input.combined;
 
+import coil.core.base.events.map;
+import coil.core.base.events;
 import coil.core.player_input;
 
 export namespace Coil
@@ -15,38 +19,45 @@ export namespace Coil
   {
   public:
     CombinedPlayerInputManager(Managers&... managers)
-    : _managers(managers...) {}
+    : managers_{managers...}
+    {
+      // initialze cells watching controller ids
+      size_t managerIndex = 0;
+      ((cells_[managerIndex].Init(this, &managers, managerIndex, managers.GetControllers()->GetEvent()), ++managerIndex), ...);
+      // initialize ids
+      pControllersIds_ = MakeSyncSet<ControllerId>();
+    }
 
     // PlayerInputManager's methods
 
-    ActionSetId GetActionSetId(char const* name) override
+    ActionSetId GetActionSetId(std::string_view name) override
     {
       return std::apply([&](Managers&... managers) -> ActionSetId
       {
-        ActionSetId actionSetId = _actionSets.size();
-        _actionSets.push_back({ managers.GetActionSetId(name)... });
+        ActionSetId actionSetId = actionSets_.size();
+        actionSets_.push_back({ managers.GetActionSetId(name)... });
         return actionSetId;
-      }, _managers);
+      }, managers_);
     }
 
     ButtonActionId GetButtonActionId(std::string_view name) override
     {
       return std::apply([&](Managers&... managers) -> ButtonActionId
       {
-        ButtonActionId actionId = _buttonActions.size();
-        _buttonActions.push_back({ managers.GetButtonActionId(name)... });
+        ButtonActionId actionId = buttonActions_.size();
+        buttonActions_.push_back({ managers.GetButtonActionId(name)... });
         return actionId;
-      }, _managers);
+      }, managers_);
     }
 
     AnalogActionId GetAnalogActionId(std::string_view name) override
     {
       return std::apply([&](Managers&... managers) -> AnalogActionId
       {
-        AnalogActionId actionId = _analogActions.size();
-        _analogActions.push_back({ managers.GetAnalogActionId(name)... });
+        AnalogActionId actionId = analogActions_.size();
+        analogActions_.push_back({ managers.GetAnalogActionId(name)... });
         return actionId;
-      }, _managers);
+      }, managers_);
     }
 
     void Update() override
@@ -55,68 +66,95 @@ export namespace Coil
       {
         // update managers
         (managers.Update(), ...);
-
-        // update controller ids
-        _managersControllersIds.clear();
-        _controllersIds.clear();
-        size_t managerIndex = 0;
-        ControllerId nextControllerId = 0;
-        ([&](Managers& managers)
-        {
-          auto const& controllersIds = managers.GetControllersIds();
-          for(size_t i = 0; i < controllersIds.size(); ++i)
-          {
-            _managersControllersIds.push_back(controllersIds[i]);
-            _controllersIds.push_back(nextControllerId++);
-          }
-          _managersControllersCounts[managerIndex++] = controllersIds.size();
-        }(managers), ... );
-      }, _managers);
+      }, managers_);
     }
 
     void ActivateActionSet(ControllerId controllerId, ActionSetId actionSetId) override
     {
       auto [pManager, managerIndex, managerControllerId] = GetManagerControllerId(controllerId);
-      pManager->ActivateActionSet(managerControllerId, _actionSets[actionSetId][managerIndex]);
+      pManager->ActivateActionSet(managerControllerId, actionSets_[actionSetId][managerIndex]);
     }
 
-    PlayerInputButtonActionState GetButtonActionState(ControllerId controllerId, ButtonActionId actionId) const override
+    PlayerInputButtonAction GetButtonAction(ControllerId controllerId, ActionSetId actionSetId, ButtonActionId actionId) const override
     {
       auto [pManager, managerIndex, managerControllerId] = GetManagerControllerId(controllerId);
-      return pManager->GetButtonActionState(managerControllerId, _buttonActions[actionId][managerIndex]);
+      return pManager->GetButtonAction(managerControllerId, actionSets_[actionId][managerIndex], buttonActions_[actionId][managerIndex]);
     }
 
-    PlayerInputAnalogActionState GetAnalogActionState(ControllerId controllerId, AnalogActionId actionId) const override
+    PlayerInputAnalogAction GetAnalogAction(ControllerId controllerId, ActionSetId actionSetId, AnalogActionId actionId) const override
     {
       auto [pManager, managerIndex, managerControllerId] = GetManagerControllerId(controllerId);
-      return pManager->GetAnalogActionState(managerControllerId, _analogActions[actionId][managerIndex]);
+      return pManager->GetAnalogAction(managerControllerId, actionSets_[actionId][managerIndex], analogActions_[actionId][managerIndex]);
     }
 
   private:
-    std::tuple<PlayerInputManager*, size_t, ControllerId> GetManagerControllerId(ControllerId controllerId) const
+    void OnAddController(PlayerInputManager* pManager, size_t managerIndex, ControllerId managerControllerId)
     {
-      return std::apply([&](Managers&... managers) -> auto
+      controllersIdToManager_.insert({nextControllerId_, {pManager, managerIndex, managerControllerId}});
+      controllersManagerToId_.insert({{managerIndex, managerControllerId}, nextControllerId_});
+      pControllersIds_->Set(nextControllerId_, {{}});
+      ++nextControllerId_;
+    }
+    void OnDeleteController(size_t managerIndex, ControllerId managerControllerId)
+    {
+      auto i = controllersManagerToId_.find({managerIndex, managerControllerId});
+      if(i != controllersManagerToId_.end())
       {
-        std::tuple<PlayerInputManager*, size_t, ControllerId> r = {};
-        size_t managerIndex = 0;
-        ControllerId localControllerId = controllerId;
-        (void)((
-          (localControllerId < _managersControllersCounts[managerIndex])
-          ? (r = { &managers, managerIndex, _managersControllersIds[controllerId] }, true)
-          : (localControllerId -= _managersControllersCounts[managerIndex++], false)
-        ) || ...);
-        return r;
-      }, _managers);
+        ControllerId controllerId = i->second;
+        controllersIdToManager_.erase(controllerId);
+        controllersManagerToId_.erase(i);
+        pControllersIds_->Set(controllerId, {});
+      }
     }
 
-    std::tuple<Managers&...> _managers;
+    class Cell : public Event<ControllerId, std::tuple<> const*>::Cell
+    {
+    public:
+      void Init(CombinedPlayerInputManager* pSelf, PlayerInputManager* pManager, size_t index, EventPtr<ControllerId, std::tuple<> const*> const& pEvent)
+      {
+        pSelf_ = pSelf;
+        pManager_ = pManager;
+        index_ = index;
+        SubscribeTo(pEvent);
+      }
+
+      void Notify(ControllerId key, std::tuple<> const* pValue) override
+      {
+        if(pValue)
+        {
+          pSelf_->OnAddController(pManager_, index_, key);
+        }
+        else
+        {
+          pSelf_->OnDeleteController(index_, key);
+        }
+      }
+
+    private:
+      CombinedPlayerInputManager* pSelf_ = nullptr;
+      PlayerInputManager* pManager_ = nullptr;
+      size_t index_ = -1;
+    };
+
+    std::tuple<PlayerInputManager*, size_t, ControllerId> GetManagerControllerId(ControllerId controllerId) const
+    {
+      auto i = controllersIdToManager_.find(controllerId);
+      if(i == controllersIdToManager_.end()) return {};
+      return i->second;
+    }
+
+    std::tuple<Managers&...> managers_;
+    std::array<Cell, sizeof...(Managers)> cells_;
+    std::unordered_map<ControllerId, std::tuple<PlayerInputManager*, size_t, ControllerId>> controllersIdToManager_;
+    std::map<std::tuple<size_t, ControllerId>, ControllerId> controllersManagerToId_;
+    size_t nextControllerId_ = 0;
     // internal controller ids used by managers
-    std::vector<ControllerId> _managersControllersIds;
+    std::vector<ControllerId> managersControllersIds_;
     // number of controllers per manager
-    std::array<size_t, sizeof...(Managers)> _managersControllersCounts;
+    std::array<size_t, sizeof...(Managers)> managersControllersCounts_;
     // internal ids of action sets and actions, kept for each manager
-    std::vector<std::array<ActionSetId, sizeof...(Managers)>> _actionSets;
-    std::vector<std::array<ButtonActionId, sizeof...(Managers)>> _buttonActions;
-    std::vector<std::array<AnalogActionId, sizeof...(Managers)>> _analogActions;
+    std::vector<std::array<ActionSetId, sizeof...(Managers)>> actionSets_;
+    std::vector<std::array<ButtonActionId, sizeof...(Managers)>> buttonActions_;
+    std::vector<std::array<AnalogActionId, sizeof...(Managers)>> analogActions_;
   };
 }

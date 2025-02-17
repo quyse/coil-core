@@ -106,6 +106,12 @@ export namespace Coil
     {
       return this->get()->Get();
     }
+
+    template <typename Self>
+    operator EventPtr<>(this Self&& self)
+    {
+      return std::static_pointer_cast<Event<>>(std::forward<Self>(self));
+    }
   };
 
   template <typename T>

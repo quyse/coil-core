@@ -331,6 +331,7 @@ if(TRUE)
   target_link_libraries(coil_core_player_input
     PUBLIC
       coil_core_base
+      coil_core_math
   )
   target_compile_features(coil_core_player_input PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries player_input)

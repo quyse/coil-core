@@ -1,15 +1,27 @@
 module;
 
 #include <memory>
+#include <variant>
 #include <vector>
 
 export module coil.core.player_input;
 
+import coil.core.base.events.map;
+import coil.core.base.events;
+import coil.core.base.signals;
 import coil.core.base;
+import coil.core.math;
 
 /*
 Player Input is a higher-level input library, operating with player actions
 rather than low-level device input events.
+
+Modelled mostly after Steam Input API https://partner.steamgames.com/doc/api/isteaminput
+and shares its limitations.
+
+Notably:
+All actions must have unique names. Same action in different action sets must be named differently.
+
 */
 
 export namespace Coil
@@ -22,20 +34,15 @@ export namespace Coil
     Analog,
   };
 
-  struct PlayerInputButtonActionState
+  struct PlayerInputButtonAction
   {
-    bool isPressed = false;
-    bool isJustChanged = false;
+    SignalPtr<bool> sigIsPressed;
   };
 
-  struct PlayerInputAnalogActionState
+  struct PlayerInputAnalogAction
   {
-    float x = 0;
-    float y = 0;
-    // whether state is absolute or relative
-    // absolute stay the same if no movement
-    // relative resets to zero every tick if no movement
-    bool absolute = false;
+    // relative or absolute value
+    std::variant<EventPtr<vec2>, SignalPtr<vec2>> relativeOrAbsoluteValue;
   };
 
   // base class for player input manager
@@ -47,7 +54,7 @@ export namespace Coil
     using ButtonActionId = uint64_t;
     using AnalogActionId = uint64_t;
 
-    virtual ActionSetId GetActionSetId(char const* name) = 0;
+    virtual ActionSetId GetActionSetId(std::string_view name) = 0;
     virtual ButtonActionId GetButtonActionId(std::string_view name) = 0;
     virtual AnalogActionId GetAnalogActionId(std::string_view name) = 0;
 
@@ -55,18 +62,19 @@ export namespace Coil
     virtual void ActivateActionSet(ControllerId controllerId, ActionSetId actionSetId) = 0;
 
     // get state of button action for given controller
-    virtual PlayerInputButtonActionState GetButtonActionState(ControllerId controllerId, ButtonActionId actionId) const = 0;
+    virtual PlayerInputButtonAction GetButtonAction(ControllerId controllerId, ActionSetId actionSetId, ButtonActionId actionId) const = 0;
     // get state of analog action for given controller
-    virtual PlayerInputAnalogActionState GetAnalogActionState(ControllerId controllerId, AnalogActionId actionId) const = 0;
+    virtual PlayerInputAnalogAction GetAnalogAction(ControllerId controllerId, ActionSetId actionSetId, AnalogActionId actionId) const = 0;
 
     // get connected controllers
-    std::vector<ControllerId> const& GetControllersIds() const
+    SyncSetPtr<ControllerId> const& GetControllers() const
     {
-      return _controllersIds;
+      return pControllersIds_;
     }
 
   protected:
-    std::vector<ControllerId> _controllersIds;
+    // must be initialized by implementation
+    SyncSetPtr<ControllerId> pControllersIds_;
   };
 
 
@@ -83,41 +91,76 @@ export namespace Coil
   };
 
   // state adapter
-  struct PlayerInputActionSetStateAdapter
+  struct PlayerInputActionSetAdapter
   {
     template <PlayerInputActionType actionType>
-    struct Member;
+    struct Field;
+
     template <>
-    struct Member<PlayerInputActionType::Button>
+    struct Field<PlayerInputActionType::Button>
     {
-      using Type = PlayerInputButtonActionState;
-    };
-    template <>
-    struct Member<PlayerInputActionType::Analog>
-    {
-      using Type = PlayerInputAnalogActionState;
+      SignalPtr<bool> sigIsPressed;
     };
 
-    template <PlayerInputActionType actionType>
-    using Field = typename Member<actionType>::Type;
+    template <>
+    struct Field<PlayerInputActionType::Analog>
+    {
+      EventPtr<vec2> evRelativeValue;
+      SignalPtr<vec2> sigAbsoluteValue;
+    };
 
     template <template <typename> typename ActionSet>
     class Base
     {
     public:
-      // update action states
-      void Update(PlayerInputManager& manager, ActionSet<PlayerInputActionSetRegistrationAdapter> const& registration, PlayerInputManager::ControllerId controllerId)
+      void Register(PlayerInputManager& manager, ActionSet<PlayerInputActionSetRegistrationAdapter> const& registration, PlayerInputManager::ControllerId controllerId)
       {
-        for(size_t i = 0; i < registration._buttons.size(); ++i)
+        actionSetId_ = registration.actionSetId_;
+        controllerId_ = controllerId;
+
+        for(size_t i = 0; i < registration.buttons_.size(); ++i)
         {
-          auto const& button = registration._buttons[i];
-          static_cast<ActionSet<PlayerInputActionSetStateAdapter>*>(this)->*std::get<1>(button) = manager.GetButtonActionState(controllerId, std::get<2>(button));
+          auto const& button = registration.buttons_[i];
+          auto& field = static_cast<ActionSet<PlayerInputActionSetAdapter>*>(this)->*(button.pMember);
+          field.sigIsPressed = manager.GetButtonAction(controllerId, registration.actionSetId_, button.actionId).sigIsPressed;
         }
-        for(size_t i = 0; i < registration._analogs.size(); ++i)
+
+        for(size_t i = 0; i < registration.analogs_.size(); ++i)
         {
-          auto const& analog = registration._analogs[i];
-          static_cast<ActionSet<PlayerInputActionSetStateAdapter>*>(this)->*std::get<1>(analog) = manager.GetAnalogActionState(controllerId, std::get<2>(analog));
+          auto const& analog = registration.analogs_[i];
+          auto& field = static_cast<ActionSet<PlayerInputActionSetAdapter>*>(this)->*(analog.pMember);
+          std::visit([&](auto const& relativeOrAbsoluteValue)
+          {
+            // if it's relative value event
+            if constexpr(std::same_as<std::decay_t<decltype(relativeOrAbsoluteValue)>, EventPtr<vec2>>)
+            {
+              auto sigAbsoluteValue = MakeVariableSignal<vec2>({});
+              field.evRelativeValue = MakeDependentEvent(relativeOrAbsoluteValue, [sigAbsoluteValue](vec2 const& relativeValue) -> vec2
+              {
+                sigAbsoluteValue.SetIfDiffers(sigAbsoluteValue.Get() + relativeValue);
+                return relativeValue;
+              });
+              field.sigAbsoluteValue = sigAbsoluteValue;
+            }
+            // else it's absolute value signal
+            else
+            {
+              field.evRelativeValue = MakeDependentEvent(static_cast<EventPtr<>>(relativeOrAbsoluteValue), [relativeOrAbsoluteValue, lastAbsoluteValue = vec2()]() mutable -> vec2
+              {
+                vec2 absoluteValue = relativeOrAbsoluteValue.Get();
+                vec2 relativeValue = absoluteValue - lastAbsoluteValue;
+                lastAbsoluteValue = absoluteValue;
+                return relativeValue;
+              });
+              field.sigAbsoluteValue = relativeOrAbsoluteValue;
+            }
+          }, manager.GetAnalogAction(controllerId, registration.actionSetId_, analog.actionId).relativeOrAbsoluteValue);
         }
+      }
+
+      void Activate(PlayerInputManager& manager)
+      {
+        manager.ActivateActionSet(controllerId_, actionSetId_);
       }
 
     protected:
@@ -126,6 +169,10 @@ export namespace Coil
       {
         return {};
       }
+
+    private:
+      PlayerInputManager::ActionSetId actionSetId_ = {};
+      PlayerInputManager::ControllerId controllerId_ = {};
     };
   };
 
@@ -134,70 +181,80 @@ export namespace Coil
   class PlayerInputActionSetRegistrationAdapter::Base
   {
   public:
-    void Register(PlayerInputManager& manager)
+    void Register(PlayerInputManager& manager, std::string_view actionSetName)
     {
-      for(size_t i = 0; i < _buttons.size(); ++i)
+      actionSetId_ = manager.GetActionSetId(actionSetName);
+      for(size_t i = 0; i < buttons_.size(); ++i)
       {
-        std::get<2>(_buttons[i]) = manager.GetButtonActionId(std::get<0>(_buttons[i]));
+        buttons_[i].actionId = manager.GetButtonActionId(buttons_[i].name);
       }
-      for(size_t i = 0; i < _analogs.size(); ++i)
+      for(size_t i = 0; i < analogs_.size(); ++i)
       {
-        std::get<2>(_analogs[i]) = manager.GetAnalogActionId(std::get<0>(_analogs[i]));
+        analogs_[i].actionId = manager.GetAnalogActionId(analogs_[i].name);
       }
     }
 
   protected:
     template <PlayerInputActionType actionType, auto f, Literal name>
-    std::tuple<> RegisterField()
+    Field<actionType> RegisterField()
     {
-      Actions<actionType>::Get(*this).push_back(
-      {
-        name,
-        f.template operator()<ActionSet<PlayerInputActionSetStateAdapter>>(),
-        {},
-      });
-      return {};
+      return ActionsHelper<actionType, f>::RegisterField(*this, name);
     }
 
   private:
     // actions helper
-    template <PlayerInputActionType actionType>
-    struct Actions;
-    template <>
-    struct Actions<PlayerInputActionType::Button>
+    template <PlayerInputActionType actionType, auto f>
+    struct ActionsHelper;
+    template <auto f>
+    struct ActionsHelper<PlayerInputActionType::Button, f>
     {
-      static auto& Get(Base& self)
+      static Field<PlayerInputActionType::Button> RegisterField(Base& self, std::string_view name)
       {
-        return self._buttons;
+        self.buttons_.push_back(ButtonAction
+        {
+          .name = name,
+          .actionId = {},
+          .pMember = f.template operator()<ActionSet<PlayerInputActionSetAdapter>>(),
+        });
+        return {};
       }
     };
-    template <>
-    struct Actions<PlayerInputActionType::Analog>
+    template <auto f>
+    struct ActionsHelper<PlayerInputActionType::Analog, f>
     {
-      static auto& Get(Base& self)
+      static Field<PlayerInputActionType::Analog> RegisterField(Base& self, std::string_view name)
       {
-        return self._analogs;
+        self.analogs_.push_back(AnalogAction
+        {
+          .name = name,
+          .actionId = {},
+          .pMember = f.template operator()<ActionSet<PlayerInputActionSetAdapter>>(),
+        });
+        return {};
       }
     };
+
+    PlayerInputManager::ActionSetId actionSetId_ = {};
 
     // button actions
-    std::vector<
-      std::tuple<
-        std::string_view,
-        typename PlayerInputActionSetStateAdapter::Field<PlayerInputActionType::Button> ActionSet<PlayerInputActionSetStateAdapter>::*,
-        PlayerInputManager::ButtonActionId
-      >
-    > _buttons;
+    struct ButtonAction
+    {
+      std::string_view name;
+      PlayerInputManager::ButtonActionId actionId;
+      PlayerInputActionSetAdapter::Field<PlayerInputActionType::Button> ActionSet<PlayerInputActionSetAdapter>::*pMember;
+    };
+    std::vector<ButtonAction> buttons_;
+
     // analog actions
-    std::vector<
-      std::tuple<
-        std::string_view,
-        typename PlayerInputActionSetStateAdapter::Field<PlayerInputActionType::Analog> ActionSet<PlayerInputActionSetStateAdapter>::*,
-        PlayerInputManager::AnalogActionId
-      >
-    > _analogs;
+    struct AnalogAction
+    {
+      std::string_view name;
+      PlayerInputManager::AnalogActionId actionId;
+      PlayerInputActionSetAdapter::Field<PlayerInputActionType::Analog> ActionSet<PlayerInputActionSetAdapter>::*pMember;
+    };
+    std::vector<AnalogAction> analogs_;
 
     // allow state adapter access the vectors
-    friend PlayerInputActionSetStateAdapter::Base<ActionSet>;
+    friend PlayerInputActionSetAdapter::Base<ActionSet>;
   };
 }

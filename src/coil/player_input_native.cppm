@@ -7,9 +7,13 @@ module;
 
 export module coil.core.player_input.native;
 
+import coil.core.base.events.map;
+import coil.core.base.events;
+import coil.core.base.signals;
 import coil.core.base;
 import coil.core.input;
 import coil.core.json;
+import coil.core.math;
 import coil.core.player_input;
 
 export namespace Coil
@@ -35,17 +39,22 @@ export namespace Coil
   {
   public:
     NativePlayerInputManager(InputManager& inputManager)
-    : _inputManager(inputManager)
+    : inputManager_(inputManager)
     {
+      // initialize ids
+      pControllersIds_ = pControllers_->Map([](ControllerId controllerId, Controller const&) -> std::tuple<>
+      {
+        return {};
+      });
       // add controller 0 for keyboard+mouse
-      _controllers[_nextControllerId++] = {};
+      pControllers_->Set(nextControllerId_++, {{}});
     }
 
     void SetMapping(NativePlayerInputMapping const& mapping)
     {
       for(auto const& [actionSetName, mappingActionSet] : mapping.actionSets)
       {
-        auto& actionSet = _actionSets[GetActionSetId(actionSetName.c_str())];
+        auto& actionSet = actionSets_[GetActionSetId(actionSetName.c_str())];
 
         // keyboard
         for(auto const& [inputKey, buttonActionName] : mappingActionSet.keyboard)
@@ -70,48 +79,30 @@ export namespace Coil
 
     // PlayerInputManager's methods
 
-    ActionSetId GetActionSetId(char const* name) override
+    ActionSetId GetActionSetId(std::string_view name) override
     {
-      auto actionSetId = _actionSetsIds.insert({ name, _actionSetsIds.size() }).first->second;
-      if(actionSetId >= _actionSets.size())
+      auto actionSetId = actionSetsIds_.insert({ std::string{name}, actionSetsIds_.size() }).first->second;
+      if(actionSetId >= actionSets_.size())
       {
-        _actionSets.resize(actionSetId + 1);
+        actionSets_.resize(actionSetId + 1);
       }
       return actionSetId;
     }
 
     ButtonActionId GetButtonActionId(std::string_view name) override
     {
-      return _buttonActionsIds.insert({ std::string{name}, _buttonActionsIds.size() }).first->second;
+      return buttonActionsIds_.insert({ std::string{name}, buttonActionsIds_.size() }).first->second;
     }
 
     AnalogActionId GetAnalogActionId(std::string_view name) override
     {
-      return _analogActionsIds.insert({ std::string{name}, _analogActionsIds.size() }).first->second;
+      return analogActionsIds_.insert({ std::string{name}, analogActionsIds_.size() }).first->second;
     }
 
     void Update() override
     {
-      // reset states
-      for(auto& [controllerId, controller] : _controllers)
-      {
-        // reset "just changed" button states
-        for(size_t i = 0; i < controller.buttonActionsStates.size(); ++i)
-          controller.buttonActionsStates[i].isJustChanged = false;
-        // reset relative analog states
-        for(size_t i = 0; i < controller.analogActionsStates.size(); ++i)
-        {
-          auto& analogActionState = controller.analogActionsStates[i];
-          if(!analogActionState.absolute)
-          {
-            analogActionState.x = 0;
-            analogActionState.y = 0;
-          }
-        }
-      }
-
       // process events
-      auto& inputFrame = _inputManager.GetCurrentFrame();
+      auto& inputFrame = inputManager_.GetCurrentFrame();
       while(auto const* event = inputFrame.NextEvent())
       {
         std::visit([&]<typename E1>(E1 const& event)
@@ -122,19 +113,20 @@ export namespace Coil
             {
               if constexpr(std::same_as<E2, InputKeyboardKeyEvent>)
               {
-                auto& controller = _controllers[(ControllerId)SpecialControllerId::keyboardMouse];
-                if(controller.actionSetId.has_value())
+                pControllers_->With((ControllerId)SpecialControllerId::keyboardMouse, [&](Controller& controller)
                 {
-                  ActionSet const& actionSet = _actionSets[controller.actionSetId.value()];
-
-                  auto i = actionSet.inputKeyToButtonActionId.find(event.key);
-                  if(i != actionSet.inputKeyToButtonActionId.end())
+                  if(controller.actionSetId.has_value())
                   {
-                    auto& buttonActionState = controller.GetButtonActionState(i->second);
-                    buttonActionState.isJustChanged = buttonActionState.isPressed != event.isPressed;
-                    buttonActionState.isPressed = event.isPressed;
+                    ActionSet const& actionSet = actionSets_[controller.actionSetId.value()];
+
+                    auto i = actionSet.inputKeyToButtonActionId.find(event.key);
+                    if(i != actionSet.inputKeyToButtonActionId.end())
+                    {
+                      auto const& buttonActionState = controller.GetButtonAction(i->second);
+                      buttonActionState.sigIsPressed.SetIfDiffers(event.isPressed);
+                    }
                   }
-                }
+                });
               }
             }, event);
           }
@@ -144,51 +136,64 @@ export namespace Coil
             {
               if constexpr(std::same_as<E2, InputMouseButtonEvent>)
               {
-                auto& controller = _controllers[(ControllerId)SpecialControllerId::keyboardMouse];
-                if(controller.actionSetId.has_value())
+                pControllers_->With((ControllerId)SpecialControllerId::keyboardMouse, [&](Controller& controller)
                 {
-                  ActionSet const& actionSet = _actionSets[controller.actionSetId.value()];
-
-                  auto i = actionSet.mouseButtonToButtonActionId.find(event.button);
-                  if(i != actionSet.mouseButtonToButtonActionId.end())
+                  if(controller.actionSetId.has_value())
                   {
-                    auto& buttonActionState = controller.GetButtonActionState(i->second);
-                    buttonActionState.isJustChanged = buttonActionState.isPressed != event.isPressed;
-                    buttonActionState.isPressed = event.isPressed;
+                    ActionSet const& actionSet = actionSets_[controller.actionSetId.value()];
+
+                    auto i = actionSet.mouseButtonToButtonActionId.find(event.button);
+                    if(i != actionSet.mouseButtonToButtonActionId.end())
+                    {
+                      auto const& buttonActionState = controller.GetButtonAction(i->second);
+                      buttonActionState.sigIsPressed.SetIfDiffers(event.isPressed);
+                    }
                   }
-                }
+                });
               }
               if constexpr(std::same_as<E2, InputMouseRawMoveEvent>)
               {
-                auto& controller = _controllers[(ControllerId)SpecialControllerId::keyboardMouse];
-                if(controller.actionSetId.has_value())
+                pControllers_->With((ControllerId)SpecialControllerId::keyboardMouse, [&](Controller& controller)
                 {
-                  ActionSet const& actionSet = _actionSets[controller.actionSetId.value()];
-
-                  if(actionSet.mouseMoveAnalogActionId.has_value())
+                  if(controller.actionSetId.has_value())
                   {
-                    auto& analogActionState = controller.GetAnalogActionState(actionSet.mouseMoveAnalogActionId.value());
-                    analogActionState.x = event.rawMove.x();
-                    analogActionState.y = event.rawMove.y();
-                    analogActionState.absolute = false;
+                    ActionSet const& actionSet = actionSets_[controller.actionSetId.value()];
+
+                    if(actionSet.mouseMoveAnalogActionId.has_value())
+                    {
+                      auto const& analogAction = controller.GetAnalogAction(actionSet.mouseMoveAnalogActionId.value(), false);
+                      std::visit([&](auto const& relativeOrAbsoluteValue)
+                      {
+                        if constexpr(std::same_as<decltype(relativeOrAbsoluteValue), EventPtr<vec2> const&>)
+                        {
+                          relativeOrAbsoluteValue.Notify(vec2(event.rawMove.x(), event.rawMove.y()));
+                        }
+                      }, analogAction.relativeOrAbsoluteValue);
+                    }
                   }
-                }
+                });
               }
               if constexpr(std::same_as<E2, InputMouseCursorMoveEvent>)
               {
-                auto& controller = _controllers[(ControllerId)SpecialControllerId::keyboardMouse];
-                if(controller.actionSetId.has_value())
+                pControllers_->With((ControllerId)SpecialControllerId::keyboardMouse, [&](Controller& controller)
                 {
-                  ActionSet const& actionSet = _actionSets[controller.actionSetId.value()];
-
-                  if(actionSet.mouseCursorAnalogActionId.has_value())
+                  if(controller.actionSetId.has_value())
                   {
-                    auto& analogActionState = controller.GetAnalogActionState(actionSet.mouseCursorAnalogActionId.value());
-                    analogActionState.x = event.cursor.x();
-                    analogActionState.y = event.cursor.y();
-                    analogActionState.absolute = true;
+                    ActionSet const& actionSet = actionSets_[controller.actionSetId.value()];
+
+                    if(actionSet.mouseCursorAnalogActionId.has_value())
+                    {
+                      auto const& analogAction = controller.GetAnalogAction(actionSet.mouseCursorAnalogActionId.value(), true);
+                      std::visit([&](auto const& relativeOrAbsoluteValue)
+                      {
+                        if constexpr(std::same_as<decltype(relativeOrAbsoluteValue), SignalVarPtr<vec2> const&>)
+                        {
+                          relativeOrAbsoluteValue.SetIfDiffers(vec2(event.cursor.x(), event.cursor.y()));
+                        }
+                      }, analogAction.relativeOrAbsoluteValue);
+                    }
                   }
-                }
+                });
               }
             }, event);
           }
@@ -201,18 +206,18 @@ export namespace Coil
               {
                 if(event.isAdded)
                 {
-                  ControllerId const controllerId = _nextControllerId++;
-                  _controllers[controllerId] =
-                  {
+                  ControllerId const controllerId = nextControllerId_++;
+                  pControllers_->Set(controllerId,
+                  {{
                     .inputControllerId = inputControllerId,
-                  };
-                  _inputControllerIdToControllerId[inputControllerId] = controllerId;
+                  }});
+                  inputControllerIdToControllerId_[inputControllerId] = controllerId;
                 }
                 else
                 {
-                  auto i = _inputControllerIdToControllerId.find(inputControllerId);
-                  _controllers.erase(i->second);
-                  _inputControllerIdToControllerId.erase(i);
+                  auto i = inputControllerIdToControllerId_.find(inputControllerId);
+                  pControllers_->Set(i->second, {});
+                  inputControllerIdToControllerId_.erase(i);
                 }
               }
               // TODO: buttons, triggers, sticks
@@ -220,44 +225,53 @@ export namespace Coil
           }
         }, *event);
       }
-
-      // update controllers ids
-      _controllersIds.clear();
-      for(auto const& i : _controllers)
-        _controllersIds.push_back(i.first);
     }
 
     void ActivateActionSet(ControllerId controllerId, ActionSetId actionSetId) override
     {
-      auto i = _controllers.find(controllerId);
-      if(i == _controllers.end()) return;
-      i->second.actionSetId = actionSetId;
+      pControllers_->With(controllerId, [&](Controller& controller)
+      {
+        controller.actionSetId = actionSetId;
+      });
     }
 
-    PlayerInputButtonActionState GetButtonActionState(ControllerId controllerId, ButtonActionId actionId) const override
+    PlayerInputButtonAction GetButtonAction(ControllerId controllerId, ActionSetId actionSetId, ButtonActionId actionId) const override
     {
-      auto i = _controllers.find(controllerId);
-      if(i == _controllers.end()) return {};
-      auto const& buttonActionsStates = i->second.buttonActionsStates;
-      if(actionId >= buttonActionsStates.size()) return {};
-      return buttonActionsStates[actionId];
+      Controller* pController = pControllers_->Get(controllerId);
+      if(!pController) return {};
+      auto const& action = pController->GetButtonAction(actionId);
+      return
+      {
+        .sigIsPressed = action.sigIsPressed,
+      };
     }
 
-    PlayerInputAnalogActionState GetAnalogActionState(ControllerId controllerId, AnalogActionId actionId) const override
+    PlayerInputAnalogAction GetAnalogAction(ControllerId controllerId, ActionSetId actionSetId, AnalogActionId actionId) const override
     {
-      auto i = _controllers.find(controllerId);
-      if(i == _controllers.end()) return {};
-      auto const& analogActionsStates = i->second.analogActionsStates;
-      if(actionId >= analogActionsStates.size()) return {};
-      return analogActionsStates[actionId];
+      Controller* pController = pControllers_->Get(controllerId);
+      if(!pController) return {};
+
+      // determine if it's absolute
+      // currently the only relative action is raw mouse move
+      auto const& optMouseMoveAnalogActionId = actionSets_[actionSetId].mouseMoveAnalogActionId;
+      bool absolute = !(optMouseMoveAnalogActionId.has_value() && optMouseMoveAnalogActionId.value() == actionId);
+
+      auto const& action = pController->GetAnalogAction(actionId, absolute);
+      return std::visit([](auto const& relativeOrAbsoluteValue) -> PlayerInputAnalogAction
+      {
+        return
+        {
+          .relativeOrAbsoluteValue = relativeOrAbsoluteValue,
+        };
+      }, action.relativeOrAbsoluteValue);
     }
 
   private:
-    InputManager& _inputManager;
+    InputManager& inputManager_;
 
-    std::unordered_map<std::string, ActionSetId> _actionSetsIds;
-    std::unordered_map<std::string, ButtonActionId> _buttonActionsIds;
-    std::unordered_map<std::string, AnalogActionId> _analogActionsIds;
+    std::unordered_map<std::string, ActionSetId> actionSetsIds_;
+    std::unordered_map<std::string, ButtonActionId> buttonActionsIds_;
+    std::unordered_map<std::string, AnalogActionId> analogActionsIds_;
 
     struct ActionSet
     {
@@ -266,37 +280,58 @@ export namespace Coil
       std::optional<AnalogActionId> mouseMoveAnalogActionId;
       std::optional<AnalogActionId> mouseCursorAnalogActionId;
     };
-    std::vector<ActionSet> _actionSets;
+    std::vector<ActionSet> actionSets_;
 
     struct Controller
     {
-      PlayerInputButtonActionState& GetButtonActionState(ButtonActionId actionId)
+      struct ButtonAction
       {
-        if(actionId >= buttonActionsStates.size())
+        SignalVarPtr<bool> sigIsPressed;
+      };
+
+      struct AnalogAction
+      {
+        std::variant<EventPtr<vec2>, SignalVarPtr<vec2>> relativeOrAbsoluteValue;
+      };
+
+      ButtonAction const& GetButtonAction(ButtonActionId actionId)
+      {
+        auto i = buttonActions.find(actionId);
+        if(i != buttonActions.end()) return i->second;
+        return buttonActions.insert({actionId,
         {
-          buttonActionsStates.resize(actionId + 1);
-        }
-        return buttonActionsStates[actionId];
+          .sigIsPressed = MakeVariableSignal<bool>(false),
+        }}).first->second;
       }
 
-      PlayerInputAnalogActionState& GetAnalogActionState(AnalogActionId actionId)
+      AnalogAction const& GetAnalogAction(AnalogActionId actionId, bool absolute)
       {
-        if(actionId >= analogActionsStates.size())
+        auto i = analogActions.find(actionId);
+        if(i != analogActions.end()) return i->second;
+        return analogActions.insert(
         {
-          analogActionsStates.resize(actionId + 1);
-        }
-        return analogActionsStates[actionId];
+          actionId,
+          absolute
+            ? AnalogAction
+            {
+              .relativeOrAbsoluteValue = MakeVariableSignal<vec2>({}),
+            }
+            : AnalogAction
+            {
+              .relativeOrAbsoluteValue = MakeEvent<vec2>(),
+            }
+        }).first->second;
       }
 
       // input controller id, none for keyboard+mouse
       std::optional<InputControllerId> inputControllerId;
       std::optional<ActionSetId> actionSetId;
-      std::vector<PlayerInputButtonActionState> buttonActionsStates;
-      std::vector<PlayerInputAnalogActionState> analogActionsStates;
+      std::unordered_map<ButtonActionId, ButtonAction> buttonActions;
+      std::unordered_map<AnalogActionId, AnalogAction> analogActions;
     };
-    std::unordered_map<ControllerId, Controller> _controllers;
-    std::unordered_map<InputControllerId, ControllerId> _inputControllerIdToControllerId;
-    ControllerId _nextControllerId = 0;
+    SyncMapPtr<ControllerId, Controller> pControllers_ = MakeSyncMap<ControllerId, Controller>();
+    std::unordered_map<InputControllerId, ControllerId> inputControllerIdToControllerId_;
+    ControllerId nextControllerId_ = 0;
 
     // special controller ids
     enum class SpecialControllerId : ControllerId

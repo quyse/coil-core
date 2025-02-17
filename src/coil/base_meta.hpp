@@ -9,13 +9,13 @@
     return &Object::name; \
   })
 // field accessor: returns object which can get a field with specified name of any object
-#define COIL_META_FIELD(name) \
+#define COIL_META_MEMBER(name) \
   ([]<typename Object>(Object&& object) -> auto&& \
   { \
     return std::forward<Object>(object).name; \
   })
 // method call: returns object which can call a method with specified name of any object
-#define COIL_META_METHOD(name) \
+#define COIL_META_CALL_METHOD(name) \
   ([]<typename Object, typename... Args>(Object&& object, Args&&... args) -> decltype(auto) \
   { \
     return std::forward<Object>(object).name(std::forward<Args>(args)...); \

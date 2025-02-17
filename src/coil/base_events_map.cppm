@@ -93,7 +93,7 @@ export namespace Coil
     class MappedMap;
 
     template <typename Handler>
-    using MappedValue = decltype(std::declval<Handler>()(std::declval<Key>(), &std::declval<Value&>()));
+    using MappedValue = decltype(std::declval<Handler>()(std::declval<Key>(), std::declval<Value>()));
 
     template <typename Handler>
     SyncMapPtr<Key, MappedValue<std::decay_t<Handler>>> Map(Handler&& handler) const
@@ -153,7 +153,7 @@ export namespace Coil
     {
       if(pValue)
       {
-        this->Set(key, {handler_(key, pValue)});
+        this->Set(key, {handler_(key, *pValue)});
       }
       else
       {

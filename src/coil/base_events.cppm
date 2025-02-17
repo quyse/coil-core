@@ -61,6 +61,11 @@ export namespace Coil
     class CellHead
     {
     public:
+      ~CellHead()
+      {
+        if(pNext_) pNext_->pPrev_ = nullptr;
+      }
+
       void Notify(ConstRefExceptScalarOf<Args>... args)
       {
         for(Cell* pCell = pNext_; pCell; pCell = pCell->pNext_)
@@ -93,7 +98,9 @@ export namespace Coil
       {
         Remove();
         this->pNext_ = head.pNext_;
+        if(this->pNext_) this->pNext_->pPrev_ = this;
         head.pNext_ = this;
+        pPrev_ = &head;
       }
 
       void Remove()
@@ -109,6 +116,8 @@ export namespace Coil
 
     private:
       CellHead* pPrev_ = nullptr;
+
+      friend CellHead;
     };
 
     // cell which passes events to a handler
@@ -211,12 +220,14 @@ export namespace Coil
   template <typename... Args>
   EventPtr<Args...> MakeEvent()
   {
-    return {std::make_shared<Event<Args...>>()};
+    return std::make_shared<Event<Args...>>();
   }
 
   template <typename Handler, typename... Args>
-  EventArgHelper<EventPtr, EventHandlerResult<Handler, Args...>>::Result MakeDependentEvent(EventPtr<Args...> pEvent, Handler&& handler)
+  EventArgHelper<EventPtr, EventHandlerResult<Handler, Args...>>::Result MakeDependentEvent(EventPtr<Args...> const& pEvent, Handler&& handler)
   {
-    return {std::make_shared<typename Event<Args...>::template DependentEvent<std::decay_t<Handler>>>(pEvent, std::forward<Handler>(handler))};
+    return std::static_pointer_cast<typename EventArgHelper<Event, EventHandlerResult<Handler, Args...>>::Result>(
+      std::make_shared<typename Event<Args...>::template DependentEvent<std::decay_t<Handler>>>(pEvent, std::forward<Handler>(handler))
+    );
   }
 }

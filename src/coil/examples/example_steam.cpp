@@ -167,8 +167,9 @@ int COIL_ENTRY_POINT(std::vector<std::string> args)
     : static_cast<PlayerInputManager&>(nativePlayerInputManager)
   ;
   InGameActionSet<PlayerInputActionSetRegistrationAdapter> actionSetRegistration;
-  actionSetRegistration.Register(playerInputManager);
-  auto actionSetId = playerInputManager.GetActionSetId("InGame");
+  actionSetRegistration.Register(playerInputManager, "InGame");
+
+  auto pControllers = playerInputManager.GetControllers();
 
   RenderContext renderContext{RenderContext::RenderType::Instances};
 
@@ -181,18 +182,15 @@ int COIL_ENTRY_POINT(std::vector<std::string> args)
       steam.Update();
       playerInputManager.Update();
 
+      for(auto [controllerId, _] : *pControllers)
       {
-        auto const& controllersIds = playerInputManager.GetControllersIds();
-        for(auto controllerId : controllersIds)
+        InGameActionSet<PlayerInputActionSetAdapter> actionSet;
+        actionSet.Register(playerInputManager, actionSetRegistration, controllerId);
+        actionSet.Activate(playerInputManager);
+        firing |= actionSet.fire.sigIsPressed.Get();
+        if(actionSet.exit.sigIsPressed.Get())
         {
-          playerInputManager.ActivateActionSet(controllerId, actionSetId);
-          InGameActionSet<PlayerInputActionSetStateAdapter> actionSetState;
-          actionSetState.Update(playerInputManager, actionSetRegistration, controllerId);
-          firing |= actionSetState.fire.isPressed;
-          if(actionSetState.exit.isPressed)
-          {
-            co_return;
-          }
+          co_return;
         }
       }
 

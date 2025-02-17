@@ -7,6 +7,9 @@ module;
 
 export module coil.core.steam;
 
+import coil.core.base.events.map;
+import coil.core.base.signals;
+import coil.core.math;
 import coil.core.player_input;
 
 export namespace Coil
@@ -18,32 +21,32 @@ export namespace Coil
     {
       Global()
       {
-        _initialized = SteamAPI_Init();
+        initialized_ = SteamAPI_Init();
       }
 
       ~Global()
       {
-        if(_initialized)
+        if(initialized_)
         {
           SteamAPI_Shutdown();
         }
       }
 
-      bool _initialized = false;
+      bool initialized_ = false;
     };
 
   public:
     Steam()
     {
       static std::shared_ptr<Global> global = std::make_shared<Global>();
-      _global = global;
-      _initialized = global->_initialized;
+      global_ = global;
+      initialized_ = global->initialized_;
     }
 
     // return if initialized
     operator bool() const
     {
-      return _initialized;
+      return initialized_;
     }
 
     // run every frame
@@ -53,8 +56,8 @@ export namespace Coil
     }
 
   private:
-    std::shared_ptr<Global> _global;
-    bool _initialized = false;
+    std::shared_ptr<Global> global_;
+    bool initialized_ = false;
   };
 
   class SteamInput
@@ -64,55 +67,64 @@ export namespace Coil
     {
       Global()
       {
-        _steamInput->Init(false);
+        steamInput_->Init(false);
       }
 
       ~Global()
       {
-        if(_steamInput)
+        if(steamInput_)
         {
-          _steamInput->Shutdown();
+          steamInput_->Shutdown();
         }
       }
 
-      Steam _steam;
-      ISteamInput* const _steamInput = ::SteamInput();
+      Steam steam_;
+      ISteamInput* const steamInput_ = ::SteamInput();
     };
 
   public:
     SteamInput()
     {
       static std::shared_ptr<Global> global = std::make_shared<Global>();
-      _global = global;
+      global_ = global;
     }
 
     ISteamInput& operator()() const
     {
-      return *_global->_steamInput;
+      return *global_->steamInput_;
     }
 
   private:
-    std::shared_ptr<Global> _global;
+    std::shared_ptr<Global> global_;
   };
 
   class SteamPlayerInputManager final : public PlayerInputManager
   {
   public:
+    SteamPlayerInputManager()
+    {
+      // initialize ids
+      pControllersIds_ = pControllers_->Map([](ControllerId controllerId, Controller const&) -> std::tuple<>
+      {
+        return {};
+      });
+    }
+
     // PlayerInputManager's methods
 
-    ActionSetId GetActionSetId(char const* name) override
+    ActionSetId GetActionSetId(std::string_view name) override
     {
-      ActionSetId actionSetId = _actionSets.size();
-      _actionSets.push_back({
-        .name = name,
+      ActionSetId actionSetId = actionSets_.size();
+      actionSets_.push_back({
+        .name = std::string{name},
       });
       return actionSetId;
     }
 
     ButtonActionId GetButtonActionId(std::string_view name) override
     {
-      ButtonActionId actionId = _buttonActions.size();
-      _buttonActions.push_back({
+      ButtonActionId actionId = buttonActions_.size();
+      buttonActions_.push_back({
         .name = std::string{name},
       });
       return actionId;
@@ -120,8 +132,8 @@ export namespace Coil
 
     AnalogActionId GetAnalogActionId(std::string_view name) override
     {
-      AnalogActionId actionId = _analogActions.size();
-      _analogActions.push_back({
+      AnalogActionId actionId = analogActions_.size();
+      analogActions_.push_back({
         .name = std::string{name},
       });
       return actionId;
@@ -130,94 +142,103 @@ export namespace Coil
     void Update() override
     {
       // get active controllers
-      _tempInputHandles.resize(STEAM_INPUT_MAX_COUNT);
-      _tempInputHandles.resize(_steamInput().GetConnectedControllers(_tempInputHandles.data()));
+      tempInputHandles_.resize(STEAM_INPUT_MAX_COUNT);
+      tempInputHandles_.resize(steamInput_().GetConnectedControllers(tempInputHandles_.data()));
 
       // remove non-active controllers
-      for(auto& [inputHandle, controllerState] : _controllers)
+      // mark all controllers non-active first
+      for(auto& [inputHandle, controllerState] : *pControllers_)
         controllerState.active = false;
-      for(size_t i = 0; i < _tempInputHandles.size(); ++i)
-        _controllers[_tempInputHandles[i]].active = true;
-      for(auto i = _controllers.begin(); i != _controllers.end(); )
+      // mark active controllers
+      for(size_t i = 0; i < tempInputHandles_.size(); ++i)
       {
-        if(i->second.active) ++i;
-        else
+        auto inputHandle = tempInputHandles_[i];
+        Controller* pController = pControllers_->Get(inputHandle);
+        if(!pController)
         {
-          auto j = i;
-          ++i;
-          _controllers.erase(j);
+          pController = pControllers_->Set(inputHandle, {{}});
         }
+        pController->active = true;
+      }
+      // remove remaining non-active controllers
+      tempInputHandles_.clear();
+      for(auto const& [inputHandle, controller] : *pControllers_)
+      {
+        if(!controller.active)
+        {
+          tempInputHandles_.push_back(inputHandle);
+        }
+      }
+      for(size_t i = 0; i < tempInputHandles_.size(); ++i)
+      {
+        pControllers_->Set(tempInputHandles_[i], {});
       }
 
       // update states
-      _controllersIds.clear();
-      for(auto& [inputHandle, controllerState] : _controllers)
+      for(auto const& [inputHandle, controller] : *pControllers_)
       {
-        _controllersIds.push_back(inputHandle);
-        controllerState.buttonStates.resize(_buttonActions.size());
-        for(size_t i = 0; i < _buttonActions.size(); ++i)
+        for(auto const& [buttonActionId, controllerButtonAction] : controller.buttonActions)
         {
-          auto& buttonAction = _buttonActions[i];
+          auto& buttonAction = buttonActions_[buttonActionId];
           if(!buttonAction.handle)
           {
-            buttonAction.handle = _steamInput().GetDigitalActionHandle(buttonAction.name.c_str());
+            buttonAction.handle = steamInput_().GetDigitalActionHandle(buttonAction.name.c_str());
           }
 
-          auto& buttonState = controllerState.buttonStates[i];
-          bool isPressed = _steamInput().GetDigitalActionData(inputHandle, _buttonActions[i].handle).bState;
-          buttonState.isJustChanged = buttonState.isPressed != isPressed;
-          buttonState.isPressed = isPressed;
+          bool isPressed = steamInput_().GetDigitalActionData(inputHandle, buttonAction.handle).bState;
+          controllerButtonAction.sigIsPressed.SetIfDiffers(isPressed);
         }
 
-        controllerState.analogStates.resize(_analogActions.size());
-        for(size_t i = 0; i < _analogActions.size(); ++i)
+        for(auto const& [analogActionId, controllerAnalogAction] : controller.analogActions)
         {
-          auto& analogAction = _analogActions[i];
+          auto& analogAction = analogActions_[analogActionId];
           if(!analogAction.handle)
           {
-            analogAction.handle = _steamInput().GetAnalogActionHandle(analogAction.name.c_str());
+            analogAction.handle = steamInput_().GetAnalogActionHandle(analogAction.name.c_str());
           }
 
-          auto& analogState = controllerState.analogStates[i];
-          auto data = _steamInput().GetAnalogActionData(inputHandle, _analogActions[i].handle);
-          analogState.x = data.x;
-          analogState.y = data.y;
+          auto data = steamInput_().GetAnalogActionData(inputHandle, analogAction.handle);
+          controllerAnalogAction.sigValue.SetIfDiffers(vec2(data.x, data.y));
         }
       }
     }
 
     void ActivateActionSet(ControllerId controllerId, ActionSetId actionSetId) override
     {
-      _steamInput().ActivateActionSet(controllerId, GetActionSetHandle(actionSetId));
+      steamInput_().ActivateActionSet(controllerId, GetActionSetHandle(actionSetId));
     }
 
-    PlayerInputButtonActionState GetButtonActionState(ControllerId controllerId, ButtonActionId actionId) const override
+    PlayerInputButtonAction GetButtonAction(ControllerId controllerId, ActionSetId actionSetId, ButtonActionId actionId) const override
     {
-      auto i = _controllers.find(controllerId);
-      if(i == _controllers.end()) return {};
-      auto const& controller = i->second;
-      if(actionId >= controller.buttonStates.size()) return {};
-      return controller.buttonStates[actionId];
+      Controller* pController = pControllers_->Get(controllerId);
+      if(!pController) return {};
+      auto const& action = pController->GetButtonAction(actionId);
+      return
+      {
+        .sigIsPressed = action.sigIsPressed,
+      };
     }
 
-    PlayerInputAnalogActionState GetAnalogActionState(ControllerId controllerId, AnalogActionId actionId) const override
+    PlayerInputAnalogAction GetAnalogAction(ControllerId controllerId, ActionSetId actionSetId, AnalogActionId actionId) const override
     {
-      auto i = _controllers.find(controllerId);
-      if(i == _controllers.end()) return {};
-      auto const& controller = i->second;
-      if(actionId >= controller.analogStates.size()) return {};
-      return controller.analogStates[actionId];
+      Controller* pController = pControllers_->Get(controllerId);
+      if(!pController) return {};
+      auto const& action = pController->GetAnalogAction(actionId);
+      return
+      {
+        .relativeOrAbsoluteValue = action.sigValue,
+      };
     }
 
   private:
-    SteamInput _steamInput;
+    SteamInput steamInput_;
 
     InputActionSetHandle_t GetActionSetHandle(ActionSetId actionSetId)
     {
-      auto& actionSet = _actionSets[actionSetId];
+      auto& actionSet = actionSets_[actionSetId];
       if(!actionSet.handle)
       {
-        actionSet.handle = _steamInput().GetActionSetHandle(actionSet.name);
+        actionSet.handle = steamInput_().GetActionSetHandle(actionSet.name.c_str());
       }
       return actionSet.handle;
     }
@@ -225,32 +246,62 @@ export namespace Coil
     struct ActionSet
     {
       InputActionSetHandle_t handle = 0;
-      char const* name = nullptr;
+      std::string name;
     };
-    std::vector<ActionSet> _actionSets;
+    std::vector<ActionSet> actionSets_;
 
     struct ButtonAction
     {
       InputDigitalActionHandle_t handle = 0;
       std::string name;
     };
-    std::vector<ButtonAction> _buttonActions;
+    std::vector<ButtonAction> buttonActions_;
 
     struct AnalogAction
     {
       InputAnalogActionHandle_t handle = 0;
       std::string name;
     };
-    std::vector<AnalogAction> _analogActions;
+    std::vector<AnalogAction> analogActions_;
 
-    struct ControllerState
+    struct Controller
     {
-      std::vector<PlayerInputButtonActionState> buttonStates;
-      std::vector<PlayerInputAnalogActionState> analogStates;
+      struct ButtonAction
+      {
+        SignalVarPtr<bool> sigIsPressed;
+      };
+
+      struct AnalogAction
+      {
+        SignalVarPtr<vec2> sigValue;
+      };
+
+      ButtonAction const& GetButtonAction(ButtonActionId actionId)
+      {
+        auto i = buttonActions.find(actionId);
+        if(i != buttonActions.end()) return i->second;
+        return buttonActions.insert({actionId,
+        {
+          .sigIsPressed = MakeVariableSignal<bool>(false),
+        }}).first->second;
+      }
+
+      AnalogAction const& GetAnalogAction(AnalogActionId actionId)
+      {
+        auto i = analogActions.find(actionId);
+        if(i != analogActions.end()) return i->second;
+        return analogActions.insert({actionId,
+        {
+          .sigValue = MakeVariableSignal<vec2>({}),
+        }}).first->second;
+      }
+
+      std::unordered_map<ButtonActionId, ButtonAction> buttonActions;
+      std::unordered_map<AnalogActionId, AnalogAction> analogActions;
       bool active = false;
     };
-    std::unordered_map<InputHandle_t, ControllerState> _controllers;
+    SyncMapPtr<ControllerId, Controller> pControllers_ = MakeSyncMap<ControllerId, Controller>();
 
-    std::vector<InputHandle_t> _tempInputHandles;
+    std::vector<InputHandle_t> tempInputHandles_;
   };
 }
