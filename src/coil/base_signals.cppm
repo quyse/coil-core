@@ -6,6 +6,7 @@ module;
 export module coil.core.base.signals;
 
 import coil.core.base.events;
+import coil.core.base.util;
 
 export namespace Coil
 {
@@ -28,7 +29,7 @@ export namespace Coil
     }
 
   public:
-    // cell which passes recalculate to its signal
+    // cell which passes notify to its signal
     class SignalCell final : public Cell
     {
     public:
@@ -44,7 +45,7 @@ export namespace Coil
       SignalBase* pSignal_ = nullptr;
     };
 
-    // cell which tracks if recalculate was called
+    // cell which tracks if notify was called
     class WatchCell final : public Cell
     {
     public:
@@ -80,7 +81,7 @@ export namespace Coil
   class Signal : public SignalBase
   {
   public:
-    virtual T const& Get() const = 0;
+    virtual ConstRefExceptScalarOf<T> Get() const = 0;
   };
 
   template <typename T>
@@ -102,7 +103,7 @@ export namespace Coil
     : SignalPtr::shared_ptr{std::move(pSignal)}
     {}
 
-    T const& Get() const
+    ConstRefExceptScalarOf<T> Get() const
     {
       return this->get()->Get();
     }
@@ -139,7 +140,7 @@ export namespace Coil
     ConstSignal(T&& value)
     : value_{std::forward<T>(value)} {}
 
-    T const& Get() const override
+    ConstRefExceptScalarOf<T> Get() const override
     {
       return value_;
     }
@@ -159,7 +160,7 @@ export namespace Coil
     VariableSignal(TT&& value)
     : value_(std::forward<TT>(value)) {}
 
-    T const& Get() const override
+    ConstRefExceptScalarOf<T> Get() const override
     {
       return value_;
     }
@@ -208,7 +209,7 @@ export namespace Coil
       }, dependencies_);
     }
 
-    T const& Get() const override
+    ConstRefExceptScalarOf<T> Get() const override
     {
       if(!optValue_.has_value() || this->dirty_)
       {
