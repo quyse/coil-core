@@ -2,6 +2,8 @@ module;
 
 #include <memory>
 #include <optional>
+#include <ranges>
+#include <vector>
 
 export module coil.core.base.signals;
 
@@ -70,7 +72,10 @@ export namespace Coil
 
   protected:
     template <typename T>
-    struct Dependency;
+    struct EventDependency;
+
+    template <typename T>
+    struct SignalDependency;
 
     mutable bool dirty_ = true;
   };
@@ -115,10 +120,11 @@ export namespace Coil
     }
   };
 
+  // dependency for watching another signal
   template <typename T>
-  struct SignalBase::Dependency
+  struct SignalBase::SignalDependency
   {
-    Dependency(SignalPtr<T> pSignal, SignalBase* pSelfSignal)
+    SignalDependency(SignalPtr<T> pSignal, SignalBase* pSelfSignal)
     : pSignal_{std::move(pSignal)}, cell_{pSelfSignal}
     {}
 
@@ -150,7 +156,7 @@ export namespace Coil
   };
 
   template <typename T>
-  class VariableSignal final : public Signal<T>
+  class VariableSignal : public Signal<T>
   {
   public:
     VariableSignal(T value = {})
@@ -201,9 +207,9 @@ export namespace Coil
     template <typename FF, typename... AArgs>
     DependentSignal(FF&& f, SignalPtr<AArgs>... pSignals)
     : f_{std::forward<FF>(f)}
-    , dependencies_(SignalBase::Dependency{std::move(pSignals), this}...)
+    , dependencies_(SignalBase::SignalDependency{std::move(pSignals), this}...)
     {
-      std::apply([](SignalBase::Dependency<Args>&... dependencies)
+      std::apply([](SignalBase::SignalDependency<Args>&... dependencies)
       {
         (dependencies.Init(), ...);
       }, dependencies_);
@@ -213,7 +219,7 @@ export namespace Coil
     {
       if(!optValue_.has_value() || this->dirty_)
       {
-        optValue_ = {std::apply([&](SignalBase::Dependency<Args> const&... dependencies) -> T
+        optValue_ = {std::apply([&](SignalBase::SignalDependency<Args> const&... dependencies) -> T
         {
           return f_(dependencies.pSignal_->Get()...);
         }, dependencies_)};
@@ -224,8 +230,82 @@ export namespace Coil
 
   private:
     F f_;
-    std::tuple<SignalBase::Dependency<Args>...> dependencies_;
+    std::tuple<SignalBase::SignalDependency<Args>...> dependencies_;
     mutable std::optional<T> optValue_;
+  };
+
+  template <typename T>
+  class SignalUnpackingSignal final : public Signal<T>
+  {
+  public:
+    SignalUnpackingSignal(SignalPtr<SignalPtr<T>> pSignalSignal)
+    : pSignalSignal_{std::move(pSignalSignal)}
+    , cellSigSig_{this}
+    , cellSig_{this}
+    {
+      cellSigSig_.SubscribeTo(pSignalSignal_);
+      cellSig_.SubscribeTo(pSignalSignal_->Get());
+    }
+
+    ConstRefExceptScalarOf<T> Get() const override
+    {
+      if(!optSignal_.has_value() || !optValue_.has_value() || this->dirty_)
+      {
+        optSignal_ = {pSignalSignal_.Get()};
+        optValue_ = {optSignal_.value().Get()};
+        cellSig_.SubscribeTo(optSignal_.value());
+        this->dirty_ = false;
+      }
+      return optValue_.value();
+    }
+
+  private:
+    SignalPtr<SignalPtr<T>> pSignalSignal_;
+    mutable SignalBase::SignalCell cellSigSig_;
+    mutable SignalBase::SignalCell cellSig_;
+    mutable std::optional<SignalPtr<T>> optSignal_;
+    mutable std::optional<T> optValue_;
+  };
+
+  template <typename F, typename A, typename R = decltype(std::declval<F>()(std::declval<std::views::empty<A>>()))>
+  class SignalDependentOnRange final : public Signal<R>
+  {
+  public:
+    template <typename FF, std::ranges::range Args>
+    SignalDependentOnRange(FF&& f, Args&& pSignals)
+    : f_{std::forward<FF>(f)}
+    {
+      if constexpr(std::ranges::sized_range<Args>)
+      {
+        dependencies_.reserve(std::ranges::size(pSignals));
+      }
+      for(auto const& pSignal : pSignals)
+      {
+        dependencies_.push_back({pSignal, this});
+      }
+      for(size_t i = 0; i < dependencies_.size(); ++i)
+      {
+        dependencies_[i].Init();
+      }
+    }
+
+    ConstRefExceptScalarOf<R> Get() const override
+    {
+      if(!optValue_.has_value() || this->dirty_)
+      {
+        optValue_ = {f_(dependencies_ | std::views::transform([](SignalBase::SignalDependency<A> const& dependency) -> auto
+        {
+          return dependency.pSignal_->Get();
+        }))};
+        this->dirty_ = false;
+      }
+      return optValue_.value();
+    }
+
+  private:
+    F f_;
+    std::vector<SignalBase::SignalDependency<A>> dependencies_;
+    mutable std::optional<R> optValue_;
   };
 
   template <typename T>
@@ -252,30 +332,88 @@ export namespace Coil
     }
   };
 
+  // dependency for watching single-arg event
+  template <typename T>
+  class SignalDependentOnEvent : public VariableSignal<T>
+  {
+  private:
+    class SignalEventCell final : public Event<T>::Cell
+    {
+    public:
+      SignalEventCell(SignalDependentOnEvent* pSignal)
+      : pSignal_{pSignal} {}
+
+      void Notify(ConstRefExceptScalarOf<T> arg) override
+      {
+        pSignal_->Set(arg);
+      }
+
+    private:
+      SignalDependentOnEvent* pSignal_ = nullptr;
+    };
+
+  public:
+    SignalDependentOnEvent(EventPtr<T> pEvent, T initialValue = {})
+    : SignalDependentOnEvent::VariableSignal{std::move(initialValue)}, pEvent_{std::move(pEvent)}, cell_{this}
+    {
+      cell_.SubscribeTo(pEvent_);
+    }
+
+    template <typename TT>
+    SignalDependentOnEvent(EventPtr<T> pEvent, TT&& initialValue)
+    : SignalDependentOnEvent::VariableSignal{std::forward<TT>(initialValue)}, pEvent_{std::move(pEvent)}, cell_{this}
+    {
+      cell_.SubscribeTo(pEvent_);
+    }
+
+    EventPtr<T> pEvent_;
+    SignalEventCell cell_;
+  };
+
   template <typename T>
   SignalPtr<std::decay_t<T>> MakeConstSignal(T&& value)
   {
-    return {std::make_shared<ConstSignal<std::decay_t<T>>>(std::move(value))};
+    return std::make_shared<ConstSignal<std::decay_t<T>>>(std::move(value));
   }
 
   template <typename T>
   SignalVarPtr<std::decay_t<T>> MakeVariableSignal(T&& value = {})
   {
-    return {std::make_shared<VariableSignal<std::decay_t<T>>>(std::move(value))};
+    return std::make_shared<VariableSignal<std::decay_t<T>>>(std::move(value));
+  }
+
+  template <typename T, typename TT = T>
+  SignalPtr<T> MakeSignalDependentOnEvent(EventPtr<T> pEvent, TT&& initialValue = {})
+  {
+    return std::make_shared<SignalDependentOnEvent<T>>(std::move(pEvent), std::forward<TT>(initialValue));
   }
 
   template <typename F, typename... Args>
-  auto MakeDependentSignal(F&& f, SignalPtr<Args>... args) -> SignalPtr<decltype(f(args->Get()...))>
+  auto MakeSignalDependentOnSignals(F&& f, SignalPtr<Args>... args) -> SignalPtr<decltype(f(args->Get()...))>
   {
-    return
-    {
-      std::make_shared<
-        DependentSignal<
-          std::decay_t<decltype(f(args->Get()...))>,
-          std::decay_t<F>,
-          std::decay_t<Args>...
-        >
-      >(std::forward<F>(f), std::move(args)...)
-    };
+    return std::make_shared<
+      DependentSignal<
+        std::decay_t<decltype(f(args->Get()...))>,
+        std::decay_t<F>,
+        std::decay_t<Args>...
+      >
+    >(std::forward<F>(f), std::move(args)...);
+  }
+
+  template <typename T>
+  SignalPtr<T> MakeSignalUnpackingSignal(SignalPtr<SignalPtr<T>> pSignal)
+  {
+    return std::make_shared<SignalUnpackingSignal<T>>(pSignal);
+  }
+
+  template <
+    typename F,
+    std::ranges::range Args,
+    typename A = std::decay_t<decltype(std::declval<std::ranges::range_value_t<Args>>()->Get())>,
+    typename R = std::decay_t<decltype(std::declval<F>()(std::views::empty<A>))>
+  >
+  SignalPtr<R> MakeSignalDependentOnRange(F&& f, Args&& args)
+  {
+    return std::make_shared<SignalDependentOnRange<std::decay_t<F>, A, R>>(std::forward<F>(f), std::forward<Args>(args));
   }
 }

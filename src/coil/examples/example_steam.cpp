@@ -159,7 +159,7 @@ int COIL_ENTRY_POINT(std::vector<std::string> args)
   auto& nativePlayerInputManager = book.Allocate<NativePlayerInputManager>(inputManager);
   nativePlayerInputManager.SetMapping(JsonDecode<NativePlayerInputMapping>(JsonFromBuffer(File::MapRead(book, "example_native_player_input_mapping.json"))));
 
-  PlayerInputManager& playerInputManager = steam
+  SingleControllerCombinedPlayerInputManager playerInputManager = steam
     ? static_cast<PlayerInputManager&>(book.Allocate<CombinedPlayerInputManager<NativePlayerInputManager, SteamPlayerInputManager>>(
         nativePlayerInputManager,
         book.Allocate<SteamPlayerInputManager>()
@@ -168,6 +168,9 @@ int COIL_ENTRY_POINT(std::vector<std::string> args)
   ;
   InGameActionSet<PlayerInputActionSetRegistrationAdapter> actionSetRegistration;
   actionSetRegistration.Register(playerInputManager, "InGame");
+  InGameActionSet<PlayerInputActionSetAdapter> actionSet;
+  actionSet.Register(playerInputManager, actionSetRegistration, 0);
+  actionSet.Activate(playerInputManager);
 
   auto pControllers = playerInputManager.GetControllers();
 
@@ -182,16 +185,10 @@ int COIL_ENTRY_POINT(std::vector<std::string> args)
       steam.Update();
       playerInputManager.Update();
 
-      for(auto [controllerId, _] : *pControllers)
+      firing |= actionSet.fire.sigIsPressed.Get();
+      if(actionSet.exit.sigIsPressed.Get())
       {
-        InGameActionSet<PlayerInputActionSetAdapter> actionSet;
-        actionSet.Register(playerInputManager, actionSetRegistration, controllerId);
-        actionSet.Activate(playerInputManager);
-        firing |= actionSet.fire.sigIsPressed.Get();
-        if(actionSet.exit.sigIsPressed.Get())
-        {
-          co_return;
-        }
+        co_return;
       }
 
       GraphicsFrame& frame = graphicsPresenter.StartFrame();

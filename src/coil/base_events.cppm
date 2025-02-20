@@ -224,7 +224,7 @@ export namespace Coil
   }
 
   template <typename Handler, typename... Args>
-  EventArgHelper<EventPtr, EventHandlerResult<Handler, Args...>>::Result MakeDependentEvent(EventPtr<Args...> const& pEvent, Handler&& handler)
+  EventArgHelper<EventPtr, EventHandlerResult<Handler, Args...>>::Result MakeEventDependentOnEvent(Handler&& handler, EventPtr<Args...> const& pEvent)
   {
     return std::static_pointer_cast<typename EventArgHelper<Event, EventHandlerResult<Handler, Args...>>::Result>(
       std::make_shared<typename Event<Args...>::template DependentEvent<std::decay_t<Handler>>>(pEvent, std::forward<Handler>(handler))

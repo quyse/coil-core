@@ -2,6 +2,7 @@ module;
 
 #include <concepts>
 #include <map>
+#include <ranges>
 #include <tuple>
 #include <unordered_map>
 #include <vector>
@@ -10,10 +11,13 @@ export module coil.core.player_input.combined;
 
 import coil.core.base.events.map;
 import coil.core.base.events;
+import coil.core.base.signals;
+import coil.core.math;
 import coil.core.player_input;
 
 export namespace Coil
 {
+  // player input manager combining multiple managers
   template <std::derived_from<PlayerInputManager>... Managers>
   class CombinedPlayerInputManager final : public PlayerInputManager
   {
@@ -156,5 +160,128 @@ export namespace Coil
     std::vector<std::array<ActionSetId, sizeof...(Managers)>> actionSets_;
     std::vector<std::array<ButtonActionId, sizeof...(Managers)>> buttonActions_;
     std::vector<std::array<AnalogActionId, sizeof...(Managers)>> analogActions_;
+  };
+
+  // player input manager combining all controllers into a single one
+  template <std::derived_from<PlayerInputManager> Manager>
+  class SingleControllerCombinedPlayerInputManager final : public PlayerInputManager
+  {
+  public:
+    SingleControllerCombinedPlayerInputManager(Manager& manager)
+    : manager_{manager}
+    {
+      // always a single controller
+      pControllersIds_ = MakeSyncSet<ControllerId>();
+      pControllersIds_->Set(0, {{}});
+    }
+
+    // PlayerInputManager's methods
+
+    ActionSetId GetActionSetId(std::string_view name) override
+    {
+      return manager_.GetActionSetId(name);
+    }
+
+    ButtonActionId GetButtonActionId(std::string_view name) override
+    {
+      return manager_.GetButtonActionId(name);
+    }
+
+    AnalogActionId GetAnalogActionId(std::string_view name) override
+    {
+      return manager_.GetAnalogActionId(name);
+    }
+
+    void Update() override
+    {
+      manager_.Update();
+    }
+
+    void ActivateActionSet(ControllerId, ActionSetId actionSetId) override
+    {
+      for(auto const& [controllerId, _] : *manager_.GetControllers())
+      {
+        manager_.ActivateActionSet(controllerId, actionSetId);
+      }
+    }
+
+    PlayerInputButtonAction GetButtonAction(ControllerId, ActionSetId actionSetId, ButtonActionId actionId) const override
+    {
+      auto sigButtonsActions = manager_.GetControllers()->Map([this, actionSetId, actionId](ControllerId controllerId, auto)
+      {
+        return manager_.GetButtonAction(controllerId, actionSetId, actionId);
+      })->GetSignal();
+      auto sigSigIsPressed = MakeSignalDependentOnSignals([](std::unordered_map<ControllerId, PlayerInputButtonAction> const& buttonsActions)
+      {
+        return MakeSignalDependentOnRange([](auto rangeIsPressed)
+        {
+          for(bool isPressed : rangeIsPressed)
+          {
+            if(isPressed) return true;
+          }
+          return false;
+        }, buttonsActions | std::views::values | std::views::transform([](PlayerInputButtonAction const& buttonAction)
+        {
+          return buttonAction.sigIsPressed;
+        }));
+      }, std::move(sigButtonsActions));
+
+      return
+      {
+        .sigIsPressed = MakeSignalUnpackingSignal(std::move(sigSigIsPressed)),
+      };
+    }
+
+    PlayerInputAnalogAction GetAnalogAction(ControllerId controllerId, ActionSetId actionSetId, AnalogActionId actionId) const override
+    {
+      auto sigButtonsActions = manager_.GetControllers()->Map([this, actionSetId, actionId](ControllerId controllerId, auto)
+      {
+        return manager_.GetAnalogAction(controllerId, actionSetId, actionId);
+      })->GetSignal();
+      auto sigAbsoluteValue = MakeSignalDependentOnSignals([](std::unordered_map<ControllerId, PlayerInputAnalogAction> const& analogsActions)
+      {
+        return MakeSignalDependentOnRange([](auto rangeAbsoluteValue)
+        {
+          vec2 totalAbsoluteValue;
+          for(vec2 absoluteValue : rangeAbsoluteValue)
+          {
+            totalAbsoluteValue += absoluteValue;
+          }
+          return totalAbsoluteValue;
+        }, analogsActions | std::views::values | std::views::transform([](PlayerInputAnalogAction const& analogAction)
+        {
+          return std::visit([](auto const& relativeOrAbsoluteValue) -> std::optional<SignalPtr<vec2>>
+          {
+            // if it's relative event
+            if constexpr(std::same_as<std::decay_t<decltype(relativeOrAbsoluteValue)>, EventPtr<vec2>>)
+            {
+              // TODO
+              return {};
+            }
+            else
+            {
+              return {relativeOrAbsoluteValue};
+            }
+          }, analogAction.relativeOrAbsoluteValue);
+        }) | std::views::filter([](auto const& opt)
+        {
+          return opt.has_value();
+        }) | std::views::transform([](auto const& opt) -> auto
+        {
+          return opt.value();
+        }));
+      }, std::move(sigButtonsActions));
+
+      return
+      {
+        .relativeOrAbsoluteValue = MakeSignalUnpackingSignal(std::move(sigAbsoluteValue)),
+      };
+    }
+
+  private:
+    Manager& manager_;
+
+    std::unordered_map<ButtonActionId, PlayerInputButtonAction> buttonActions_;
+    std::unordered_map<AnalogActionId, PlayerInputAnalogAction> analogActions_;
   };
 }

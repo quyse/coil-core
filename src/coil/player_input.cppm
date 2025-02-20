@@ -135,23 +135,23 @@ export namespace Coil
             if constexpr(std::same_as<std::decay_t<decltype(relativeOrAbsoluteValue)>, EventPtr<vec2>>)
             {
               auto sigAbsoluteValue = MakeVariableSignal<vec2>({});
-              field.evRelativeValue = MakeDependentEvent(relativeOrAbsoluteValue, [sigAbsoluteValue](vec2 const& relativeValue) -> vec2
+              field.evRelativeValue = MakeEventDependentOnEvent([sigAbsoluteValue](vec2 const& relativeValue) -> vec2
               {
                 sigAbsoluteValue.SetIfDiffers(sigAbsoluteValue.Get() + relativeValue);
                 return relativeValue;
-              });
+              }, relativeOrAbsoluteValue);
               field.sigAbsoluteValue = sigAbsoluteValue;
             }
             // else it's absolute value signal
             else
             {
-              field.evRelativeValue = MakeDependentEvent(static_cast<EventPtr<>>(relativeOrAbsoluteValue), [relativeOrAbsoluteValue, lastAbsoluteValue = vec2()]() mutable -> vec2
+              field.evRelativeValue = MakeEventDependentOnEvent([relativeOrAbsoluteValue, lastAbsoluteValue = vec2()]() mutable -> vec2
               {
                 vec2 absoluteValue = relativeOrAbsoluteValue.Get();
                 vec2 relativeValue = absoluteValue - lastAbsoluteValue;
                 lastAbsoluteValue = absoluteValue;
                 return relativeValue;
-              });
+              }, static_cast<EventPtr<>>(relativeOrAbsoluteValue));
               field.sigAbsoluteValue = relativeOrAbsoluteValue;
             }
           }, manager.GetAnalogAction(controllerId, registration.actionSetId_, analog.actionId).relativeOrAbsoluteValue);

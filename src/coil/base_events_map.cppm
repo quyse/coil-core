@@ -6,6 +6,7 @@ module;
 export module coil.core.base.events.map;
 
 import coil.core.base.events;
+import coil.core.base.signals;
 import coil.core.base.util;
 
 export namespace Coil
@@ -20,7 +21,7 @@ export namespace Coil
   using SyncSetPtr = SyncMapPtr<Key, std::tuple<>>;
 
   template <IsDecayed Key, IsDecayed Value>
-  class SyncMap
+  class SyncMap : public std::enable_shared_from_this<SyncMap<Key, Value>>
   {
   public:
     SyncMap() = default;
@@ -115,9 +116,24 @@ export namespace Coil
       return pEvent_;
     }
 
+    SignalPtr<std::unordered_map<Key, Value>> GetSignal() const
+    {
+      if(auto pSignal = pSignal_.lock())
+      {
+        return pSignal;
+      }
+      auto pSignal = MakeSignalDependentOnEvent(MakeEventDependentOnEvent([self = this->shared_from_this()](Key, Value const*)
+      {
+        return self->items_;
+      }, GetEvent()), items_);
+      pSignal_ = pSignal;
+      return pSignal;
+    }
+
   private:
     std::unordered_map<Key, Value> items_;
     mutable EventPtr<Key, Value const*> pEvent_;
+    mutable std::weak_ptr<Signal<std::unordered_map<Key, Value>>> pSignal_;
   };
 
   template <IsDecayed Key, IsDecayed Value>
