@@ -269,6 +269,7 @@ lib.makeExtensible (self: with self; {
       "-DUSE_ZLIB=ON"
       "-DCURL_ZSTD=ON"
       "-DCURL_USE_MBEDTLS=ON"
+      "-DCURL_USE_LIBPSL=OFF"
     ];
     meta = pkgs.curl.meta // {
       outputsToInstall = null;
