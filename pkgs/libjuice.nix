@@ -5,12 +5,12 @@
 
 stdenv.mkDerivation rec {
   pname = "libjuice";
-  version = "1.5.7";
+  version = "1.5.9";
 
   src = fetchgit {
     url = "https://github.com/paullouisageneau/libjuice.git";
     rev = "v${version}";
-    hash = "sha256-niMzFimcb+6FJq9ks7FJ2yrwJ7NnSEfj/bxLaPhdMDk=";
+    hash = "sha256-31l/bcvmg1x8HJ4mrIaiCHWIqwrK/XQYJxee8S3+2f8=";
   };
 
   nativeBuildInputs = [

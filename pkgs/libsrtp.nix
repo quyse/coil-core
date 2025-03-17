@@ -9,20 +9,13 @@
 
 stdenv.mkDerivation rec {
   pname = "libsrtp";
-  version = "2.6.0";
+  version = "2.7.0";
 
   src = fetchgit {
     url = "https://github.com/cisco/libsrtp.git";
     rev = "v${version}";
-    hash = "sha256-vWL5bksKT5NUoNkIRiJ2FeGODQthD8SgXjCaA7SeTe4=";
+    hash = "sha256-5AFsigie3YUrfvZYEIopjBJSNdoKoFlMBP9lv68+f6Q=";
   };
-
-  patches = [
-    (fetchpatch {
-      url = "https://github.com/cisco/libsrtp/pull/702.patch";
-      hash = "sha256-BwKiY4CQ9lPyDTWVOtt1FKES4Sj9LdkGU6+EdqnlNbE=";
-    })
-  ];
 
   nativeBuildInputs = [
     cmake
