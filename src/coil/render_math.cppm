@@ -1,5 +1,6 @@
 module;
 
+#include <cstddef>
 #include <concepts>
 
 export module coil.core.render.math;

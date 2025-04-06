@@ -1,6 +1,7 @@
 #include "entrypoint.hpp"
 #include <coroutine>
 #include <iostream>
+#include <memory>
 #include <random>
 
 import coil.core.base;

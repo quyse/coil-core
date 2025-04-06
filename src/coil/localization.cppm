@@ -1,6 +1,7 @@
 module;
 
 #include <concepts>
+#include <cstddef>
 #include <cstdint>
 #include <tuple>
 #include <utility>
