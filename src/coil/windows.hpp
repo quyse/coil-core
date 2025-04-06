@@ -1,7 +1,6 @@
 #pragma once
 
 #include "base.hpp"
-#include <thread>
 
 #if !defined(COIL_PLATFORM_WINDOWS)
   #error not windows

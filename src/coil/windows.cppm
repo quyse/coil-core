@@ -1,6 +1,7 @@
 module;
 
 #include "windows.hpp"
+#include <thread>
 
 export module coil.core.windows;
 

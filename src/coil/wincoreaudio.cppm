@@ -3,10 +3,7 @@ module;
 #include "windows.hpp"
 #include <audioclient.h>
 #include <mmdeviceapi.h>
-
-// #include <mutex>
-// #include <queue>
-// #include <thread>
+#include <thread>
 
 export module coil.core.audio.wincoreaudio;
 
