@@ -11,6 +11,8 @@ module;
 export module coil.core.audio.wincoreaudio;
 
 import coil.core.audio;
+import coil.core.base;
+import coil.core.windows;
 
 export namespace Coil
 {

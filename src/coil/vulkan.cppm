@@ -3,6 +3,8 @@ module;
 #include <vulkan/vulkan.h>
 #include <functional>
 #include <map>
+#include <optional>
+#include <span>
 #include <unordered_map>
 #include <variant>
 #include <vector>

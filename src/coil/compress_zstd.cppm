@@ -1,7 +1,10 @@
 module;
 
+#include "base.hpp"
 #include <zstd.h>
+#if !defined(COIL_PLATFORM_WINDOWS)
 #include <alloca.h>
+#endif
 #include <malloc.h>
 #include <concepts>
 #include <cstdint>

@@ -3,6 +3,7 @@ module;
 #include <vulkan/vulkan.h>
 #include <algorithm>
 #include <functional>
+#include <span>
 #include <variant>
 
 module coil.core.vulkan;

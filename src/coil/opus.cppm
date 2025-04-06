@@ -1,6 +1,7 @@
 module;
 
 #include <opus/opus.h>
+#include <string_view>
 #include <vector>
 
 export module coil.core.audio.opus;

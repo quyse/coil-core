@@ -2,6 +2,7 @@ module;
 
 #include <algorithm>
 #include <tuple>
+#include <vector>
 
 export module coil.core.image;
 

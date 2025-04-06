@@ -397,7 +397,7 @@ export namespace Coil
         {
           if(renderType.value() != knobRenderType)
           {
-            throw std::runtime_error{"render knobs set different render types"};
+            throw Exception{"render knobs set different render types"};
           }
         }
         else

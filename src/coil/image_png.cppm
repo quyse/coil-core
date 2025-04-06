@@ -1,6 +1,7 @@
 module;
 
 #include <sstream>
+#include <vector>
 #include <png.h>
 
 export module coil.core.image.png;

@@ -1,5 +1,6 @@
 #include "entrypoint.hpp"
 #include <iostream>
+#include <optional>
 
 import coil.core.sqlite;
 

@@ -3,6 +3,7 @@ module;
 #include <any>
 #include <concepts>
 #include <mutex>
+#include <optional>
 #include <string_view>
 #include <unordered_map>
 

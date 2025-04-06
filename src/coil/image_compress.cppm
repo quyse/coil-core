@@ -1,6 +1,7 @@
 module;
 
 #include <squish.h>
+#include <string_view>
 #include <vector>
 
 export module coil.core.image.compress;

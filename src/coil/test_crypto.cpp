@@ -1,4 +1,5 @@
 #include "entrypoint.hpp"
+#include <array>
 
 import coil.core.base;
 import coil.core.crypto;

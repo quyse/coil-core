@@ -13,7 +13,7 @@ export module coil.core.entrypoint_graphical;
 
 #if defined(COIL_PLATFORM_WINDOWS)
 
-int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
+extern "C" int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {
   int argsCount;
   LPWSTR* argsStrs = CommandLineToArgvW(pCmdLine, &argsCount);

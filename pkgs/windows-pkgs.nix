@@ -30,6 +30,10 @@ lib.makeExtensible (self: with self; {
     buildInputs = [
       vulkan-headers
     ];
+    postPatch = ''
+      # remove .rc
+      sed -ie 's?''${RC_FILE_LOCATION}??' loader/CMakeLists.txt
+    '';
     cmakeFlags = [
       "-DENABLE_WERROR=OFF"
     ];
@@ -51,6 +55,8 @@ lib.makeExtensible (self: with self; {
       # remove unsupported option
       grep -Fv -- '-z noexecstack' < build/cmake/CMakeModules/AddZstdCompilationFlags.cmake > build/cmake/CMakeModules/AddZstdCompilationFlags.cmake.new
       mv build/cmake/CMakeModules/AddZstdCompilationFlags.cmake{.new,}
+      # remove .rc
+      sed -ie 's?''${PlatformDependResources}??' build/cmake/lib/CMakeLists.txt
     '';
     cmakeFlags = [
       "-DZSTD_MULTITHREAD_SUPPORT=OFF"
@@ -65,6 +71,10 @@ lib.makeExtensible (self: with self; {
 
   SDL2 = mkCmakePkg {
     inherit (pkgs.SDL2) pname version src meta;
+    postPatch = ''
+      # remove .rc
+      sed -ie 's?''${VERSION_SOURCES}??' CMakeLists.txt
+    '';
     cmakeFlags = [
       "-DBUILD_SHARED_LIBS=ON"
     ];
@@ -72,10 +82,14 @@ lib.makeExtensible (self: with self; {
 
   zlib = mkCmakePkg {
     inherit (pkgs.zlib) pname version src meta;
+    postPatch = ''
+      # remove .rc
+      sed -ie 's?win32/zlib1.rc??' CMakeLists.txt
+    '';
   };
 
   libpng = mkCmakePkg {
-    inherit (pkgs.libpng) pname version src meta;
+    inherit (pkgs.libpng) pname version src;
     buildInputs = [
       zlib
     ];
@@ -84,6 +98,9 @@ lib.makeExtensible (self: with self; {
       "-DPNG_EXECUTABLES=OFF"
       "-DPNG_TESTS=OFF"
     ];
+    meta = pkgs.libpng.meta // {
+      outputsToInstall = null;
+    };
   };
 
   libsquish = mkCmakePkg rec {
@@ -94,7 +111,7 @@ lib.makeExtensible (self: with self; {
   };
 
   sqlite = mkCmakePkg {
-    inherit (pkgs.sqlite) pname version src meta;
+    inherit (pkgs.sqlite) pname version src;
     postPatch = ''
       ln -s ${pkgs.writeText "sqlite-CMakeLists.txt" ''
         cmake_minimum_required(VERSION 3.19)
@@ -108,6 +125,9 @@ lib.makeExtensible (self: with self; {
         install(TARGETS sqlite EXPORT sqliteTargets ARCHIVE DESTINATION lib PUBLIC_HEADER DESTINATION include)
       ''} CMakeLists.txt
     '';
+    meta = pkgs.sqlite.meta // {
+      outputsToInstall = null;
+    };
   };
 
   mbedtls = mkCmakePkg {
@@ -128,6 +148,10 @@ lib.makeExtensible (self: with self; {
     buildInputs = [
       libpng
     ];
+    postPatch = ''
+      # remove .rc
+      sed -ie 's?src/base/ftver.rc??' CMakeLists.txt
+    '';
     cmakeFlags = [
       "-DBUILD_SHARED_LIBS=ON"
     ];
@@ -260,6 +284,10 @@ lib.makeExtensible (self: with self; {
       zlib
       zstd
     ];
+    postPatch = ''
+      # remove .rc
+      sed -ie 's?"libcurl.rc"??' lib/CMakeLists.txt
+    '';
     cmakeFlags = [
       "-DBUILD_CURL_EXE=OFF"
       "-DBUILD_SHARED_LIBS=ON"
@@ -277,7 +305,14 @@ lib.makeExtensible (self: with self; {
   };
 
   c-ares = mkCmakePkg {
-    inherit (pkgs.c-ares) pname version src meta;
+    inherit (pkgs.c-ares) pname version src;
+    postPatch = ''
+      # remove .rc
+      sed -ie 's?cares.rc??' src/lib/CMakeLists.txt
+    '';
+    meta = pkgs.c-ares.meta // {
+      outputsToInstall = null;
+    };
   };
 
   boost = msvc.stdenv.mkDerivation {
@@ -340,5 +375,9 @@ lib.makeExtensible (self: with self; {
     cmakeFlags = [
       "-DCOIL_CORE_DONT_REQUIRE_LIBS=${dontRequireLibsList}"
     ];
+    postPatch = ''
+      sed -iE 's/cxx_std_26/cxx_std_23/' CMakeLists.txt
+      sed -iE 's/CMAKE_CXX_STANDARD 26/CMAKE_CXX_STANDARD 23/' CMakeLists.txt
+    '';
   };
 })

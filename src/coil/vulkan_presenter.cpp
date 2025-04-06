@@ -2,6 +2,7 @@ module;
 
 #include <vulkan/vulkan.h>
 #include <functional>
+#include <optional>
 
 module coil.core.vulkan;
 

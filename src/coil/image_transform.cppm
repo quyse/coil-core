@@ -1,5 +1,6 @@
 module;
 
+#include <string_view>
 #include <vector>
 
 export module coil.core.image.transform;

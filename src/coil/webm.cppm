@@ -1,6 +1,7 @@
 module;
 
 #include <webm/webm_parser.h>
+#include <optional>
 #include <unordered_map>
 
 export module coil.core.media.webm;

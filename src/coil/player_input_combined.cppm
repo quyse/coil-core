@@ -5,6 +5,7 @@ module;
 #include <ranges>
 #include <tuple>
 #include <unordered_map>
+#include <variant>
 #include <vector>
 
 export module coil.core.player_input.combined;

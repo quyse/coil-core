@@ -7,7 +7,10 @@ module;
 
 #include <coroutine>
 #include <functional>
+#include <mutex>
+#include <optional>
 #include <stop_token>
+#include <string>
 #include <thread>
 
 export module coil.core.curl;

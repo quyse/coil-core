@@ -1,6 +1,13 @@
 module;
 
+// alloca
+#include "base.hpp"
+#if defined(COIL_PLATFORM_WINDOWS)
+#include <malloc.h>
+#else
 #include <alloca.h>
+#endif
+
 #include <span>
 
 export module coil.core.render.polygons;
