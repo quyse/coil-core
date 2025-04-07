@@ -36,7 +36,7 @@ Some WIP documentation.
 ## Platform support
 
 * Linux
-* Windows (broken currently)
+* Windows
 * macOS (planned)
 
 ## Building
@@ -45,7 +45,7 @@ Some WIP documentation.
 
 * `coil-core-nixos` - built using [nixpkgs](https://github.com/NixOS/nixpkgs) dependencies, for use on NixOS
 * ~~`coil-core-ubuntu`~~ (broken currently) - built using Ubuntu LTS
-* ~~`coil-core-windows`~~ (broken currently) - Windows build, using MSVC/clang toolchain
+* `coil-core-windows` - Windows build, using MSVC/clang toolchain
 
 ### Building without Nix
 
