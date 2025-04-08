@@ -2,6 +2,10 @@ module;
 
 #include "curl.hpp"
 
+#if defined(COIL_PLATFORM_WINDOWS)
+#define NEED_SET_SYSTEM_CERTS
+#endif
+
 #include <coroutine>
 #include <functional>
 #include <mutex>
@@ -9,6 +13,10 @@ module;
 #include <stop_token>
 #include <string>
 #include <thread>
+#if defined(NEED_SET_SYSTEM_CERTS)
+#include <mbedtls/ssl.h>
+#include <mbedtls/x509_crt.h>
+#endif
 
 export module coil.core.curl;
 
@@ -24,12 +32,38 @@ namespace Coil
     CurlGlobal()
     {
       curl_global_init(CURL_GLOBAL_ALL);
+
+#if defined(NEED_SET_SYSTEM_CERTS)
+      mbedtls_x509_crt_init(&chain_);
+#if defined(COIL_PLATFORM_WINDOWS)
+      HCERTSTORE hCertStore = CertOpenSystemStoreW(NULL, L"ROOT");
+      if(hCertStore)
+      {
+
+        PCCERT_CONTEXT pCertContext = nullptr;
+
+        while((pCertContext = CertEnumCertificatesInStore(hCertStore, pCertContext)))
+        {
+          if(pCertContext->dwCertEncodingType == X509_ASN_ENCODING)
+          {
+            mbedtls_x509_crt_parse_der(&chain_, pCertContext->pbCertEncoded, pCertContext->cbCertEncoded);
+          }
+        }
+
+        CertCloseStore(hCertStore, 0);
+      }
+#endif
+#endif
     }
 
     ~CurlGlobal()
     {
       curl_global_cleanup();
     }
+
+#if defined(NEED_SET_SYSTEM_CERTS)
+    mbedtls_x509_crt chain_;
+#endif
   };
 }
 
@@ -48,11 +82,17 @@ export namespace Coil
   private:
     void Init()
     {
-      static CurlGlobal global;
+      GetGlobal();
       _thread = std::jthread{[&](std::stop_token stopToken)
       {
         ThreadHandler(stopToken);
       }};
+    }
+
+    static CurlGlobal& GetGlobal()
+    {
+      static CurlGlobal global;
+      return global;
     }
 
   public:
@@ -94,6 +134,13 @@ export namespace Coil
         curl_easy_setopt(_curl, CURLOPT_READDATA, this);
         curl_easy_setopt(_curl, CURLOPT_WRITEFUNCTION, &StaticWriteCallback);
         curl_easy_setopt(_curl, CURLOPT_WRITEDATA, this);
+#if defined(NEED_SET_SYSTEM_CERTS)
+        curl_easy_setopt(_curl, CURLOPT_SSL_CTX_FUNCTION, static_cast<curl_ssl_ctx_callback>([](CURL* curl, void* ssl_ctx, void* clientp) -> CURLcode
+        {
+          mbedtls_ssl_conf_ca_chain((mbedtls_ssl_config*)ssl_ctx, &GetGlobal().chain_, nullptr);
+          return CURLE_OK;
+        }));
+#endif
         // run configuration
         if(info.configure)
         {

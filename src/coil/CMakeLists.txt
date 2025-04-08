@@ -936,6 +936,7 @@ if(TARGET CURL::libcurl)
     PUBLIC
       coil_core_tasks
       CURL::libcurl
+      $<$<BOOL:${WIN32}>:MbedTLS::mbedtls;crypt32.lib>
   )
   target_compile_features(coil_core_curl PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries curl)
