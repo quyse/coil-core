@@ -1,5 +1,5 @@
 { stdenv
-, fetchgit
+, fetchFromGitHub
 , cmake
 , plog
 , usrsctp
@@ -11,12 +11,13 @@
 
 stdenv.mkDerivation rec {
   pname = "libdatachannel";
-  version = "0.22.5";
+  version = "0.22.6";
 
-  src = fetchgit {
-    url = "https://github.com/paullouisageneau/libdatachannel.git";
+  src = fetchFromGitHub {
+    owner = "paullouisageneau";
+    repo = "libdatachannel";
     rev = "v${version}";
-    hash = "sha256-6oJf7yHI47VOZtE2AKan+3GrcAgMMxJaZziNsSe7pdg=";
+    hash = "sha256-Xn2RfPFvCIx7gTFqxXbFVJZDkphZR94SAHJ+0ombf+8=";
     fetchSubmodules = false;
   };
 

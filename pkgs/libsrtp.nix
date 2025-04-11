@@ -1,5 +1,5 @@
 { stdenv
-, fetchgit
+, fetchFromGitHub
 , fetchpatch
 , cmake
 , ninja
@@ -11,8 +11,9 @@ stdenv.mkDerivation rec {
   pname = "libsrtp";
   version = "2.7.0";
 
-  src = fetchgit {
-    url = "https://github.com/cisco/libsrtp.git";
+  src = fetchFromGitHub {
+    owner = "cisco";
+    repo = "libsrtp";
     rev = "v${version}";
     hash = "sha256-5AFsigie3YUrfvZYEIopjBJSNdoKoFlMBP9lv68+f6Q=";
   };

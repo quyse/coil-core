@@ -226,10 +226,11 @@ lib.makeExtensible (self: with self; {
     pname = "opus";
     version = "1.5.2";
     # use git checkout instead of tarball to get cmake exports
-    src = pkgs.fetchgit {
-      url = "https://github.com/xiph/opus";
+    src = pkgs.fetchFromGitHub {
+      owner = "xiph";
+      repo = "opus";
       rev = "v${version}";
-      hash = "sha256-iflnfZqocDuiqV4KEB/iB5OWezoBUIMdfdw5/zhgnS8=";
+      hash = "sha256-M1G7ypcfs7nJmXgkyoG96jT/CkgN5BOzy+DGO4LVCvA=";
     };
     cmakeFlags = [
       "-DBUILD_SHARED_LIBS=ON"

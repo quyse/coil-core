@@ -87,11 +87,11 @@ lib.makeExtensible (self: with self; {
 
     libgav1 = self.coil.compile-cpp (stdenv.mkDerivation rec {
       pname = "libgav1";
-      version = "0.19.0";
+      version = "0.20.0";
       src = pkgs.fetchgit {
         url = "https://chromium.googlesource.com/codecs/libgav1";
         rev = "v${version}";
-        hash = "sha256-kuDXv8H24UwyrOK0cAsTSvMPFCkPI8qUcj5u9WwgfkU=";
+        hash = "sha256-BgTfWmbcMvJB1KewJpRcMtbOd2FVuJ+fi1zAXBXfkrg=";
       };
       nativeBuildInputs = [
         cmake

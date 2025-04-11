@@ -1,16 +1,17 @@
 { stdenv
-, fetchgit
+, fetchFromGitHub
 , cmake
 }:
 
 stdenv.mkDerivation rec {
   pname = "libjuice";
-  version = "1.5.9";
+  version = "1.6.0";
 
-  src = fetchgit {
-    url = "https://github.com/paullouisageneau/libjuice.git";
+  src = fetchFromGitHub {
+    owner = "paullouisageneau";
+    repo = "libjuice";
     rev = "v${version}";
-    hash = "sha256-31l/bcvmg1x8HJ4mrIaiCHWIqwrK/XQYJxee8S3+2f8=";
+    hash = "sha256-fC92Pf0jyL2pUcJFyl7AqjZHcnQEV1cknDwwUiWB1bk=";
   };
 
   nativeBuildInputs = [
