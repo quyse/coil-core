@@ -70,7 +70,7 @@ lib.makeExtensible (self: with self; {
   };
 
   SDL2 = mkCmakePkg {
-    inherit (pkgs.SDL2) pname version src meta;
+    inherit (pkgs.SDL2_classic or pkgs.SDL2) pname version src meta;
     postPatch = ''
       # remove .rc
       sed -ie 's?''${VERSION_SOURCES}??' CMakeLists.txt
