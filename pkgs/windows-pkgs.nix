@@ -6,7 +6,7 @@
 
 lib.makeExtensible (self: with self; {
   msvc = coil.toolchain-windows.msvc {};
-  inherit (msvc) mkCmakePkg finalizePkg;
+  inherit (msvc) mkCmakePkg finalizePkg buildEnvWithModulesSupport;
 
   nlohmann_json = mkCmakePkg {
     inherit (pkgs.nlohmann_json) pname version src meta;
@@ -30,10 +30,6 @@ lib.makeExtensible (self: with self; {
     buildInputs = [
       vulkan-headers
     ];
-    postPatch = ''
-      # remove .rc
-      sed -ie 's?''${RC_FILE_LOCATION}??' loader/CMakeLists.txt
-    '';
     cmakeFlags = [
       "-DENABLE_WERROR=OFF"
     ];
@@ -55,8 +51,6 @@ lib.makeExtensible (self: with self; {
       # remove unsupported option
       grep -Fv -- '-z noexecstack' < build/cmake/CMakeModules/AddZstdCompilationFlags.cmake > build/cmake/CMakeModules/AddZstdCompilationFlags.cmake.new
       mv build/cmake/CMakeModules/AddZstdCompilationFlags.cmake{.new,}
-      # remove .rc
-      sed -ie 's?''${PlatformDependResources}??' build/cmake/lib/CMakeLists.txt
     '';
     cmakeFlags = [
       "-DZSTD_MULTITHREAD_SUPPORT=OFF"
@@ -71,10 +65,6 @@ lib.makeExtensible (self: with self; {
 
   SDL2 = mkCmakePkg {
     inherit (pkgs.SDL2_classic or pkgs.SDL2) pname version src meta;
-    postPatch = ''
-      # remove .rc
-      sed -ie 's?''${VERSION_SOURCES}??' CMakeLists.txt
-    '';
     cmakeFlags = [
       "-DBUILD_SHARED_LIBS=ON"
     ];
@@ -82,10 +72,6 @@ lib.makeExtensible (self: with self; {
 
   zlib = mkCmakePkg {
     inherit (pkgs.zlib) pname version src meta;
-    postPatch = ''
-      # remove .rc
-      sed -ie 's?win32/zlib1.rc??' CMakeLists.txt
-    '';
   };
 
   libpng = mkCmakePkg {
@@ -148,10 +134,6 @@ lib.makeExtensible (self: with self; {
     buildInputs = [
       libpng
     ];
-    postPatch = ''
-      # remove .rc
-      sed -ie 's?src/base/ftver.rc??' CMakeLists.txt
-    '';
     cmakeFlags = [
       "-DBUILD_SHARED_LIBS=ON"
     ];
@@ -285,10 +267,6 @@ lib.makeExtensible (self: with self; {
       zlib
       zstd
     ];
-    postPatch = ''
-      # remove .rc
-      sed -ie 's?"libcurl.rc"??' lib/CMakeLists.txt
-    '';
     cmakeFlags = [
       "-DBUILD_CURL_EXE=OFF"
       "-DBUILD_SHARED_LIBS=ON"
@@ -353,6 +331,7 @@ lib.makeExtensible (self: with self; {
 
   coil-core = mkCmakePkg {
     inherit (pkgs.coil.core) name src meta;
+    buildEnv = buildEnvWithModulesSupport;
     buildInputs = [
       nlohmann_json
       vulkan-headers
