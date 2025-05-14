@@ -11,6 +11,7 @@ module;
 #endif
 
 #include <filesystem>
+#include <optional>
 
 export module coil.core.process;
 
@@ -137,7 +138,7 @@ export namespace Coil
   }
 
   // run process, do not wait for it
-  void RunProcessAndForget(std::string const& program, std::vector<std::string> const& arguments)
+  void RunProcessAndForget(std::string const& program, std::vector<std::string> const& arguments, std::optional<std::string> const& workingDirectory = {})
   {
 #if defined(COIL_PLATFORM_WINDOWS)
     // not clear how to transition from arguments to command line, Windows escaping is crazy
@@ -152,17 +153,26 @@ export namespace Coil
 
     if(::fork() == 0)
     {
+      if(workingDirectory.has_value())
+      {
+        std::filesystem::current_path(workingDirectory.value());
+      }
       ::execvp(program.c_str(), args.data());
     }
 #endif
   }
 
   // run executable or open a document
-  void RunOrOpenFile(std::string const& fileName)
+  void RunOrOpenFile(std::string const& fileName, std::optional<std::string> const& workingDirectory = {})
   {
 #if defined(COIL_PLATFORM_WINDOWS)
     std::wstring fileNameStr;
     Unicode::Convert<char, char16_t>(fileName.begin(), fileName.end(), fileNameStr);
+    std::wstring workingDirectoryStr;
+    if(workingDirectory.has_value())
+    {
+      Unicode::Convert<char, char16_t>(workingDirectory.value().begin(), workingDirectory.value().end(), workingDirectoryStr);
+    }
     SHELLEXECUTEINFOW info =
     {
       .cbSize = sizeof(info),
@@ -171,13 +181,13 @@ export namespace Coil
       .lpVerb = NULL,
       .lpFile = fileNameStr.c_str(),
       .lpParameters = NULL,
-      .lpDirectory = NULL,
+      .lpDirectory = workingDirectory.has_value() ? workingDirectoryStr.c_str() : NULL,
       .nShow = SW_NORMAL,
     };
     if(!ShellExecuteExW(&info))
       throw Exception{"failed to run or open file: "} << fileName;
 #elif defined(COIL_PLATFORM_POSIX)
-    RunProcessAndForget("xdg-open", {fileName});
+    RunProcessAndForget("xdg-open", {fileName}, workingDirectory);
 #endif
   }
 }
