@@ -285,10 +285,6 @@ lib.makeExtensible (self: with self; {
 
   c-ares = mkCmakePkg {
     inherit (pkgs.c-ares) pname version src;
-    postPatch = ''
-      # remove .rc
-      sed -ie 's?cares.rc??' src/lib/CMakeLists.txt
-    '';
     meta = pkgs.c-ares.meta // {
       outputsToInstall = null;
     };
