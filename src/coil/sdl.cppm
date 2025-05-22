@@ -1,6 +1,6 @@
 module;
 
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 #include <functional>
 #include <memory>
 #include <string>
@@ -13,6 +13,14 @@ import coil.core.input;
 import coil.core.math;
 import coil.core.platform;
 import coil.core.unicode;
+
+namespace Coil
+{
+  Exception SdlException(char const* message)
+  {
+    return Exception{message} << ": " << SDL_GetError();
+  }
+}
 
 export namespace Coil
 {
@@ -59,15 +67,15 @@ export namespace Coil
     {
       switch(sdlEvent.type)
       {
-      case SDL_KEYDOWN:
-      case SDL_KEYUP:
+      case SDL_EVENT_KEY_DOWN:
+      case SDL_EVENT_KEY_UP:
         AddEvent(InputKeyboardKeyEvent
         {
-          .key = ConvertKey(sdlEvent.key.keysym.scancode),
-          .isPressed = sdlEvent.type == SDL_KEYDOWN,
+          .key = ConvertKey(sdlEvent.key.scancode),
+          .isPressed = sdlEvent.type == SDL_EVENT_KEY_DOWN,
         });
         break;
-      case SDL_TEXTINPUT:
+      case SDL_EVENT_TEXT_INPUT:
         for(Unicode::Iterator<char, char32_t, char const*> i(sdlEvent.text.text); *i; ++i)
         {
           AddEvent(InputKeyboardCharacterEvent
@@ -76,7 +84,7 @@ export namespace Coil
           });
         }
         break;
-      case SDL_MOUSEMOTION:
+      case SDL_EVENT_MOUSE_MOTION:
         // raw move event
         AddEvent(InputMouseRawMoveEvent
         {
@@ -99,8 +107,8 @@ export namespace Coil
           .wheel = 0,
         });
         break;
-      case SDL_MOUSEBUTTONDOWN:
-      case SDL_MOUSEBUTTONUP:
+      case SDL_EVENT_MOUSE_BUTTON_DOWN:
+      case SDL_EVENT_MOUSE_BUTTON_UP:
         {
           InputMouseButton button;
           bool ok = true;
@@ -124,12 +132,12 @@ export namespace Coil
             AddEvent(InputMouseButtonEvent
             {
               .button = button,
-              .isPressed = sdlEvent.type == SDL_MOUSEBUTTONDOWN,
+              .isPressed = sdlEvent.type == SDL_EVENT_MOUSE_BUTTON_DOWN,
             });
           }
         }
         break;
-      case SDL_MOUSEWHEEL:
+      case SDL_EVENT_MOUSE_WHEEL:
         // raw move event
         AddEvent(InputMouseRawMoveEvent
         {
@@ -147,11 +155,11 @@ export namespace Coil
           .wheel = sdlEvent.wheel.direction == SDL_MOUSEWHEEL_FLIPPED ? -sdlEvent.wheel.y : sdlEvent.wheel.y,
         });
         break;
-      case SDL_CONTROLLERDEVICEADDED:
+      case SDL_EVENT_GAMEPAD_ADDED:
         // device added event
         {
           // open controller
-          SDL_GameController* sdlController = SDL_GameControllerOpen(sdlEvent.cdevice.which);
+          SDL_Gamepad* sdlController = SDL_OpenGamepad(sdlEvent.cdevice.which);
           if(sdlController)
           {
             auto controller = std::make_unique<SdlController>(sdlController);
@@ -169,7 +177,7 @@ export namespace Coil
           }
         }
         break;
-      case SDL_CONTROLLERDEVICEREMOVED:
+      case SDL_EVENT_GAMEPAD_REMOVED:
         // device removed event
         {
           // try to find controller by id, and remove it from map
@@ -191,26 +199,26 @@ export namespace Coil
           }
         }
         break;
-      case SDL_CONTROLLERBUTTONDOWN:
-      case SDL_CONTROLLERBUTTONUP:
+      case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
+      case SDL_EVENT_GAMEPAD_BUTTON_UP:
         // controller button down/up event
         {
           InputControllerButton button;
           bool ok = true;
-          switch(sdlEvent.cbutton.button)
+          switch(sdlEvent.gbutton.button)
           {
-#define B(a, b) case SDL_CONTROLLER_BUTTON_##a: button = InputControllerButton::b; break
-          B(A, A);
-          B(B, B);
-          B(X, X);
-          B(Y, Y);
+#define B(a, b) case SDL_GAMEPAD_BUTTON_##a: button = InputControllerButton::b; break
+          B(SOUTH, A);
+          B(EAST, B);
+          B(WEST, X);
+          B(NORTH, Y);
           B(BACK, Back);
           B(GUIDE, Guide);
           B(START, Start);
-          B(LEFTSTICK, LeftStick);
-          B(RIGHTSTICK, RightStick);
-          B(LEFTSHOULDER, LeftShoulder);
-          B(RIGHTSHOULDER, RightShoulder);
+          B(LEFT_STICK, LeftStick);
+          B(RIGHT_STICK, RightStick);
+          B(LEFT_SHOULDER, LeftShoulder);
+          B(RIGHT_SHOULDER, RightShoulder);
           B(DPAD_UP, DPadUp);
           B(DPAD_DOWN, DPadDown);
           B(DPAD_LEFT, DPadLeft);
@@ -222,30 +230,30 @@ export namespace Coil
           {
             AddEvent(InputControllerEvent
             {
-              .controllerId = (InputControllerId)sdlEvent.cbutton.which,
+              .controllerId = (InputControllerId)sdlEvent.gbutton.which,
               .event = InputControllerEvent::ButtonEvent
               {
                 .button = button,
-                .isPressed = sdlEvent.type == SDL_CONTROLLERBUTTONDOWN,
+                .isPressed = sdlEvent.type == SDL_EVENT_GAMEPAD_BUTTON_DOWN,
               },
             });
           }
         }
         break;
-      case SDL_CONTROLLERAXISMOTION:
+      case SDL_EVENT_GAMEPAD_AXIS_MOTION:
         // controller axis motion event
         {
           InputControllerAxis axis;
           bool ok = true;
-          switch(sdlEvent.caxis.axis)
+          switch(sdlEvent.gaxis.axis)
           {
-#define A(a, b) case SDL_CONTROLLER_AXIS_##a: axis = InputControllerAxis::b; break
+#define A(a, b) case SDL_GAMEPAD_AXIS_##a: axis = InputControllerAxis::b; break
           A(LEFTX, LeftX);
           A(LEFTY, LeftY);
           A(RIGHTX, RightX);
           A(RIGHTY, RightY);
-          A(TRIGGERLEFT, TriggerLeft);
-          A(TRIGGERRIGHT, TriggerRight);
+          A(LEFT_TRIGGER, TriggerLeft);
+          A(RIGHT_TRIGGER, TriggerRight);
 #undef A
           default: ok = false; break;
           }
@@ -253,11 +261,11 @@ export namespace Coil
           {
             AddEvent(InputControllerEvent
             {
-              .controllerId = (InputControllerId)sdlEvent.caxis.which,
+              .controllerId = (InputControllerId)sdlEvent.gaxis.which,
               .event = InputControllerEvent::AxisMotionEvent
               {
                 .axis = axis,
-                .axisValue = sdlEvent.caxis.value,
+                .axisValue = sdlEvent.gaxis.value,
               },
             });
           }
@@ -405,8 +413,8 @@ export namespace Coil
     class SdlController final : public InputController
     {
     public:
-      SdlController(SDL_GameController* controller)
-      : SdlController(controller, SDL_GameControllerGetJoystick(controller))
+      SdlController(SDL_Gamepad* controller)
+      : SdlController(controller, SDL_GetGamepadJoystick(controller))
       {}
       ~SdlController()
       {
@@ -428,29 +436,29 @@ export namespace Coil
 
         if(_hapticEffectIndex >= 0 && _hapticEffect.type == SDL_HAPTIC_LEFTRIGHT)
         {
-          SDL_HapticStopEffect(_haptic, _hapticEffectIndex);
-          SDL_HapticUpdateEffect(_haptic, _hapticEffectIndex, &_hapticEffect);
+          SDL_StopHapticEffect(_haptic, _hapticEffectIndex);
+          SDL_UpdateHapticEffect(_haptic, _hapticEffectIndex, &_hapticEffect);
         }
         else
         {
           if(_hapticEffectIndex >= 0)
           {
-            SDL_HapticStopEffect(_haptic, _hapticEffectIndex);
-            SDL_HapticDestroyEffect(_haptic, _hapticEffectIndex);
+            SDL_StopHapticEffect(_haptic, _hapticEffectIndex);
+            SDL_DestroyHapticEffect(_haptic, _hapticEffectIndex);
           }
 
           _hapticEffect.type = SDL_HAPTIC_LEFTRIGHT;
-          _hapticEffectIndex = SDL_HapticNewEffect(_haptic, &_hapticEffect);
+          _hapticEffectIndex = SDL_CreateHapticEffect(_haptic, &_hapticEffect);
         }
 
-        SDL_HapticRunEffect(_haptic, _hapticEffectIndex, 1);
+        SDL_RunHapticEffect(_haptic, _hapticEffectIndex, 1);
       }
 
       void StopHaptic()
       {
         if(_hapticEffectIndex >= 0)
         {
-          SDL_HapticStopEffect(_haptic, _hapticEffectIndex);
+          SDL_StopHapticEffect(_haptic, _hapticEffectIndex);
         }
       }
 
@@ -458,32 +466,32 @@ export namespace Coil
       {
         if(_hapticEffectIndex >= 0)
         {
-          SDL_HapticStopEffect(_haptic, _hapticEffectIndex);
-          SDL_HapticDestroyEffect(_haptic, _hapticEffectIndex);
+          SDL_StopHapticEffect(_haptic, _hapticEffectIndex);
+          SDL_DestroyHapticEffect(_haptic, _hapticEffectIndex);
           _hapticEffectIndex = -1;
         }
 
         if(_haptic)
         {
-          SDL_HapticClose(_haptic);
+          SDL_CloseHaptic(_haptic);
           _haptic = nullptr;
         }
 
         if(_controller)
         {
-          SDL_GameControllerClose(_controller);
+          SDL_CloseGamepad(_controller);
           _controller = nullptr;
         }
       }
 
     private:
-      SdlController(SDL_GameController* controller, SDL_Joystick* joystick)
-      : InputController(SDL_JoystickInstanceID(joystick))
+      SdlController(SDL_Gamepad* controller, SDL_Joystick* joystick)
+      : InputController(SDL_GetJoystickID(joystick))
       , _controller(controller)
-      , _haptic(SDL_HapticOpenFromJoystick(joystick))
+      , _haptic(SDL_OpenHapticFromJoystick(joystick))
       {}
 
-      SDL_GameController* _controller = nullptr;
+      SDL_Gamepad* _controller = nullptr;
       SDL_Haptic* _haptic = nullptr;
       SDL_HapticEffect _hapticEffect;
       int _hapticEffectIndex = -1;
@@ -499,7 +507,7 @@ export namespace Coil
     : _window(window), _windowId(SDL_GetWindowID(_window))
     {
       SDL_GetWindowSize(_window, &_virtualSize.x(), &_virtualSize.y());
-      SDL_GL_GetDrawableSize(_window, &_clientSize.x(), &_clientSize.y());
+      SDL_GetWindowSizeInPixels(_window, &_clientSize.x(), &_clientSize.y());
       _dpiScale = float(_clientSize.x()) / float(_virtualSize.x());
       UpdateInputManager();
     }
@@ -532,7 +540,7 @@ export namespace Coil
     {
       if(_fullScreen == fullScreen) return;
       _fullScreen = fullScreen;
-      SDL_SetWindowFullscreen(_window, _fullScreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+      SDL_SetWindowFullscreen(_window, _fullScreen);
     }
 
     ivec2 GetDrawableSize() const override
@@ -564,32 +572,27 @@ export namespace Coil
 
           switch(event.type)
           {
-          case SDL_WINDOWEVENT:
-            switch(event.window.event)
+          case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
+            SDL_GetWindowSize(_window, &_virtualSize.x(), &_virtualSize.y());
+            SDL_GetWindowSizeInPixels(_window, &_clientSize.x(), &_clientSize.y());
+            _dpiScale = float(_clientSize.x()) / float(_virtualSize.x());
+            UpdateInputManager();
+            if(_presenter)
             {
-            case SDL_WINDOWEVENT_SIZE_CHANGED:
-              SDL_GetWindowSize(_window, &_virtualSize.x(), &_virtualSize.y());
-              SDL_GL_GetDrawableSize(_window, &_clientSize.x(), &_clientSize.y());
-              _dpiScale = float(_clientSize.x()) / float(_virtualSize.x());
-              UpdateInputManager();
-              if(_presenter)
-              {
-                _presenter->Resize(GetDrawableSize());
-              }
-              break;
-            case SDL_WINDOWEVENT_MINIMIZED:
-              _visible = false;
-              break;
-            case SDL_WINDOWEVENT_RESTORED:
-            case SDL_WINDOWEVENT_MAXIMIZED:
-              _visible = true;
-              break;
-            case SDL_WINDOWEVENT_FOCUS_LOST:
-              _inputManager.ReleaseButtonsOnUpdate();
-              break;
+              _presenter->Resize(GetDrawableSize());
             }
             break;
-          case SDL_QUIT:
+          case SDL_EVENT_WINDOW_MINIMIZED:
+            _visible = false;
+            break;
+          case SDL_EVENT_WINDOW_RESTORED:
+          case SDL_EVENT_WINDOW_MAXIMIZED:
+            _visible = true;
+            break;
+          case SDL_EVENT_WINDOW_FOCUS_LOST:
+            _inputManager.ReleaseButtonsOnUpdate();
+            break;
+          case SDL_EVENT_QUIT:
             Stop();
             break;
           }
@@ -617,12 +620,19 @@ export namespace Coil
   protected:
     void _UpdateMouseLock() override
     {
-      SDL_SetRelativeMouseMode(_mouseLock ? SDL_TRUE : SDL_FALSE);
+      SDL_SetWindowRelativeMouseMode(_window, _mouseLock);
     }
 
     void _UpdateCursorVisible() override
     {
-      SDL_ShowCursor(_cursorVisible ? SDL_ENABLE : SDL_DISABLE);
+      if(_cursorVisible)
+      {
+        SDL_ShowCursor();
+      }
+      else
+      {
+        SDL_HideCursor();
+      }
     }
 
   private:
@@ -648,13 +658,11 @@ export namespace Coil
   public:
     SdlWindow& CreateWindow(Book& book, std::string const& title, ivec2 const& size) override
     {
-      SDL_Window* window = SDL_CreateWindow(title.c_str(),
-        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-        size.x(), size.y(),
-        SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_VULKAN
+      SDL_Window* window = SDL_CreateWindow(title.c_str(), size.x(), size.y(),
+        SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_VULKAN
       );
       if(!window)
-        throw Exception("failed to create SDL window");
+        throw SdlException("failed to create SDL window");
       return book.Allocate<SdlWindow>(window);
     }
   };

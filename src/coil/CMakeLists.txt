@@ -514,7 +514,7 @@ if(TARGET coil_core_spirv AND TARGET Vulkan::Vulkan)
 endif()
 list(APPEND coil_core_all_libraries vulkan)
 
-if(TARGET SDL2::SDL2)
+if(TARGET SDL3::SDL3)
   add_library(coil_core_sdl STATIC)
   target_sources(coil_core_sdl PUBLIC FILE_SET CXX_MODULES FILES
     sdl.cppm
@@ -524,7 +524,7 @@ if(TARGET SDL2::SDL2)
       coil_core_input
       coil_core_platform
       coil_core_unicode
-      SDL2::SDL2
+      SDL3::SDL3
   )
   target_compile_features(coil_core_sdl PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries sdl)

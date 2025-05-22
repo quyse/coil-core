@@ -63,10 +63,10 @@ lib.makeExtensible (self: with self; {
     };
   };
 
-  SDL2 = mkCmakePkg {
-    inherit (pkgs.SDL2_classic or pkgs.SDL2) pname version src meta;
+  sdl3 = mkCmakePkg {
+    inherit (pkgs.sdl3) pname version src meta;
     cmakeFlags = [
-      "-DBUILD_SHARED_LIBS=ON"
+      "-DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON"
     ];
   };
 
@@ -338,7 +338,7 @@ lib.makeExtensible (self: with self; {
       vulkan-loader
       spirv-headers
       zstd
-      SDL2
+      sdl3
       libpng
       libsquish
       sqlite

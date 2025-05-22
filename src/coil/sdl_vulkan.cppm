@@ -1,7 +1,7 @@
 module;
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_vulkan.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_vulkan.h>
 #include <vector>
 
 export module coil.core.sdl.vulkan;
@@ -32,18 +32,16 @@ export namespace Coil
         // get necessary extensions from window
 
         // get extensions count
-        unsigned int count = 0;
-        if(!SDL_Vulkan_GetInstanceExtensions(sdlWindow->GetSdlWindow(), &count, nullptr))
+        uint32_t count = 0;
+        char const* const* pExtensions = SDL_Vulkan_GetInstanceExtensions(&count);
+        if(!pExtensions)
           throw Exception("getting Vulkan instance extensions for SDL failed");
 
         size_t initialCount = extensions.size();
         extensions.resize(initialCount + count);
 
-        // get extensions
-        if(!SDL_Vulkan_GetInstanceExtensions(sdlWindow->GetSdlWindow(), &count, extensions.data() + initialCount))
-          throw Exception("getting Vulkan instance extensions for SDL failed");
-        // theoretically returned count could become less, so resize again
-        extensions.resize(initialCount + count);
+        for(uint32_t i = 0; i < count; ++i)
+          extensions[initialCount + i] = pExtensions[i];
       });
 
       VulkanSystem::RegisterDeviceSurfaceHandler([](VkInstance instance, GraphicsWindow& window) -> VkSurfaceKHR
@@ -52,7 +50,7 @@ export namespace Coil
         if(!sdlWindow) return nullptr;
 
         VkSurfaceKHR surface;
-        if(!SDL_Vulkan_CreateSurface(sdlWindow->GetSdlWindow(), instance, &surface))
+        if(!SDL_Vulkan_CreateSurface(sdlWindow->GetSdlWindow(), instance, nullptr, &surface))
           throw Exception("creating Vulkan surface for SDL failed");
 
         return surface;

@@ -58,7 +58,7 @@ export namespace Coil
     // absolute cursor position
     ivec2 cursor;
     // relative mouse wheel change
-    int32_t wheel;
+    float wheel;
   };
   using InputMouseEvent = std::variant<InputMouseButtonEvent, InputMouseRawMoveEvent, InputMouseCursorMoveEvent>;
 

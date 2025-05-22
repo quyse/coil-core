@@ -5,7 +5,7 @@
 , ninja
 , pkg-config
 , writeText
-, SDL2
+, sdl3
 , vulkan-headers
 , vulkan-loader
 , spirv-headers
@@ -55,7 +55,7 @@ in stdenv.mkDerivation {
     mbedtls
   ]
   ++ lib.optionals (hasFeature "graphics") [
-    SDL2
+    sdl3
     vulkan-headers
     vulkan-loader
     spirv-headers
