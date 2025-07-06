@@ -72,7 +72,7 @@ namespace Coil
     // create presenter
     VulkanPresenter& presenter = book.Allocate<VulkanPresenter>(*this, book, surface, pool, std::move(recreatePresent), std::move(recreatePresentPerImage));
 
-    presenter.Init({});
+    presenter.Init();
 
     window.SetPresenter(&presenter);
 

@@ -228,7 +228,7 @@ export namespace Coil
       std::function<GraphicsRecreatePresentPerImageFunc>&& recreatePresentPerImage
       );
 
-    void Init(std::optional<ivec2> const& size);
+    void Init();
 
     void Clear()
     {
@@ -239,14 +239,16 @@ export namespace Coil
 
     void Resize(ivec2 const& size) override
     {
+      _size = size;
       Clear();
-      Init(size);
+      Init();
     }
 
     VulkanFrame& StartFrame() override;
 
   private:
     VulkanDevice& _device;
+    ivec2 _size;
     // Book for resources recreated on resize.
     Book _sizeDependentBook;
     VkSurfaceKHR _surface;

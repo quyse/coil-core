@@ -32,7 +32,7 @@ namespace Coil
     }
   }
 
-  void VulkanPresenter::Init(std::optional<ivec2> const& size)
+  void VulkanPresenter::Init()
   {
     // get surface capabilities
     VkSurfaceCapabilitiesKHR surfaceCapabilities;
@@ -78,10 +78,10 @@ namespace Coil
 
     VkExtent2D extent =
       // use size passed by window if it's available
-      size.has_value() ? VkExtent2D
+      _size.x() > 0 && _size.y() > 0 ? VkExtent2D
       {
-        .width = std::min(std::max((uint32_t)size.value().x(), surfaceCapabilities.minImageExtent.width), surfaceCapabilities.maxImageExtent.width),
-        .height = std::min(std::max((uint32_t)size.value().y(), surfaceCapabilities.minImageExtent.height), surfaceCapabilities.maxImageExtent.height),
+        .width = std::min(std::max((uint32_t)_size.x(), surfaceCapabilities.minImageExtent.width), surfaceCapabilities.maxImageExtent.width),
+        .height = std::min(std::max((uint32_t)_size.y(), surfaceCapabilities.minImageExtent.height), surfaceCapabilities.maxImageExtent.height),
       } :
       // on Wayland, initially special values are passed as extent in capabilities
       // replace them with some default size, they will be overriden with next resize call
@@ -180,7 +180,7 @@ namespace Coil
     {
       _recreateNeeded = false;
       Clear();
-      Init({});
+      Init();
     }
 
     // choose frame
