@@ -119,23 +119,17 @@ export namespace Coil
     class InitialAwaiter
     {
     public:
-      InitialAwaiter(std::coroutine_handle<> coroutine)
-      : _coroutine(std::move(coroutine)) {}
-
       bool await_ready() const
       {
         return false;
       }
-      void await_suspend(std::coroutine_handle<> const&) const
+      void await_suspend(std::coroutine_handle<> const& coroutine) const
       {
-        TaskEngine::GetInstance().Queue(_coroutine);
+        TaskEngine::GetInstance().Queue(coroutine);
       }
       void await_resume() const
       {
       }
-
-    private:
-      std::coroutine_handle<> _coroutine;
     };
 
     // final awaiter class
@@ -143,23 +137,17 @@ export namespace Coil
     class FinalAwaiter
     {
     public:
-      FinalAwaiter(std::coroutine_handle<> coroutine)
-      : _coroutine(std::move(coroutine)) {}
-
       bool await_ready() const noexcept
       {
         return false;
       }
-      void await_suspend(std::coroutine_handle<> const&) const noexcept
+      void await_suspend(std::coroutine_handle<> const& coroutine) const noexcept
       {
-        _coroutine.destroy();
+        coroutine.destroy();
       }
       void await_resume() const noexcept
       {
       }
-
-    private:
-      std::coroutine_handle<> _coroutine;
     };
   };
 
@@ -171,11 +159,11 @@ export namespace Coil
   public:
     InitialAwaiter initial_suspend()
     {
-      return { std::coroutine_handle<TaskPromise<R>>::from_promise(static_cast<TaskPromise<R>&>(*this)) };
+      return {};
     }
     FinalAwaiter final_suspend() noexcept
     {
-      return { std::coroutine_handle<TaskPromise<R>>::from_promise(static_cast<TaskPromise<R>&>(*this)) };
+      return {};
     }
 
     Task<R> get_return_object()
