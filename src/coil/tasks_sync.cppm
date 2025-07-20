@@ -17,13 +17,28 @@ export namespace Coil
   public:
     ConditionVariable() = default;
 
+    // implementation node: we lock and unlock _cv._mutex manually, instead of using std::unique_lock
+    // the problem with std::unique_lock is that its unlock() method is not atomic
+    // at least in libc++ https://github.com/llvm/llvm-project/issues/49709
+    // and after unlock the awaiter can be deleted by other thread before the owning boolean flag is set
     class WaitAwaiter
     {
     public:
       WaitAwaiter(ConditionVariable& cv, std::unique_lock<std::mutex>& userLock)
-      : _cv{cv}, _userLock{userLock}, _lock{_cv._mutex}
+      : _cv{cv}, _userLock{userLock}
       {
+        _cv._mutex.lock();
+        _cvLocked = true;
+
         _userLock.unlock();
+      }
+
+      ~WaitAwaiter()
+      {
+        if(_cvLocked)
+        {
+          _cv._mutex.unlock();
+        }
       }
 
       bool await_ready() const
@@ -34,7 +49,10 @@ export namespace Coil
       void await_suspend(std::coroutine_handle<> coroutine)
       {
         _cv._waiters.push(coroutine);
-        _lock.unlock();
+        // reset the flag before unlocking the mutex
+        _cvLocked = false;
+        _cv._mutex.unlock();
+        // after unlocking the mutex awaiter can be deleted by other thread
       }
 
       void await_resume() const
@@ -45,7 +63,7 @@ export namespace Coil
     private:
       ConditionVariable& _cv;
       std::unique_lock<std::mutex>& _userLock;
-      std::unique_lock<std::mutex> _lock;
+      bool _cvLocked = false;
     };
 
     // unlocks lock, waits until notified, then locks the lock back

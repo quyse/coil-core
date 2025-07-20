@@ -12,8 +12,6 @@ import coil.core.tasks;
 
 using namespace Coil;
 
-std::mt19937 rnd;
-
 class Tester
 {
 public:
@@ -194,6 +192,7 @@ public:
 
         static Task<void> RunRead(size_t size, size_t maxChunkSize, std::shared_ptr<SuspendableInputStream> inputStream)
         {
+          std::mt19937 rnd{123};
           std::vector<uint8_t> buf(maxChunkSize);
           size_t readSize = 0;
           while(size)
@@ -212,6 +211,7 @@ public:
 
         static Task<void> RunWrite(size_t size, size_t maxChunkSize, std::shared_ptr<SuspendableOutputStream> outputStream)
         {
+          std::mt19937 rnd{456};
           std::vector<uint8_t> buf(maxChunkSize);
           size_t writtenSize = 0;
           while(writtenSize < size)
@@ -263,7 +263,7 @@ int COIL_ENTRY_POINT(std::vector<std::string> args)
   size_t currentThreadsCount = 0;
   for(size_t i = 0; i < sizeof(threadsCounts) / sizeof(threadsCounts[0]); ++i)
   {
-    for(size_t j = currentThreadsCount; j < threadsCounts[i]; ++j)
+    for(; currentThreadsCount < threadsCounts[i]; ++currentThreadsCount)
       TaskEngine::GetInstance().AddThread();
     counts += Tester(threadsCounts[i]).Run();
   }
