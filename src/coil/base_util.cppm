@@ -35,15 +35,15 @@ export namespace Coil
     Tuple<Tail...> tail;
 
     template <size_t i>
-    auto const& get() const
+    decltype(auto) get(this auto& self)
     {
       if constexpr(i == 0)
       {
-        return head;
+        return self.head;
       }
       else
       {
-        return tail.template get<i - 1>();
+        return self.tail.template get<i - 1>();
       }
     }
   };
