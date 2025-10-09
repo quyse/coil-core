@@ -48,65 +48,10 @@ lib.makeExtensible (self: with self; {
     }));
 
 
-    libsquish = self.coil.compile-cpp (stdenv.mkDerivation rec {
-      pname = "libsquish";
-      version = "1.15";
-      src = pkgs.fetchurl {
-        url = "https://downloads.sourceforge.net/libsquish/libsquish-${version}.tgz";
-        hash = "sha256-YoeW7rpgiGYYOmHQgNRpZ8ndpnI7wKPsUjJMhdIUcmk=";
-      };
-      sourceRoot = ".";
-      nativeBuildInputs = [
-        cmake
-      ];
-      buildInputs = [
-        openmp
-      ];
-      cmakeFlags = [
-        "-DBUILD_SHARED_LIBS=ON"
-      ];
-      meta.license = lib.licenses.mit;
-    });
+    libsquish = self.coil.compile-cpp (callPackage ./pkgs/libsquish.nix {});
 
-    libwebm = self.coil.compile-cpp (stdenv.mkDerivation rec {
-      pname = "libwebm";
-      version = "1.0.0.31";
-      src = pkgs.fetchgit {
-        url = "https://chromium.googlesource.com/webm/libwebm";
-        rev = "libwebm-${version}";
-        hash = "sha256-+ayX33rcX/jkewsW8WrGalTe9X44qFBHOrIYTteOQzc=";
-      };
-      nativeBuildInputs = [
-        cmake
-      ];
-      cmakeFlags = [
-        "-DENABLE_WEBM_PARSER=ON"
-      ];
-      meta.license = lib.licenses.bsd3;
-    });
-
-    libgav1 = self.coil.compile-cpp (stdenv.mkDerivation rec {
-      pname = "libgav1";
-      version = "0.20.0";
-      src = pkgs.fetchgit {
-        url = "https://chromium.googlesource.com/codecs/libgav1";
-        rev = "v${version}";
-        hash = "sha256-BgTfWmbcMvJB1KewJpRcMtbOd2FVuJ+fi1zAXBXfkrg=";
-      };
-      nativeBuildInputs = [
-        cmake
-      ];
-      cmakeFlags = [
-        # https://github.com/NixOS/nixpkgs/issues/144170
-        "-DCMAKE_INSTALL_INCLUDEDIR=include"
-        "-DCMAKE_INSTALL_LIBDIR=lib"
-        # eliminate abseil dependency
-        "-DLIBGAV1_THREADPOOL_USE_STD_MUTEX=1"
-        "-DLIBGAV1_ENABLE_EXAMPLES=0"
-        "-DLIBGAV1_ENABLE_TESTS=0"
-      ];
-      meta.license = lib.licenses.asl20;
-    });
+    libwebm = self.coil.compile-cpp (callPackage ./pkgs/libwebm.nix {});
+    libgav1 = self.coil.compile-cpp (callPackage ./pkgs/libgav1.nix {});
 
     mbedtls = self.coil.compile-cpp (super.mbedtls.overrideAttrs (attrs: {
       postConfigure = (attrs.postConfigure or "") + ''

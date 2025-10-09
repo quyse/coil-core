@@ -90,7 +90,7 @@ lib.makeExtensible (self: with self; {
   };
 
   libsquish = mkCmakePkg rec {
-    inherit (pkgs.libsquish) pname version src sourceRoot meta;
+    inherit (pkgs.libsquish) pname version src sourceRoot postPatch meta;
     cmakeFlags = [
       "-DBUILD_SQUISH_WITH_OPENMP=OFF"
     ];
@@ -104,7 +104,7 @@ lib.makeExtensible (self: with self; {
         project(sqlite)
         set(CMAKE_CXX_VISIBILITY_PRESET hidden)
         set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
-        set(CMAKE_INTERPROCEDURAL_OPTIMIZAITON ON)
+        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
         set(CMAKE_CXX_EXTENSIONS OFF)
         add_library(sqlite STATIC sqlite3.c)
         set_property(TARGET sqlite PROPERTY PUBLIC_HEADER sqlite3.h)
