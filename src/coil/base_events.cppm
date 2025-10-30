@@ -1,9 +1,10 @@
 module;
 
-#include <memory>
+#include <utility>
 
 export module coil.core.base.events;
 
+import coil.core.base.ptr;
 import coil.core.base.util;
 
 namespace Coil
@@ -14,10 +15,10 @@ namespace Coil
   {
     using Result = T<Args...>;
   };
-  template <template <typename...> typename T>
-  struct EventArgHelper<T, void>
+  template <template <typename...> typename T, typename... Args>
+  struct EventArgHelper<T, void, Args...>
   {
-    using Result = T<>;
+    using Result = typename EventArgHelper<T, Args...>::Result;
   };
 
   template <typename Handler, typename... Args>
@@ -30,7 +31,7 @@ export namespace Coil
   class EventPtr;
 
   template <typename... Args>
-  class Event
+  class Event : public PtrCountedBase
   {
   public:
     using ArgsTuple = std::tuple<Args...>;
@@ -52,12 +53,13 @@ export namespace Coil
   protected:
     void NotifyDependants(ConstRefExceptScalarOf<Args>... args) const
     {
-      dependants_.Notify(args...);
+      dependants_.NotifyAllNext(args...);
     }
 
   public:
     class Cell;
 
+    // just a head of a linked list of event cells
     class CellHead
     {
     public:
@@ -66,7 +68,7 @@ export namespace Coil
         if(pNext_) pNext_->pPrev_ = nullptr;
       }
 
-      void Notify(ConstRefExceptScalarOf<Args>... args)
+      void NotifyAllNext(ConstRefExceptScalarOf<Args>... args) const
       {
         for(Cell* pCell = pNext_; pCell; pCell = pCell->pNext_)
         {
@@ -80,6 +82,7 @@ export namespace Coil
       friend Cell;
     };
 
+    // an event cell, capable of being in a linked list of cells
     class Cell : public CellHead
     {
     public:
@@ -89,7 +92,7 @@ export namespace Coil
       }
 
       // convenience method
-      void SubscribeTo(std::shared_ptr<Event> const& pEvent)
+      void SubscribeTo(Ptr<Event> const& pEvent)
       {
         AddTo(pEvent->dependants_);
       }
@@ -148,11 +151,11 @@ export namespace Coil
     DependentEvent(EventPtr<Args...> const& pEvent, HandlerArg&& handler) -> DependentEvent<std::decay_t<HandlerArg>>;
 
   protected:
-    mutable CellHead dependants_;
+    CellHead dependants_;
   };
 
   template <typename... Args>
-  class EventPtr : public std::shared_ptr<Event<Args...>>
+  class EventPtr : public Ptr<Event<Args...>>
   {
   public:
     EventPtr() = default;
@@ -161,13 +164,13 @@ export namespace Coil
     EventPtr& operator=(EventPtr const&) = default;
     EventPtr& operator=(EventPtr&&) = default;
 
-    EventPtr(std::shared_ptr<Event<Args...>> pEvent)
-    : EventPtr::shared_ptr{std::move(pEvent)}
+    EventPtr(Ptr<Event<Args...>> pEvent)
+    : EventPtr::Ptr{std::move(pEvent)}
     {}
 
     void Notify(ConstRefExceptScalarOf<Args>... args) const
     {
-      this->get()->Notify(args...);
+      this->ptr_->Notify(args...);
     }
   };
 
@@ -220,14 +223,15 @@ export namespace Coil
   template <typename... Args>
   EventPtr<Args...> MakeEvent()
   {
-    return std::make_shared<Event<Args...>>();
+    return EventPtr<Args...>::Make();
   }
 
   template <typename Handler, typename... Args>
   EventArgHelper<EventPtr, EventHandlerResult<Handler, Args...>>::Result MakeEventDependentOnEvent(Handler&& handler, EventPtr<Args...> const& pEvent)
   {
-    return std::static_pointer_cast<typename EventArgHelper<Event, EventHandlerResult<Handler, Args...>>::Result>(
-      std::make_shared<typename Event<Args...>::template DependentEvent<std::decay_t<Handler>>>(pEvent, std::forward<Handler>(handler))
-    );
+    return
+      Ptr<typename Event<Args...>::template DependentEvent<std::decay_t<Handler>>>
+      ::Make(pEvent, std::forward<Handler>(handler))
+      .template StaticCast<typename EventArgHelper<Event, EventHandlerResult<Handler, Args...>>::Result>();
   }
 }

@@ -23,6 +23,7 @@ if(TRUE)
     base_events.cppm
     base_events_map.cppm
     base_generator.cppm
+    base_ptr.cppm
     base_signals.cppm
     base_util.cppm
   )

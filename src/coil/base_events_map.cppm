@@ -1,12 +1,12 @@
 module;
 
-#include <memory>
 #include <optional>
 #include <unordered_map>
 
 export module coil.core.base.events.map;
 
 import coil.core.base.events;
+import coil.core.base.ptr;
 import coil.core.base.signals;
 import coil.core.base.util;
 
@@ -16,13 +16,13 @@ export namespace Coil
   class SyncMap;
 
   template <IsDecayed Key, IsDecayed Value>
-  using SyncMapPtr = std::shared_ptr<SyncMap<Key, Value>>;
+  using SyncMapPtr = Ptr<SyncMap<Key, Value>>;
 
   template <IsDecayed Key>
   using SyncSetPtr = SyncMapPtr<Key, std::tuple<>>;
 
   template <IsDecayed Key, IsDecayed Value>
-  class SyncMap : public std::enable_shared_from_this<SyncMap<Key, Value>>
+  class SyncMap : public PtrCountedBase
   {
   public:
     SyncMap() = default;
@@ -46,7 +46,8 @@ export namespace Coil
         if(optValue.has_value())
         {
           i->second = std::move(optValue).value();
-          // item was there already, no event
+          // modify event
+          GetEvent()->Notify(i->first, &i->second);
           return &i->second;
         }
         else
@@ -100,12 +101,12 @@ export namespace Coil
     template <typename Handler>
     SyncMapPtr<Key, MappedValue<std::decay_t<Handler>>> Map(Handler&& handler) const
     {
-      auto pMap = std::make_shared<MappedMap<std::decay_t<Handler>>>(std::forward<Handler>(handler), GetEvent());
+      auto pMap = Ptr<MappedMap<std::decay_t<Handler>>>::Make(std::forward<Handler>(handler), GetEvent());
       for(auto const& [key, value] : items_)
       {
         pMap->Notify(key, &value);
       }
-      return pMap;
+      return SyncMapPtr<Key, MappedValue<std::decay_t<Handler>>>{pMap};
     }
 
     EventPtr<Key, Value const*> const& GetEvent() const
@@ -117,24 +118,17 @@ export namespace Coil
       return pEvent_;
     }
 
-    SignalPtr<std::unordered_map<Key, Value>> GetSignal() const
+    SignalPtr<std::unordered_map<Key, Value>> CreateSignal()
     {
-      if(auto pSignal = pSignal_.lock())
-      {
-        return pSignal;
-      }
-      auto pSignal = MakeSignalDependentOnEvent(MakeEventDependentOnEvent([self = this->shared_from_this()](Key, Value const*)
+      return MakeSignalDependentOnEvent(MakeEventDependentOnEvent([self = Ptr<SyncMap<Key, Value>>{this}](Key, Value const*)
       {
         return self->items_;
       }, GetEvent()), items_);
-      pSignal_ = pSignal;
-      return pSignal;
     }
 
   private:
     std::unordered_map<Key, Value> items_;
     mutable EventPtr<Key, Value const*> pEvent_;
-    mutable std::weak_ptr<Signal<std::unordered_map<Key, Value>>> pSignal_;
   };
 
   template <IsDecayed Key, IsDecayed Value>
@@ -186,12 +180,12 @@ export namespace Coil
   template <IsDecayed Key, IsDecayed Value>
   SyncMapPtr<Key, Value> MakeSyncMap()
   {
-    return std::make_shared<SyncMap<Key, Value>>();
+    return Ptr<SyncMap<Key, Value>>::Make();
   }
 
   template <IsDecayed Key>
   SyncSetPtr<Key> MakeSyncSet()
   {
-    return std::make_shared<SyncMap<Key, std::tuple<>>>();
+    return Ptr<SyncMap<Key, std::tuple<>>>::Make();
   }
 }

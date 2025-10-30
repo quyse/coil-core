@@ -211,7 +211,7 @@ export namespace Coil
       auto sigButtonsActions = manager_.GetControllers()->Map([this, actionSetId, actionId](ControllerId controllerId, auto)
       {
         return manager_.GetButtonAction(controllerId, actionSetId, actionId);
-      })->GetSignal();
+      })->CreateSignal();
       auto sigSigIsPressed = MakeSignalDependentOnSignals([](std::unordered_map<ControllerId, PlayerInputButtonAction> const& buttonsActions)
       {
         return MakeSignalDependentOnRange([](auto rangeIsPressed)
@@ -238,7 +238,7 @@ export namespace Coil
       auto sigButtonsActions = manager_.GetControllers()->Map([this, actionSetId, actionId](ControllerId controllerId, auto)
       {
         return manager_.GetAnalogAction(controllerId, actionSetId, actionId);
-      })->GetSignal();
+      })->CreateSignal();
       auto sigAbsoluteValue = MakeSignalDependentOnSignals([](std::unordered_map<ControllerId, PlayerInputAnalogAction> const& analogsActions)
       {
         return MakeSignalDependentOnRange([](auto rangeAbsoluteValue)
@@ -267,7 +267,7 @@ export namespace Coil
         }) | std::views::filter([](auto const& opt)
         {
           return opt.has_value();
-        }) | std::views::transform([](auto const& opt) -> auto
+        }) | std::views::transform([](auto const& opt)
         {
           return opt.value();
         }));

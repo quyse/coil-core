@@ -1,6 +1,5 @@
 module;
 
-#include <memory>
 #include <optional>
 #include <ranges>
 #include <vector>
@@ -8,6 +7,7 @@ module;
 export module coil.core.base.signals;
 
 import coil.core.base.events;
+import coil.core.base.ptr;
 import coil.core.base.util;
 
 export namespace Coil
@@ -90,7 +90,7 @@ export namespace Coil
   };
 
   template <typename T>
-  class SignalPtr : public std::shared_ptr<Signal<T>>
+  class SignalPtr : public Ptr<Signal<T>>
   {
   public:
     SignalPtr() = default;
@@ -99,24 +99,23 @@ export namespace Coil
     SignalPtr& operator=(SignalPtr const&) = default;
     SignalPtr& operator=(SignalPtr&&) = default;
 
-    SignalPtr(std::shared_ptr<Signal<T>> pSignal)
-    : SignalPtr::shared_ptr{std::move(pSignal)}
+    SignalPtr(Ptr<Signal<T>> pSignal)
+    : SignalPtr::Ptr{std::move(pSignal)}
     {}
 
     template <typename S>
-    SignalPtr(std::shared_ptr<S> pSignal)
-    : SignalPtr::shared_ptr{std::move(pSignal)}
+    SignalPtr(Ptr<S> pSignal)
+    : SignalPtr::Ptr{std::move(pSignal)}
     {}
 
     ConstRefExceptScalarOf<T> Get() const
     {
-      return this->get()->Get();
+      return this->ptr_->Get();
     }
 
-    template <typename Self>
-    operator EventPtr<>(this Self&& self)
+    operator EventPtr<>() const
     {
-      return std::static_pointer_cast<Event<>>(std::forward<Self>(self));
+      return this->template StaticCast<Event<>>();
     }
   };
 
@@ -312,23 +311,23 @@ export namespace Coil
   class SignalVarPtr : public SignalPtr<T>
   {
   public:
-    SignalVarPtr(std::shared_ptr<VariableSignal<T>> pSignal)
+    SignalVarPtr(Ptr<VariableSignal<T>> pSignal)
     : SignalVarPtr::SignalPtr{std::move(pSignal)}
     {}
 
     template <typename TT>
     void Set(TT&& arg) const
     {
-      static_cast<VariableSignal<T>*>(this->get())->Set(std::forward<TT>(arg));
+      static_cast<VariableSignal<T>*>(this->ptr_)->Set(std::forward<TT>(arg));
     }
 
     template <typename TT>
     bool SetIfDiffers(TT&& arg) const requires requires
     {
-      { static_cast<VariableSignal<T>*>(this->get())->SetIfDiffers(std::forward<TT>(arg)) } -> std::same_as<bool>;
+      { static_cast<VariableSignal<T>*>(this->ptr_)->SetIfDiffers(std::forward<TT>(arg)) } -> std::same_as<bool>;
     }
     {
-      return static_cast<VariableSignal<T>*>(this->get())->SetIfDiffers(std::forward<TT>(arg));
+      return static_cast<VariableSignal<T>*>(this->ptr_)->SetIfDiffers(std::forward<TT>(arg));
     }
   };
 
@@ -373,37 +372,37 @@ export namespace Coil
   template <typename T>
   SignalPtr<std::decay_t<T>> MakeConstSignal(T&& value)
   {
-    return std::make_shared<ConstSignal<std::decay_t<T>>>(std::move(value));
+    return Ptr<ConstSignal<std::decay_t<T>>>::Make(std::move(value));
   }
 
   template <typename T>
   SignalVarPtr<std::decay_t<T>> MakeVariableSignal(T&& value = {})
   {
-    return std::make_shared<VariableSignal<std::decay_t<T>>>(std::move(value));
+    return Ptr<VariableSignal<std::decay_t<T>>>::Make(std::move(value));
   }
 
   template <typename T, typename TT = T>
   SignalPtr<T> MakeSignalDependentOnEvent(EventPtr<T> pEvent, TT&& initialValue = {})
   {
-    return std::make_shared<SignalDependentOnEvent<T>>(std::move(pEvent), std::forward<TT>(initialValue));
+    return Ptr<SignalDependentOnEvent<T>>::Make(std::move(pEvent), std::forward<TT>(initialValue));
   }
 
   template <typename F, typename... Args>
   auto MakeSignalDependentOnSignals(F&& f, SignalPtr<Args>... args) -> SignalPtr<decltype(f(args->Get()...))>
   {
-    return std::make_shared<
+    return Ptr<
       DependentSignal<
         std::decay_t<decltype(f(args->Get()...))>,
         std::decay_t<F>,
         std::decay_t<Args>...
       >
-    >(std::forward<F>(f), std::move(args)...);
+    >::Make(std::forward<F>(f), std::move(args)...);
   }
 
   template <typename T>
   SignalPtr<T> MakeSignalUnpackingSignal(SignalPtr<SignalPtr<T>> pSignal)
   {
-    return std::make_shared<SignalUnpackingSignal<T>>(pSignal);
+    return Ptr<SignalUnpackingSignal<T>>::Make(pSignal);
   }
 
   template <
@@ -414,6 +413,6 @@ export namespace Coil
   >
   SignalPtr<R> MakeSignalDependentOnRange(F&& f, Args&& args)
   {
-    return std::make_shared<SignalDependentOnRange<std::decay_t<F>, A, R>>(std::forward<F>(f), std::forward<Args>(args));
+    return Ptr<SignalDependentOnRange<std::decay_t<F>, A, R>>::Make(std::forward<F>(f), std::forward<Args>(args));
   }
 }
