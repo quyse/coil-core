@@ -35,7 +35,7 @@ extern "C" int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWS
 
 #else
 
-int main(int argc, char** argv)
+extern "C++" int main(int argc, char** argv)
 {
   return COIL_ENTRY_POINT(std::vector<std::string>(argv, argv + argc));
 }

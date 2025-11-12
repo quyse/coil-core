@@ -29,7 +29,7 @@ extern "C" int wmain(int argc, wchar_t** argv)
 
 #else
 
-int main(int argc, char** argv)
+extern "C++" int main(int argc, char** argv)
 {
   return COIL_ENTRY_POINT(std::vector<std::string>(argv, argv + argc));
 }
