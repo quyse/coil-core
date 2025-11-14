@@ -120,7 +120,7 @@ export namespace Coil
 
     SignalPtr<std::unordered_map<Key, Value>> CreateSignal()
     {
-      return MakeSignalDependentOnEvent(MakeEventDependentOnEvent([self = Ptr<SyncMap<Key, Value>>{this}](Key, Value const*)
+      return MakeSignalDependentOnEvent(MakeEventDependentOnEvent([self = PtrSelf()](Key, Value const*)
       {
         return self->items_;
       }, GetEvent()), items_);

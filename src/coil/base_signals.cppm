@@ -311,6 +311,8 @@ export namespace Coil
   class SignalVarPtr : public SignalPtr<T>
   {
   public:
+    SignalVarPtr() = default;
+
     SignalVarPtr(Ptr<VariableSignal<T>> pSignal)
     : SignalVarPtr::SignalPtr{std::move(pSignal)}
     {}
@@ -352,12 +354,6 @@ export namespace Coil
     };
 
   public:
-    SignalDependentOnEvent(EventPtr<T> pEvent, T initialValue = {})
-    : SignalDependentOnEvent::VariableSignal{std::move(initialValue)}, pEvent_{std::move(pEvent)}, cell_{this}
-    {
-      cell_.SubscribeTo(pEvent_);
-    }
-
     template <typename TT>
     SignalDependentOnEvent(EventPtr<T> pEvent, TT&& initialValue)
     : SignalDependentOnEvent::VariableSignal{std::forward<TT>(initialValue)}, pEvent_{std::move(pEvent)}, cell_{this}
@@ -370,13 +366,13 @@ export namespace Coil
   };
 
   template <typename T>
-  SignalPtr<std::decay_t<T>> MakeConstSignal(T&& value)
+  SignalPtr<std::decay_t<T>> MakeConstSignal(T value)
   {
     return Ptr<ConstSignal<std::decay_t<T>>>::Make(std::move(value));
   }
 
   template <typename T>
-  SignalVarPtr<std::decay_t<T>> MakeVariableSignal(T&& value = {})
+  SignalVarPtr<std::decay_t<T>> MakeVariableSignal(T value = {})
   {
     return Ptr<VariableSignal<std::decay_t<T>>>::Make(std::move(value));
   }

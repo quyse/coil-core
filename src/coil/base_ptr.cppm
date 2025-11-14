@@ -84,6 +84,8 @@ export namespace Coil
       return Ptr<T>{new T(std::forward<Args>(args)...)};
     }
 
+    friend auto operator<=>(Ptr const&, Ptr const&) = default;
+
   protected:
     T* ptr_ = nullptr;
   };
@@ -102,6 +104,13 @@ export namespace Coil
     void PtrDereference()
     {
       if(!--_ptrRefCount) delete this;
+    }
+
+    // pointer to itself
+    template <typename Self>
+    Ptr<std::remove_reference_t<Self>> PtrSelf(this Self&& self)
+    {
+      return Ptr<std::remove_reference_t<Self>>{&self};
     }
 
     size_t _ptrRefCount = 0;
