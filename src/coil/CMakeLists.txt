@@ -437,6 +437,20 @@ endif()
 list(APPEND coil_core_all_libraries scene)
 
 if(TRUE)
+  add_library(coil_core_component STATIC)
+  target_sources(coil_core_component PUBLIC FILE_SET CXX_MODULES FILES
+    component.cppm
+  )
+  target_link_libraries(coil_core_component
+    PUBLIC
+      coil_core_base
+  )
+  target_compile_features(coil_core_component PUBLIC cxx_std_26)
+  list(APPEND coil_core_libraries component)
+endif()
+list(APPEND coil_core_all_libraries component)
+
+if(TRUE)
   add_library(coil_core_render STATIC)
   target_sources(coil_core_render PUBLIC FILE_SET CXX_MODULES FILES
     render.cppm
