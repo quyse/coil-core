@@ -125,11 +125,6 @@ export namespace Coil
   {
     SignalDependency(SignalPtr<T> pSignal, SignalBase* pSelfSignal)
     : pSignal_{std::move(pSignal)}, cell_{pSelfSignal}
-    {}
-
-    // to be called when `this` address became stable
-    // not in constructor, because can be moved afterwards
-    void Init()
     {
       cell_.SubscribeTo(pSignal_);
     }
@@ -206,13 +201,8 @@ export namespace Coil
     template <typename FF, typename... AArgs>
     DependentSignal(FF&& f, SignalPtr<AArgs>... pSignals)
     : f_{std::forward<FF>(f)}
-    , dependencies_(SignalBase::SignalDependency{std::move(pSignals), this}...)
-    {
-      std::apply([](SignalBase::SignalDependency<Args>&... dependencies)
-      {
-        (dependencies.Init(), ...);
-      }, dependencies_);
-    }
+    , dependencies_{SignalBase::SignalDependency{std::move(pSignals), this}...}
+    {}
 
     ConstRefExceptScalarOf<T> Get() const override
     {
@@ -281,10 +271,6 @@ export namespace Coil
       for(auto const& pSignal : pSignals)
       {
         dependencies_.push_back({pSignal, this});
-      }
-      for(size_t i = 0; i < dependencies_.size(); ++i)
-      {
-        dependencies_[i].Init();
       }
     }
 

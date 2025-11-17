@@ -63,6 +63,10 @@ export namespace Coil
     class CellHead
     {
     public:
+      CellHead() = default;
+      CellHead(CellHead const&) = delete;
+      CellHead(CellHead&&) = delete;
+
       ~CellHead()
       {
         if(pNext_) pNext_->pPrev_ = nullptr;
@@ -86,6 +90,18 @@ export namespace Coil
     class Cell : public CellHead
     {
     public:
+      Cell() = default;
+      Cell(Cell const&) = delete;
+      Cell(Cell&& other)
+      {
+        if(other.pPrev_)
+        {
+          CellHead* prev = other.pPrev_;
+          other.Remove();
+          AddTo(*prev);
+        }
+      }
+
       ~Cell()
       {
         Remove();
