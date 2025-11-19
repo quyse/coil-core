@@ -151,7 +151,6 @@ if(TRUE)
   target_link_libraries(coil_core_assets
     PUBLIC
       coil_core_json
-      coil_core_tasks
   )
   target_compile_features(coil_core_assets PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries assets)
@@ -384,7 +383,6 @@ if(TRUE)
       coil_core_base
       coil_core_image
       coil_core_math
-      coil_core_tasks
   )
   target_compile_features(coil_core_graphics PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries graphics)
@@ -415,7 +413,6 @@ if(TRUE)
   target_link_libraries(coil_core_image_transform
     PUBLIC
       coil_core_image
-      coil_core_tasks
   )
   target_compile_features(coil_core_image_transform PUBLIC cxx_std_26)
   list(APPEND coil_core_libraries image_transform)
@@ -584,7 +581,6 @@ if(TARGET PNG::PNG)
     PUBLIC
       coil_core_data
       coil_core_image
-      coil_core_tasks
       PNG::PNG
   )
   target_compile_features(coil_core_image_png PUBLIC cxx_std_26)
@@ -600,7 +596,6 @@ if(TARGET Squish::Squish)
   target_link_libraries(coil_core_image_compress
     PUBLIC
       coil_core_image
-      coil_core_tasks
     PRIVATE
       Squish::Squish
   )
@@ -616,7 +611,7 @@ if(TARGET zstd::libzstd_shared)
   )
   target_link_libraries(coil_core_compress_zstd
     PUBLIC
-      coil_core_tasks
+      coil_core_base
       zstd::libzstd_shared
   )
   target_compile_features(coil_core_compress_zstd PUBLIC cxx_std_26)
@@ -727,7 +722,6 @@ if(TARGET Freetype::Freetype AND TARGET harfbuzz::harfbuzz)
   target_link_libraries(coil_core_fthb
     PUBLIC
       coil_core_fonts
-      coil_core_tasks
       Freetype::Freetype
       harfbuzz::harfbuzz
   )
@@ -883,7 +877,7 @@ if(TARGET Ogg::ogg)
   )
   target_link_libraries(coil_core_ogg
     PUBLIC
-      coil_core_tasks
+      coil_core_base
       Ogg::ogg
   )
   target_compile_features(coil_core_ogg PUBLIC cxx_std_26)
@@ -898,7 +892,7 @@ if(TARGET Webm::Webm)
   )
   target_link_libraries(coil_core_webm
     PUBLIC
-      coil_core_tasks
+      coil_core_base
       Webm::Webm
   )
   target_compile_features(coil_core_webm PUBLIC cxx_std_26)
@@ -914,7 +908,6 @@ if(TARGET Opus::opus)
   target_link_libraries(coil_core_opus
     PUBLIC
       coil_core_audio
-      coil_core_tasks
     PRIVATE
       Opus::opus
   )
@@ -930,7 +923,6 @@ if(TARGET libgav1::libgav1)
   )
   target_link_libraries(coil_core_av1
     PUBLIC
-      coil_core_tasks
       coil_core_video
       libgav1::libgav1
   )

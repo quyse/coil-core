@@ -6,7 +6,6 @@ module;
 export module coil.core.video.av1;
 
 import coil.core.base;
-import coil.core.tasks;
 import coil.core.video;
 
 export namespace Coil
@@ -129,10 +128,10 @@ export namespace Coil
   public:
     template <typename Asset, typename AssetContext>
     requires std::convertible_to<Av1DecodeStreamSource*, Asset>
-    Task<Asset> LoadAsset(Book& book, AssetContext& assetContext) const
+    Asset LoadAsset(Book& book, AssetContext& assetContext) const
     {
-      co_return &book.Allocate<Av1DecodeStreamSource>(
-        *co_await assetContext.template LoadAssetParam<PacketInputStreamSource*>(book, "source")
+      return &book.Allocate<Av1DecodeStreamSource>(
+        *assetContext.template LoadAssetParam<PacketInputStreamSource*>(book, "source")
       );
     }
 

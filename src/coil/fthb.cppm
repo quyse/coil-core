@@ -15,7 +15,6 @@ import coil.core.fonts;
 import coil.core.image;
 import coil.core.localization;
 import coil.core.math;
-import coil.core.tasks;
 
 namespace Coil
 {
@@ -337,9 +336,9 @@ export namespace Coil
   public:
     template <typename Asset, typename AssetContext>
     requires std::convertible_to<FtHbFontSource*, Asset>
-    Task<Asset> LoadAsset(Book& book, AssetContext& assetContext) const
+    Asset LoadAsset(Book& book, AssetContext& assetContext) const
     {
-      co_return &book.Allocate<FtHbFontSource>(co_await assetContext.template LoadAssetParam<Buffer>(book, "buffer"));
+      return &book.Allocate<FtHbFontSource>(assetContext.template LoadAssetParam<Buffer>(book, "buffer"));
     }
 
     static constexpr std::string_view assetLoaderName = "fthb";

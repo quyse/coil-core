@@ -13,7 +13,6 @@ module;
 export module coil.core.compress.zstd;
 
 import coil.core.base;
-import coil.core.tasks;
 
 namespace
 {
@@ -155,10 +154,10 @@ export namespace Coil
   public:
     template <typename Asset, typename AssetContext>
     requires std::convertible_to<ZstdDecompressStreamSource*, Asset>
-    Task<Asset> LoadAsset(Book& book, AssetContext& assetContext) const
+    Asset LoadAsset(Book& book, AssetContext& assetContext) const
     {
-      co_return &book.Allocate<ZstdDecompressStreamSource>(
-        *co_await assetContext.template LoadAssetParam<InputStreamSource*>(book, "source")
+      return &book.Allocate<ZstdDecompressStreamSource>(
+        *assetContext.template LoadAssetParam<InputStreamSource*>(book, "source")
       );
     }
 

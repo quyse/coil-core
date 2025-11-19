@@ -2,8 +2,8 @@ module;
 
 #include <any>
 #include <concepts>
-#include <mutex>
 #include <optional>
+#include <string>
 #include <string_view>
 #include <unordered_map>
 
@@ -11,7 +11,6 @@ export module coil.core.assets;
 
 import coil.core.base;
 import coil.core.json;
-import coil.core.tasks;
 
 export namespace Coil
 {
@@ -19,7 +18,7 @@ export namespace Coil
   template <typename Asset, typename AssetLoader, typename AssetContext>
   concept IsAssetLoadable = requires(AssetLoader const& assetLoader, Book& book, AssetContext& assetContext)
   {
-    { assetLoader.template LoadAsset<Asset>(book, assetContext) } -> std::same_as<Task<Asset>>;
+    { assetLoader.template LoadAsset<Asset>(book, assetContext) } -> std::same_as<Asset>;
   };
 
   // class managing loaded assets
@@ -29,12 +28,14 @@ export namespace Coil
   public:
     AssetManager() = default;
     AssetManager(AssetLoaders&&... assetLoaders)
-    : _assetLoaders(std::move(assetLoaders)...) {}
+    : assetLoaders_{std::move(assetLoaders)...} {}
+    AssetManager(std::tuple<AssetLoaders...>&& assetLoaders)
+    : assetLoaders_{std::move(assetLoaders)} {}
 
     void SetJsonContext(Json&& jsonContext)
     {
-      _jsonContext = std::move(jsonContext);
-      _assetContext.emplace(*this, _jsonContext);
+      jsonContext_ = std::move(jsonContext);
+      assetContext_.emplace(*this, jsonContext_);
     }
 
     // context for asset
@@ -43,144 +44,134 @@ export namespace Coil
     {
     public:
       AssetContext(AssetManager& assetManager, Json const& context)
-      : _assetManager(assetManager), _context(context) {}
+      : assetManager_{assetManager}, context_{context} {}
 
       // load asset represented by context
       template <IsAsset Asset>
-      Task<Asset> LoadAsset(Book& book)
       requires (IsAssetLoadable<Asset, AssetLoaders, AssetContext> || ...)
+      Asset LoadAsset(Book& book)
       {
-        return TryLoadAsset<Asset, 0>(book, JsonDecodeField<std::string>(_context, "loader"));
+        auto assetLoaderName = JsonDecodeField<std::string>(context_, "loader");
+        return [&]<size_t i>(this auto const& search) -> Asset
+        {
+          if constexpr(i < sizeof...(AssetLoaders))
+          {
+            auto const& assetLoader = std::get<i>(assetManager_.assetLoaders_);
+            using AssetLoader = std::decay_t<decltype(assetLoader)>;
+            if constexpr(IsAssetLoadable<Asset, AssetLoader, AssetManager>)
+            {
+              if(AssetLoader::assetLoaderName == assetLoaderName)
+              {
+                return assetLoader.template LoadAsset<Asset>(book, *this);
+              }
+            }
+
+            return search.template operator()<i + 1>();
+          }
+          else
+          {
+            throw Exception{} << "no asset loader " << assetLoaderName << " for " << typeid(Asset).name();
+          }
+        }.template operator()<0>();
       }
 
       // get required parameter
       std::string GetParam(std::string_view paramName)
       {
-        return JsonDecodeField<std::string>(_context, paramName);
+        return JsonDecodeField<std::string>(context_, paramName);
       }
       // get optional parameter
       std::optional<std::string> GetOptionalParam(std::string_view paramName)
       {
-        return JsonDecodeField<std::optional<std::string>>(_context, paramName);
+        return JsonDecodeField<std::optional<std::string>>(context_, paramName);
       }
       // get parameter from string
       template <typename T, typename... DefaultArgs>
       T GetFromStringParam(std::string_view paramName, DefaultArgs&&... defaultArgs)
       {
-        auto value = JsonDecodeField<std::optional<std::string>>(_context, paramName, {});
+        auto value = JsonDecodeField<std::optional<std::string>>(context_, paramName, {});
         return value.has_value() ? FromString<T>(value.value()) : T(std::forward<DefaultArgs>(defaultArgs)...);
       }
       // get optional parameter from string
       template <typename T>
       std::optional<T> GetOptionalFromStringParam(std::string_view paramName)
       {
-        auto value = JsonDecodeField<std::optional<std::string>>(_context, paramName, {});
+        auto value = JsonDecodeField<std::optional<std::string>>(context_, paramName, {});
         if(!value.has_value()) return {};
         return FromString<T>(value.value());
       }
 
       // load asset represented by parameter
       template <IsAsset Asset>
-      Task<Asset> LoadAssetParam(Book& book, std::string_view paramName)
+      Asset LoadAssetParam(Book& book, std::string_view paramName)
       {
-        auto i = _context.find(paramName);
-        if(i == _context.end())
-          throw Exception() << "no asset param " << paramName;
+        auto i = context_.find(paramName);
+        if(i == context_.end())
+          throw Exception{} << "no asset param " << paramName;
 
         auto const& subContext = i.value();
         if(subContext.is_object())
         {
-          co_return co_await AssetContext(_assetManager, subContext).LoadAsset<Asset>(book);
+          return AssetContext(assetManager_, subContext).LoadAsset<Asset>(book);
         }
         else
         {
-          co_return co_await _assetManager.LoadAsset<Asset>(book, JsonDecode<std::string>(subContext));
+          return assetManager_.LoadAsset<Asset>(book, JsonDecode<std::string>(subContext));
         }
       }
 
     private:
-      template <typename Asset, size_t i>
-      Task<Asset> TryLoadAsset(Book& book, std::string_view assetLoaderName)
-      {
-        if constexpr(i < sizeof...(AssetLoaders))
-        {
-          auto const& assetLoader = std::get<i>(_assetManager._assetLoaders);
-          using AssetLoader = std::decay_t<decltype(assetLoader)>;
-          if constexpr(IsAssetLoadable<Asset, AssetLoader, AssetManager>)
-          {
-            if(AssetLoader::assetLoaderName == assetLoaderName)
-            {
-              return assetLoader.template LoadAsset<Asset>(book, *this);
-            }
-          }
-
-          return TryLoadAsset<Asset, i + 1>(book, assetLoaderName);
-        }
-        else
-        {
-          throw Exception() << "no asset loader " << assetLoaderName << " for " << typeid(Asset).name();
-        }
-      }
-
-      AssetManager& _assetManager;
-      Json const& _context;
+      AssetManager& assetManager_;
+      Json const& context_;
     };
 
     template <IsAsset Asset>
-    Task<Asset> LoadAsset(Book& book, std::string const& assetName)
+    Asset LoadAsset(Book& book, std::string const& assetName)
     requires (IsAssetLoadable<Asset, AssetLoaders, AssetManager> || ...)
     {
-      std::unique_lock lock(_mutex);
+      // mark the asset as loading or check that it's already started loading or loaded
+      auto [i, inserted] = assets_.insert({assetName, std::optional<std::any>{}});
 
-      // if task already started
-      auto i = _assets.find(assetName);
-      if(i != _assets.end())
+      // if asset does not exist yet
+      if(inserted)
       {
-        // wait for task to finish
-        auto task = i->second;
-        lock.unlock();
+        // load asset
 
-        auto asset = co_await task;
+        if(!assetContext_.has_value())
+          throw Exception{"no asset context set"};
+
+        Asset asset = assetContext_.value().template LoadAssetParam<Asset>(book, assetName);
+        i->second = std::any{asset};
+        return asset;
+      }
+      // otherwise get loaded asset
+      else
+      {
+        auto optAsset = i->second;
+        // if it's not actually loaded, it's a dependency loop
+        if(!optAsset.has_value())
+        {
+          throw Exception{} << "asset dependency loop detected on " << typeid(Asset).name();
+        }
 
         // safely cast to required asset type
         try
         {
-          co_return std::any_cast<Asset>(asset);
+          return std::any_cast<Asset>(optAsset.value());
         }
         catch(std::bad_any_cast const&)
         {
-          throw Exception() << "mistyped cached asset: expected " << typeid(Asset).name() << " but got " << asset.type().name();
+          throw Exception{} << "mistyped cached asset: expected " << typeid(Asset).name() << " but got " << optAsset.value().type().name();
         }
-      }
-      else
-      {
-        // otherwise start task
-
-        if(!_assetContext.has_value())
-          throw Exception("no asset context set");
-
-        auto assetTask = _assetContext.value().template LoadAssetParam<Asset>(book, assetName);
-        _assets.insert(
-        {
-          assetName,
-          [](auto assetTask) -> Task<std::any>
-          {
-            co_return std::any(co_await assetTask);
-          }(assetTask),
-        });
-        lock.unlock();
-
-        co_return co_await assetTask;
       }
     }
 
   private:
-    std::tuple<AssetLoaders...> const _assetLoaders;
+    std::tuple<AssetLoaders...> const assetLoaders_;
 
-    Json _jsonContext;
-    std::optional<AssetContext> _assetContext;
+    Json jsonContext_;
+    std::optional<AssetContext> assetContext_;
 
-    std::mutex _mutex;
-    std::unordered_map<std::string, Task<std::any>> _assets;
+    std::unordered_map<std::string, std::optional<std::any>> assets_;
   };
 }

@@ -25,7 +25,6 @@ import coil.core.render;
 import coil.core.sdl.vulkan;
 import coil.core.sdl;
 import coil.core.steam;
-import coil.core.tasks;
 import coil.core.vulkan;
 
 using namespace Coil;
@@ -45,8 +44,6 @@ COIL_META_STRUCT(Assets)
 int COIL_ENTRY_POINT(std::vector<std::string> args)
 {
   AppIdentity::GetInstance().Name() = "coil_core_example_steam";
-
-  TaskEngine::GetInstance().AddThread();
 
   Book book;
 
@@ -80,7 +77,7 @@ int COIL_ENTRY_POINT(std::vector<std::string> args)
   assetManager.SetJsonContext(JsonFromBuffer(File::MapRead(book, "example_assets.json")));
 
   Assets<AssetStructAdapter> assets;
-  assets.SelfLoad(book, assetManager).Get();
+  assets.SelfLoad(book, assetManager);
 
   Canvas canvas(graphicsDevice);
   canvas.Init(graphicsBook, graphicsPool);

@@ -15,7 +15,6 @@ import coil.core.base;
 import coil.core.graphics.shaders;
 import coil.core.image.format;
 import coil.core.math;
-import coil.core.tasks;
 
 export namespace Coil
 {
@@ -566,16 +565,16 @@ export namespace Coil
     : _manager(manager) {}
 
     template <std::same_as<GraphicsImage*> Asset, typename AssetContext>
-    Task<Asset> LoadAsset(Book& book, AssetContext& assetContext) const
+    Asset LoadAsset(Book& book, AssetContext& assetContext) const
     {
-      auto image = co_await assetContext.template LoadAssetParam<ImageBuffer>(book, "image");
-      auto* pSampler = co_await assetContext.template LoadAssetParam<GraphicsSampler*>(book, "sampler");
+      auto image = assetContext.template LoadAssetParam<ImageBuffer>(book, "image");
+      auto* pSampler = assetContext.template LoadAssetParam<GraphicsSampler*>(book, "sampler");
       auto* pTexture = &_manager.GetDevice().CreateTexture(book, _manager.GetPool(), image.format, pSampler);
       _manager.AddContextTask([pTexture, image](GraphicsContext& context)
       {
         context.SetTextureData(*pTexture, image);
       });
-      co_return pTexture;
+      return pTexture;
     }
 
     static constexpr std::string_view assetLoaderName = "texture";
@@ -592,11 +591,11 @@ export namespace Coil
     : _manager(manager) {}
 
     template <std::same_as<GraphicsSampler*> Asset, typename AssetContext>
-    Task<Asset> LoadAsset(Book& book, AssetContext& assetContext) const
+    Asset LoadAsset(Book& book, AssetContext& assetContext) const
     {
       auto allFilter = assetContext.template GetFromStringParam<GraphicsSamplerConfig::Filter>("filter", GraphicsSamplerConfig::Filter::Nearest);
       auto allWrap = assetContext.template GetFromStringParam<GraphicsSamplerConfig::Wrap>("wrap", GraphicsSamplerConfig::Wrap::Repeat);
-      co_return &_manager.GetDevice().CreateSampler(book,
+      return &_manager.GetDevice().CreateSampler(book,
       {
         .magFilter = assetContext.template GetFromStringParam<GraphicsSamplerConfig::Filter>("magFilter", allFilter),
         .minFilter = assetContext.template GetFromStringParam<GraphicsSamplerConfig::Filter>("minFilter", allFilter),

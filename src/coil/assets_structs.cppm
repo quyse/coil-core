@@ -9,7 +9,6 @@ export module coil.core.assets.structs;
 
 import coil.core.assets;
 import coil.core.base;
-import coil.core.tasks;
 
 export namespace Coil
 {
@@ -38,18 +37,12 @@ export namespace Coil
     {
     public:
       template <typename AssetManager>
-      Task<void> SelfLoad(Book& book, AssetManager& assetManager, std::string const& namePrefix = {})
+      void SelfLoad(Book& book, AssetManager& assetManager, std::string const& namePrefix = {})
       {
         static StructTemplate<RegistrationAdapter<AssetManager>> const registration;
-        std::vector<Task<void>> tasks;
-        tasks.reserve(registration._fields.size());
         for(size_t i = 0; i < registration._fields.size(); ++i)
         {
-          tasks.push_back(registration._fields[i]->SelfLoad(static_cast<StructTemplate<AssetStructAdapter>&>(*this), book, assetManager, namePrefix));
-        }
-        for(size_t i = 0; i < tasks.size(); ++i)
-        {
-          co_await tasks[i];
+          registration._fields[i]->SelfLoad(static_cast<StructTemplate<AssetStructAdapter>&>(*this), book, assetManager, namePrefix);
         }
       }
 
@@ -70,7 +63,7 @@ export namespace Coil
     struct FieldInfoBase
     {
       virtual ~FieldInfoBase() = default;
-      virtual Task<void> SelfLoad(StructTemplate<AssetStructAdapter>& s, Book& book, AssetManager& assetManager, std::string const& namePrefix) = 0;
+      virtual void SelfLoad(StructTemplate<AssetStructAdapter>& s, Book& book, AssetManager& assetManager, std::string const& namePrefix) = 0;
     };
 
     template <typename FieldType>
@@ -79,20 +72,20 @@ export namespace Coil
       FieldInfo(std::string name, typename AssetStructAdapter::template Field<FieldType> StructTemplate<AssetStructAdapter>::* ptr)
       : name(std::move(name)), ptr(ptr) {}
 
-      Task<void> SelfLoad(StructTemplate<AssetStructAdapter>& s, Book& book, AssetManager& assetManager, std::string const& namePrefix) override
+      void SelfLoad(StructTemplate<AssetStructAdapter>& s, Book& book, AssetManager& assetManager, std::string const& namePrefix) override
       {
         // handle sub-structs
         if constexpr(requires
         {
-          { (s.*ptr).SelfLoad(book, assetManager, namePrefix + name) } -> std::same_as<Task<void>>;
+          { (s.*ptr).SelfLoad(book, assetManager, namePrefix + name) } -> std::same_as<void>;
         })
         {
-          co_await (s.*ptr).SelfLoad(book, assetManager, namePrefix + name);
+          (s.*ptr).SelfLoad(book, assetManager, namePrefix + name);
         }
         // else it's asset field
         else
         {
-          s.*ptr = co_await assetManager.template LoadAsset<FieldType>(book, namePrefix + name);
+          s.*ptr = assetManager.template LoadAsset<FieldType>(book, namePrefix + name);
         }
       }
 

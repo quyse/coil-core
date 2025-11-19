@@ -8,7 +8,6 @@ export module coil.core.audio.opus;
 
 import coil.core.audio;
 import coil.core.base;
-import coil.core.tasks;
 
 export namespace Coil
 {
@@ -89,10 +88,10 @@ export namespace Coil
   public:
     template <typename Asset, typename AssetContext>
     requires std::convertible_to<OpusDecodeStreamSource*, Asset>
-    Task<Asset> LoadAsset(Book& book, AssetContext& assetContext) const
+    Asset LoadAsset(Book& book, AssetContext& assetContext) const
     {
-      co_return &book.Allocate<OpusDecodeStreamSource>(
-        *co_await assetContext.template LoadAssetParam<PacketInputStreamSource*>(book, "source")
+      return &book.Allocate<OpusDecodeStreamSource>(
+        *assetContext.template LoadAssetParam<PacketInputStreamSource*>(book, "source")
       );
     }
 

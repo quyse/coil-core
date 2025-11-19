@@ -10,7 +10,6 @@ import coil.core.base;
 import coil.core.image;
 import coil.core.image.format;
 import coil.core.math;
-import coil.core.tasks;
 
 export namespace Coil
 {
@@ -139,9 +138,9 @@ export namespace Coil
   {
   public:
     template <std::same_as<ImageBuffer> Asset, typename AssetContext>
-    Task<Asset> LoadAsset(Book& book, AssetContext& assetContext) const
+    Asset LoadAsset(Book& book, AssetContext& assetContext) const
     {
-      auto image = co_await assetContext.template LoadAssetParam<ImageBuffer>(book, "image");
+      auto image = assetContext.template LoadAssetParam<ImageBuffer>(book, "image");
       auto compressionParam = assetContext.template GetOptionalFromStringParam<PixelFormat::Compression>("compression");
       PixelFormat::Compression compression;
       if(compressionParam.has_value())
@@ -166,7 +165,7 @@ export namespace Coil
           break;
         }
       }
-      co_return CompressImage(book, image, compression);
+      return CompressImage(book, image, compression);
     }
 
     static constexpr std::string_view assetLoaderName = "image_compress";

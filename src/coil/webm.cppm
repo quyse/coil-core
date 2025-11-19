@@ -7,7 +7,6 @@ module;
 export module coil.core.media.webm;
 
 import coil.core.base;
-import coil.core.tasks;
 
 export namespace Coil
 {
@@ -190,10 +189,10 @@ export namespace Coil
   public:
     template <typename Asset, typename AssetContext>
     requires std::convertible_to<WebmTrackDecodeStreamSource*, Asset>
-    Task<Asset> LoadAsset(Book& book, AssetContext& assetContext) const
+    Asset LoadAsset(Book& book, AssetContext& assetContext) const
     {
-      co_return &book.Allocate<WebmTrackDecodeStreamSource>(
-        *co_await assetContext.template LoadAssetParam<InputStreamSource*>(book, "source"),
+      return &book.Allocate<WebmTrackDecodeStreamSource>(
+        *assetContext.template LoadAssetParam<InputStreamSource*>(book, "source"),
         assetContext.template GetFromStringParam<MediaType>("type")
       );
     }

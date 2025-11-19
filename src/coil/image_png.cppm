@@ -9,7 +9,6 @@ export module coil.core.image.png;
 import coil.core.base;
 import coil.core.data;
 import coil.core.image.format;
-import coil.core.tasks;
 
 namespace
 {
@@ -262,10 +261,10 @@ export namespace Coil
   {
   public:
     template <std::same_as<ImageBuffer> Asset, typename AssetContext>
-    Task<Asset> LoadAsset(Book& book, AssetContext& assetContext) const
+    Asset LoadAsset(Book& book, AssetContext& assetContext) const
     {
-      BufferInputStream inputStream = co_await assetContext.template LoadAssetParam<Buffer>(book, "buffer");
-      co_return LoadPngImage(book, inputStream);
+      BufferInputStream inputStream = assetContext.template LoadAssetParam<Buffer>(book, "buffer");
+      return LoadPngImage(book, inputStream);
     }
 
     static constexpr std::string_view assetLoaderName = "image_png";

@@ -657,16 +657,16 @@ export namespace Coil
   public:
     template <typename Asset, typename AssetContext>
     requires std::same_as<Asset, Buffer> || std::convertible_to<BufferInputStreamSource*, Asset>
-    Task<Asset> LoadAsset(Book& book, AssetContext& assetContext) const
+    Asset LoadAsset(Book& book, AssetContext& assetContext) const
     {
       auto buffer = File::MapRead(book, assetContext.GetParam("path"));
       if constexpr(std::same_as<Asset, Buffer>)
       {
-        co_return buffer;
+        return buffer;
       }
       else
       {
-        co_return &book.Allocate<BufferInputStreamSource>(buffer);
+        return &book.Allocate<BufferInputStreamSource>(buffer);
       }
     }
 

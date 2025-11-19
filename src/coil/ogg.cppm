@@ -6,7 +6,6 @@ module;
 export module coil.core.ogg;
 
 import coil.core.base;
-import coil.core.tasks;
 
 export namespace Coil
 {
@@ -102,10 +101,10 @@ export namespace Coil
   public:
     template <typename Asset, typename AssetContext>
     requires std::convertible_to<OggDecodeStreamSource*, Asset>
-    Task<Asset> LoadAsset(Book& book, AssetContext& assetContext) const
+    Asset LoadAsset(Book& book, AssetContext& assetContext) const
     {
-      co_return &book.Allocate<OggDecodeStreamSource>(
-        *co_await assetContext.template LoadAssetParam<InputStreamSource*>(book, "source")
+      return &book.Allocate<OggDecodeStreamSource>(
+        *assetContext.template LoadAssetParam<InputStreamSource*>(book, "source")
       );
     }
 
