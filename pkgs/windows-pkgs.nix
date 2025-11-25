@@ -291,7 +291,8 @@ lib.makeExtensible (self: with self; {
   };
 
   boost = msvc.stdenv.mkDerivation {
-    inherit (pkgs.boost) pname version src meta;
+    pname = "${pkgs.boost.pname}-${msvc.buildEnv.nameSuffix}";
+    inherit (pkgs.boost) version src meta;
     nativeBuildInputs = [
       msvc.buildEnv
     ];
