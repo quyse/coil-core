@@ -186,7 +186,7 @@ lib.makeExtensible (self: with self; {
     ];
   };
   usrsctp = mkCmakePkg {
-    inherit (pkgs.usrsctp) pname version src;
+    inherit (pkgs.usrsctp) pname version src patches;
     cmakeFlags = [
       "-Dsctp_werror=OFF"
       # "-Dsctp_build_shared_lib=ON"
