@@ -5,7 +5,7 @@
 }:
 
 lib.makeExtensible (self: with self; {
-  msvc = coil.toolchain-windows.msvc {};
+  inherit (coil.toolchain-windows) msvc;
   inherit (msvc) mkCmakePkg finalizePkg buildEnvWithModulesSupport;
 
   nlohmann_json = mkCmakePkg {
