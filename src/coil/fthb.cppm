@@ -106,6 +106,12 @@ export namespace Coil
       if(FT_Set_Pixel_Sizes(ftFace, size, size))
         throw Exception("setting FreeType font size failed");
 
+      hb_font_t* hbFont = hb_ft_font_create(ftFace, nullptr);
+      book.Allocate<HbFont>(hbFont);
+
+      hb_ft_font_set_funcs(hbFont);
+      hb_ft_font_set_load_flags(hbFont, FT_LOAD_NO_HINTING | FT_LOAD_NO_AUTOHINT);
+
       if(FT_HAS_MULTIPLE_MASTERS(ftFace))
       {
         FT_MM_Var* mmVar;
@@ -149,11 +155,7 @@ export namespace Coil
         FT_Done_MM_Var(FtEngine::GetLibrary(), mmVar);
       }
 
-      hb_font_t* hbFont = hb_ft_font_create(ftFace, nullptr);
-      book.Allocate<HbFont>(hbFont);
-
-      hb_ft_font_set_funcs(hbFont);
-      hb_ft_font_set_load_flags(hbFont, FT_LOAD_NO_HINTING | FT_LOAD_NO_AUTOHINT);
+      hb_ft_font_changed(hbFont);
 
       hb_buffer_t* hbBuffer = hb_buffer_create();
       book.Allocate<HbBuffer>(hbBuffer);
