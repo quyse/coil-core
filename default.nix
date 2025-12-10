@@ -1,5 +1,4 @@
-{ pkgsFun ? import <nixpkgs>
-, pkgs ? pkgsFun {}
+{ pkgs ? import <nixpkgs> {}
 , lib ? pkgs.lib
 , coil
 , features ? null
