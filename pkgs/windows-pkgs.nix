@@ -67,6 +67,7 @@ lib.makeExtensible (self: with self; {
     inherit (pkgs.sdl3) pname version src meta;
     cmakeFlags = [
       "-DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON"
+      "-DSDL_TESTS=OFF"
     ];
   };
 
