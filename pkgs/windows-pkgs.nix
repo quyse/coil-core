@@ -97,8 +97,13 @@ lib.makeExtensible (self: with self; {
     ];
   };
 
-  sqlite = mkCmakePkg {
-    inherit (pkgs.sqlite) pname version src;
+  sqlite = mkCmakePkg rec {
+    pname = "sqlite";
+    version = "3510200";
+    src = pkgs.fetchzip {
+      url = "https://sqlite.org/2026/sqlite-amalgamation-${version}.zip";
+      hash = "sha256-WUH/22OMthEsDTGrpZ8dLCts6890wSLGMmPWt725Gss=";
+    };
     postPatch = ''
       ln -s ${pkgs.writeText "sqlite-CMakeLists.txt" ''
         cmake_minimum_required(VERSION 3.19)
