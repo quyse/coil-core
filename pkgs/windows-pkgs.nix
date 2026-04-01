@@ -71,8 +71,16 @@ lib.makeExtensible (self: with self; {
     ];
   };
 
-  zlib = mkCmakePkg {
-    inherit (pkgs.zlib) pname version src meta;
+  zlib = mkCmakePkg rec {
+    pname = "zlib";
+    version = "1.3.1";
+    src = pkgs.fetchFromGitHub {
+      owner = "madler";
+      repo = "zlib";
+      tag = "v${version}";
+      hash = "sha256-TkPLWSN5QcPlL9D0kc/yhH0/puE9bFND24aj5NVDKYs=";
+    };
+    inherit (pkgs.zlib) meta;
   };
 
   libpng = mkCmakePkg {
