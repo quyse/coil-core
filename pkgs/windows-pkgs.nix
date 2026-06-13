@@ -72,16 +72,16 @@ lib.makeExtensible (self: with self; {
     ];
   };
 
-  zlib = mkCmakePkg rec {
-    pname = "zlib";
-    version = "1.3.1";
-    src = pkgs.fetchFromGitHub {
-      owner = "madler";
-      repo = "zlib";
-      tag = "v${version}";
-      hash = "sha256-TkPLWSN5QcPlL9D0kc/yhH0/puE9bFND24aj5NVDKYs=";
+  zlib = mkCmakePkg {
+    name = "zlib";
+    src = pkgs.fetchgit {
+      inherit (fixeds.fetchgit."https://github.com/madler/zlib.git##latest_release") url rev sha256;
     };
-    inherit (pkgs.zlib) meta;
+    cmakeFlags = [
+      "-DZLIB_BUILD_SHARED=ON"
+      "-DZLIB_BUILD_STATIC=OFF"
+    ];
+    meta.license = lib.licenses.zlib;
   };
 
   libpng = mkCmakePkg {

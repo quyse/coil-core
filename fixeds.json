@@ -6,6 +6,12 @@
       "sha256": "0fw1dd902had4bawfgl5ly89df05zvn2p2c1hg7afzvzjdlxvv7b",
       "tag": "boost-1.91.0-1",
       "url": "https://github.com/boostorg/boost.git"
+    },
+    "https://github.com/madler/zlib.git##latest_release": {
+      "rev": "216c70c020aa53f0c40920d155f808b6b59c9acb",
+      "sha256": "10hskld8a45xh9xqhjsxlrcgjzfml2g0cr9k47d24x9j3gsmvn2a",
+      "tag": "v1.3.2",
+      "url": "https://github.com/madler/zlib.git"
     }
   }
 }
