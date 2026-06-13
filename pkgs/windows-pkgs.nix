@@ -41,27 +41,17 @@ lib.makeExtensible (self: with self; {
   };
 
   zstd = mkCmakePkg {
-    inherit (pkgs.zstd) pname version src;
-    patches = lib.optionals (pkgs.zstd.version == "1.5.6") [
-      (pkgs.fetchpatch {
-        url = "https://github.com/facebook/zstd/pull/4019.patch";
-        hash = "sha256-XC5sK/t6d0IB9oVhMTMZWQgck3OOTKhsMAgN4GX7/L0=";
-      })
-    ];
-    postPatch = ''
-      # remove unsupported option
-      grep -Fv -- '-z noexecstack' < build/cmake/CMakeModules/AddZstdCompilationFlags.cmake > build/cmake/CMakeModules/AddZstdCompilationFlags.cmake.new
-      mv build/cmake/CMakeModules/AddZstdCompilationFlags.cmake{.new,}
-    '';
+    name = "zstd";
+    src = pkgs.fetchgit {
+      inherit (fixeds.fetchgit."https://github.com/facebook/zstd.git##latest_release") url rev sha256;
+    };
     cmakeFlags = [
       "-DZSTD_MULTITHREAD_SUPPORT=OFF"
       "-DZSTD_BUILD_PROGRAMS=OFF"
       "-DZSTD_BUILD_TESTS=OFF"
     ];
     sourceDir = "build/cmake";
-    meta = pkgs.zstd.meta // {
-      outputsToInstall = null;
-    };
+    meta.license = lib.licenses.bsd3;
   };
 
   sdl3 = mkCmakePkg {
