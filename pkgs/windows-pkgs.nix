@@ -2,6 +2,7 @@
 , lib
 , coil
 , dontRequireLibsList
+, fixeds
 }:
 
 lib.makeExtensible (self: with self; {
@@ -304,34 +305,24 @@ lib.makeExtensible (self: with self; {
     };
   };
 
-  boost = msvc.stdenv.mkDerivation {
-    pname = "${pkgs.boost.pname}-${msvc.buildEnv.nameSuffix}";
-    inherit (pkgs.boost) version src meta;
-    nativeBuildInputs = [
-      msvc.buildEnv
-    ];
-    configurePhase = ''
-      wine ./bootstrap.bat --with-toolset=clang-win
-    '';
-    buildPhase = ''
-      wine b2 \
-        --prefix=$(winepath -w $out) \
-        -j''${NIX_BUILD_CORES} \
-        --layout=system \
-        toolset=clang-win \
-        variant=release \
-        threading=multi \
-        link=shared \
-        runtime-link=shared \
-        architecture=x86 \
-        address-model=64 \
-        debug-symbols=off \
-        --without-python \
-        install
-    '';
-    installPhase = finalizePkg {
-      buildInputs = [];
+  boost = mkCmakePkg {
+    name = "boost";
+    src = pkgs.fetchgit {
+      inherit (fixeds.fetchgit."https://github.com/boostorg/boost.git##latest_release") url rev sha256;
+      fetchSubmodules = true;
     };
+    buildInputs = [
+      zlib
+      zstd
+    ];
+    cmakeFlags = [
+      "-DBUILD_SHARED_LIBS=ON"
+      "-DBOOST_ENABLE_PYTHON=OFF"
+      "-DBOOST_IOSTREAMS_ENABLE_ZLIB=ON"
+      "-DBOOST_IOSTREAMS_ENABLE_ZSTD=ON"
+    ];
+    doCheck = false;
+    meta.license = lib.licenses.boost;
   };
 
   steam = if coil.toolchain-steam != null then coil.toolchain-steam.sdk.overrideAttrs (attrs: {

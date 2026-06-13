@@ -2,6 +2,8 @@
 , lib ? pkgs.lib
 , coil
 , features ? null
+, fixedsFile ? ./fixeds.json
+, fixeds ? lib.importJSON fixedsFile
 }:
 
 lib.makeExtensible (self: with self; {
@@ -131,7 +133,7 @@ lib.makeExtensible (self: with self; {
   # Windows build
   windows-pkgs = import ./pkgs/windows-pkgs.nix {
     pkgs = nixos-pkgs // nixos-pkgs.coil;
-    inherit lib coil dontRequireLibsList;
+    inherit lib coil dontRequireLibsList fixeds;
   };
   coil-core-windows = windows-pkgs.coil-core;
 
@@ -147,5 +149,7 @@ lib.makeExtensible (self: with self; {
       coil-core-windows
     ;
     boost-windows = windows-pkgs.boost;
+
+    autoUpdateScript = coil.toolchain.autoUpdateFixedsScript fixedsFile;
   };
 })
