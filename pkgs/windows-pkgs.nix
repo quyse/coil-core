@@ -203,21 +203,20 @@ lib.makeExtensible (self: with self; {
   };
 
   ogg = mkCmakePkg {
-    inherit (pkgs.libogg) pname version src meta;
+    name = "ogg";
+    src = pkgs.fetchgit {
+      inherit (fixeds.fetchgit."https://github.com/xiph/ogg.git##latest_release") url rev sha256;
+    };
     cmakeFlags = [
       "-DBUILD_SHARED_LIBS=ON"
     ];
+    meta.license = lib.licenses.bsd3;
   };
 
   opus = mkCmakePkg rec {
-    pname = "opus";
-    version = "1.5.2";
-    # use git checkout instead of tarball to get cmake exports
-    src = pkgs.fetchFromGitHub {
-      owner = "xiph";
-      repo = "opus";
-      rev = "v${version}";
-      hash = "sha256-M1G7ypcfs7nJmXgkyoG96jT/CkgN5BOzy+DGO4LVCvA=";
+    name = "opus";
+    src = pkgs.fetchgit {
+      inherit (fixeds.fetchgit."https://github.com/xiph/opus.git##latest_release") url rev sha256;
     };
     cmakeFlags = [
       "-DBUILD_SHARED_LIBS=ON"

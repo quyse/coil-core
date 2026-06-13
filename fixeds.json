@@ -18,6 +18,18 @@
       "sha256": "10hskld8a45xh9xqhjsxlrcgjzfml2g0cr9k47d24x9j3gsmvn2a",
       "tag": "v1.3.2",
       "url": "https://github.com/madler/zlib.git"
+    },
+    "https://github.com/xiph/ogg.git##latest_release": {
+      "rev": "db03f952b25717fd5c4938817c9290837a4ae1b2",
+      "sha256": "02pchk3g2rfhpfmw2b98ndny2lqsv1n3cmzmxy36cz5vyr3fvhv2",
+      "tag": "v1.3.6",
+      "url": "https://github.com/xiph/ogg.git"
+    },
+    "https://github.com/xiph/opus.git##latest_release": {
+      "rev": "5ec2f3c915d0529b94a3a302969c673531654824",
+      "sha256": "0bwxc0wgyffwglfq6l0179xrd4q7w8gi02jym6i3nw58k9yngyc9",
+      "tag": "v1.5.2",
+      "url": "https://github.com/xiph/opus.git"
     }
   }
 }
