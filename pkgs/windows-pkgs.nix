@@ -309,6 +309,7 @@ lib.makeExtensible (self: with self; {
       "-DBOOST_ENABLE_PYTHON=OFF"
       "-DBOOST_IOSTREAMS_ENABLE_ZLIB=ON"
       "-DBOOST_IOSTREAMS_ENABLE_ZSTD=ON"
+      "-DBOOST_EXCLUDE_LIBRARIES=locale"
     ];
     doCheck = false;
     meta.license = lib.licenses.boost;
