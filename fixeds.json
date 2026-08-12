@@ -2,9 +2,9 @@
   "fetchgit": {
     "https://github.com/boostorg/boost.git##latest_release": {
       "fetch_submodules": true,
-      "rev": "4bb6fb9f8c4a34b2594d068f3ef28af7eb7020d7",
-      "sha256": "01830jsxs9p1hpf98vw39bzr8784783jypbg3v7ca7mx32zkwzb3",
-      "tag": "boost-1.92.0.beta1",
+      "rev": "afdfa32505af73e3d208144b3f623f0096cb62b6",
+      "sha256": "0b04ki2rgg8a158yzb3q27cbadpb3kbbqvm5cll6b1zbxpxp368f",
+      "tag": "boost-1.92.0",
       "url": "https://github.com/boostorg/boost.git"
     },
     "https://github.com/facebook/zstd.git##latest_release": {
