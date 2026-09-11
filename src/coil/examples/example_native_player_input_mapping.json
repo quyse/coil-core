@@ -8,6 +8,10 @@
         "Space": "fire",
         "Escape": "exit"
       }
+    , "mouse":
+      {
+        "cursor": "move"
+      }
     }
   }
 }

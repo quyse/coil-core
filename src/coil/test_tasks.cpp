@@ -263,10 +263,11 @@ int COIL_ENTRY_POINT(std::vector<std::string> args)
   ivec2 counts;
 
   // run tests on increasing number of threads
-  size_t threadsCounts[] = { 1, 2, 4 };
+  size_t threadsCounts[] = { 1, 2, 4, 8, 16 };
   size_t currentThreadsCount = 0;
   for(size_t i = 0; i < sizeof(threadsCounts) / sizeof(threadsCounts[0]); ++i)
   {
+    std::cout << "thread count: " << threadsCounts[i] << "\n";
     for(; currentThreadsCount < threadsCounts[i]; ++currentThreadsCount)
       TaskEngine::GetInstance().AddThread();
     counts += Tester(threadsCounts[i]).Run();

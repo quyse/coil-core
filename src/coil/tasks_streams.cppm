@@ -105,7 +105,7 @@ export namespace Coil
   {
   public:
     // allow buffer expansion means allow writes bigger than buffer size
-    // normally if there's not enough space for write pipe suspends
+    // normally if there's not enough space for a write the pipe suspends
     // but if the write is bigger than the buffer, assuming the writer cannot
     // do lesser write, there's no point in suspending
     // if expansion is allowed, big writes succeed immediately, and buffer is expanded

@@ -1,6 +1,6 @@
 # Coil Core game engine
 
-Work-in-progress C++ 20 game engine. Not generally usable yet.
+Work-in-progress C++ 26 game engine. Not generally usable yet.
 
 ## Features
 
