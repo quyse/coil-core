@@ -2,7 +2,6 @@
 , lib
 , fetchurl
 , cmake
-, openmp
 }:
 
 stdenv.mkDerivation rec {
@@ -18,9 +17,6 @@ stdenv.mkDerivation rec {
   '';
   nativeBuildInputs = [
     cmake
-  ];
-  buildInputs = [
-    openmp
   ];
   cmakeFlags = [
     "-DBUILD_SHARED_LIBS=ON"

@@ -1,5 +1,6 @@
 module;
 
+#include "base.hpp"
 #include <cstring>
 #include <map>
 #include <memory>
@@ -7,6 +8,11 @@ module;
 #include <set>
 #include <string>
 #include <vector>
+#if defined(COIL_PLATFORM_WINDOWS)
+#include <malloc.h>
+#else
+#include <alloca.h>
+#endif
 #include <spirv/unified1/spirv.hpp11>
 #include <spirv/unified1/GLSL.std.450.h>
 

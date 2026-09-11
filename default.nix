@@ -11,7 +11,7 @@ lib.makeExtensible (self: with self; {
   nixos-pkgs = pkgs.extend (pkgs: super: with pkgs; {
     coil = lib.makeScope newScope (self: with self; {
       # llvm packages taken from nixpkgs
-      llvmPackages = pkgs.llvmPackages_21;
+      llvmPackages = pkgs.llvmPackages_23;
       clang-tools = llvmPackages.clang-tools.override { enableLibcxx = true; };
       clang = llvmPackages.clangUseLLVM.override {
         inherit (llvmPackages) bintools; # use lld
@@ -77,7 +77,7 @@ lib.makeExtensible (self: with self; {
 
   # Ubuntu build
   ubuntu-pkgs = rec {
-    clangVersion = "21";
+    clangVersion = "23";
     diskImage = coil.toolchain-linux.diskImagesFuns.ubuntu_2204_amd64 [
       "clang-${clangVersion}"
       "cmake"
