@@ -14,9 +14,9 @@
       "url": "https://github.com/facebook/zstd.git"
     },
     "https://github.com/madler/zlib.git##latest_release": {
-      "rev": "216c70c020aa53f0c40920d155f808b6b59c9acb",
-      "sha256": "10hskld8a45xh9xqhjsxlrcgjzfml2g0cr9k47d24x9j3gsmvn2a",
-      "tag": "v1.3.2",
+      "rev": "dd9d5c2d62b52e8acb0e678de5768087eedce914",
+      "sha256": "1j76ji229pqw5lhhw1nyczlrqmlshh33bh6dkc2dhazlnp8rkgm3",
+      "tag": "v1.4",
       "url": "https://github.com/madler/zlib.git"
     },
     "https://github.com/xiph/ogg.git##latest_release": {
