@@ -8,9 +8,9 @@
       "url": "https://github.com/boostorg/boost.git"
     },
     "https://github.com/facebook/zstd.git##latest_release": {
-      "rev": "ac66b19e6bd6b83238bf008eecc1298105298532",
-      "sha256": "13jbpfhx3as4494k2x9fci1c54mrrij74mn70wrzlxbj7whmdldl",
-      "tag": "v1.5.7",
+      "rev": "f51e6be603b4a801bff221f18929e93bd8d0eff5",
+      "sha256": "1yjfp4dl1wa9cz1lpgf9cy63bpimzpbfhbxiz24qgfbv1ap1qckg",
+      "tag": "v1.6.0",
       "url": "https://github.com/facebook/zstd.git"
     },
     "https://github.com/madler/zlib.git##latest_release": {
